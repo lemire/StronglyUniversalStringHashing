@@ -106,11 +106,11 @@ ticks rdtsc() {
     return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
 }
 ticks startRDTSC (void) {
-	return rdtsc();
+    return rdtsc();
 }
 
 ticks stopRDTSCP (void) {
-	return rdtsc();
+    return rdtsc();
 }
 
 
@@ -121,21 +121,21 @@ typedef uint32_t (*hashFunction)(const uint64_t *  ,const  uint32_t * , const si
 hashFunction funcArr[HowManyFunctions] = {&hashMultilinear, &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
 
  const char* functionnames[HowManyFunctions] = {"Multilinear  (strongly universal)", 
- 												"RabinKarp                        ",
- 												"FNV1                             ",
- 												"FNV1a                            ",
- 												"SAX                              "};
+                                                 "RabinKarp                        ",
+                                                 "FNV1                             ",
+                                                 "FNV1a                            ",
+                                                 "SAX                              "};
 
 int main(int , char **) {
     const int N = 1024; // should be divisible by two!
     const int  SHORTTRIALS = 1000000;
-	const int HowManyRepeats = 3;
-	int i,k,j;
-	int elapsed;
-	hashFunction thisfunc;
-	const char * functionname;
-	ticks bef,aft;
-	struct timeval start, finish;
+    const int HowManyRepeats = 3;
+    int i,k,j;
+    int elapsed;
+    hashFunction thisfunc;
+    const char * functionname;
+    ticks bef,aft;
+    struct timeval start, finish;
     uint64_t randbuffer[N + 3];  
     uint32_t sumToFoolCompiler = 0;
     uint32_t intstring[N];// // could force 16-byte alignment with  __attribute__ ((aligned (16)));
