@@ -160,7 +160,8 @@ int main(int , char **) {
             aft = stopRDTSCP();
             gettimeofday( &finish, 0);  
             elapsed = ( 1000000*(finish.tv_sec - start.tv_sec) + (finish.tv_usec - start.tv_usec));
-            printf("%s CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",functionname,(aft-bef)*1.0/(4.0*SHORTTRIALS*N),(4.0*SHORTTRIALS*N)/(1000.*elapsed));
+            printf("%s CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",functionname,
+              (aft-bef)*1.0/(4.0*SHORTTRIALS*N),(4.0*SHORTTRIALS*N)/(1000.*elapsed));
         }
         printf("\n");
     }
