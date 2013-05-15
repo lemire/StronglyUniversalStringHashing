@@ -139,10 +139,10 @@ int main(int , char **) {
     uint64_t randbuffer[N + 3];  
     uint32_t sumToFoolCompiler = 0;
     uint32_t intstring[N];// // could force 16-byte alignment with  __attribute__ ((aligned (16)));
-    for (i=0; i < N + 2; ++i) {
+    for (i = 0; i < N + 3; ++i) {
         randbuffer[i]=rand()| ((uint64_t)(rand())<<32);
     }
-    for (i=0; i < N + 1; ++i) {
+    for ( i = 0; i < N; ++i) {
         intstring[i] = rand();
     }
     printf("For documentation, see Strongly universal string hashing is fast at http://arxiv.org/abs/1202.4961");
