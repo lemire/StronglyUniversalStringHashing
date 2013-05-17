@@ -2,7 +2,7 @@
 #
 .SUFFIXES: .cpp .o .c .h
 
-CXXFLAGS =  -O3 -Wall -Wextra -Wcast-align  
+CXXFLAGS =  -O3 -Wall -march=native -Wextra -Wcast-align  
 
 all:  multilinearhashing
 
