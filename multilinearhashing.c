@@ -38,6 +38,7 @@ uint32_t hashMultilinear(const uint64_t *  randomsource, const uint32_t *  strin
 
 // Rabin-Karp Hashing
 uint32_t hashRabinKarp(const uint64_t * useless, const uint32_t *  string, const size_t length) {
+    (void) (useless);
     int sum = 0;
     const int someprime = 31;
     for(size_t i = 0; i < length; ++i) {
@@ -49,7 +50,8 @@ uint32_t hashRabinKarp(const uint64_t * useless, const uint32_t *  string, const
 // This is similar to Rabin-Karp, but we avoid the multiplication
 //D. J. Bernstein, CDB–Constant Database, http://cr.yp.to/cdb.html
 uint32_t hashBernstein(const uint64_t * useless,const uint32_t *  string, const size_t length) {
-    int sum = 0;
+    (void) (useless);
+     int sum = 0;
     const int L = 3;
     for(size_t i = 0; i < length; ++i) {
         sum= (( sum<< L) + sum) ^ string[i] ;
@@ -60,6 +62,7 @@ uint32_t hashBernstein(const uint64_t * useless,const uint32_t *  string, const 
 // Fowler-Noll-Vo hashing
 // L. C. Noll, Fowler/Noll/Vo Hash, http://www.isthe.com/chongo/tech/comp/fnv/
 uint32_t hashFNV1(const uint64_t * useless,const uint32_t *  string, const size_t length) {
+    (void) (useless);
     int sum = 0;
     const uint32_t someprime = 31;
     for(size_t i = 0; i < length; ++i) {
@@ -71,6 +74,7 @@ uint32_t hashFNV1(const uint64_t * useless,const uint32_t *  string, const size_
 // Fowler-Noll-Vo hashing
 // L. C. Noll, Fowler/Noll/Vo Hash, http://www.isthe.com/chongo/tech/comp/fnv/
 uint32_t hashFNV1a(const uint64_t * useless ,const uint32_t *  string, const size_t length) {
+    (void) (useless);
     int sum = 0;
     const uint32_t someprime = 31;
     for(size_t i = 0; i < length; ++i) {
@@ -82,6 +86,7 @@ uint32_t hashFNV1a(const uint64_t * useless ,const uint32_t *  string, const siz
 // M. V. Ramakrishna, J. Zobel, Performance in practice of string hashing functions,
 //in: Proc. Int. Conf. on Database Systems for Advanced Applications, 1997.
 uint32_t hashSAX(const uint64_t * useless,  const uint32_t *  string, const size_t length) {
+    (void) (useless);
     int sum = 0;
     const int L = 3;
     const int R = 5;
@@ -154,6 +159,8 @@ hashFunction funcArr[HowManyFunctions] = {&hashMultilinear, &hashRabinKarp, &has
                                                  "SAX                              "};
 
 int main(int c, char ** arg) {
+    (void) (c);
+    (void) (arg);
     const int N = 1024; // should be divisible by two!
     const int  SHORTTRIALS = 1000000;
     const int HowManyRepeats = 3;
