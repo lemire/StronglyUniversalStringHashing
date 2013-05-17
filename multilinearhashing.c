@@ -17,22 +17,20 @@
  #include <stdio.h>
  #include <sys/time.h>
 
-
-
 //
 // this is strongly universal. Condition: randomsource must be at least as long as 
 // the string length  + 3.
 //  
 // Reference: Owen Kaser and Daniel Lemire, Strongly universal string hashing is fast, Computer Journal 
 // http://arxiv.org/abs/1202.4961
-__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation
+//__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation in some cases
 uint32_t hashMultilinear(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
-    uint64_t sum = randomsource[0];
-    for(size_t i = 0; i < length; ++i) {
-        sum += (randomsource[i+2] *  (uint64_t)(string[i])) ;
+    const uint32_t * const endstring = string + length;
+    uint64_t sum = *(randomsource++);
+    for(; string!= endstring; ++randomsource,++string ) {
+        sum+= (*randomsource *  (uint64_t)(*string)) ;
     }
-    sum += randomsource[length+1]; // always assume last "character" is a one
-    return (uint32_t) (sum>>32);
+    return (int) (sum>>32);
 }
 
 // Rabin-Karp Hashing
@@ -105,12 +103,38 @@ ticks rdtsc() {
         : "%ebx", "%ecx");     /* clobbers*/
     return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
 }
-ticks startRDTSC (void) {
+ticks oldstartRDTSC (void) {
 	return rdtsc();
 }
 
-ticks stopRDTSCP (void) {
+ticks oldstopRDTSCP (void) {
 	return rdtsc();
+}
+// start and stop are as recommended by 
+// Gabriele Paoloni, How to Benchmark Code Execution Times on Intel® IA-32 and IA-64 Instruction Set Architectures
+// September 2010
+// http://edc.intel.com/Link.aspx?id=3954
+
+static __inline__ ticks startRDTSC (void) {
+  unsigned cycles_low, cycles_high;
+  asm volatile ("CPUID\n\t"
+                "RDTSC\n\t"
+                "mov %%edx, %0\n\t"
+                "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::
+                "%rax", "%rbx", "%rcx", "%rdx");
+  return ((ticks)cycles_high << 32) | cycles_low;
+}
+
+static __inline__ ticks stopRDTSCP (void) {
+  unsigned cycles_low, cycles_high;
+/// This should work fine on most machines, if the RDTSCP thing
+/// fails for you, use the  rdtsc() call instead.
+  asm volatile("RDTSCP\n\t"
+               "mov %%edx, %0\n\t"
+               "mov %%eax, %1\n\t"
+               "CPUID\n\t": "=r" (cycles_high), "=r" (cycles_low):: "%rax",
+               "%rbx", "%rcx", "%rdx");
+  return ((ticks)cycles_high << 32) | cycles_low;
 }
 
 
