@@ -16,6 +16,7 @@
  #include <stdlib.h>
  #include <stdio.h>
  #include <sys/time.h>
+ #include <smmintrin.h>
 
 //
 // this is strongly universal. Condition: randomsource must be at least as long as 
@@ -30,8 +31,43 @@ uint32_t hashMultilinear(const uint64_t *  randomsource, const uint32_t *  strin
     for(; string!= endstring; ++randomsource,++string ) {
         sum+= (*randomsource *  (uint64_t)(*string)) ;
     }
+    sum += *randomsource;
     return (int) (sum>>32);
 }
+
+
+
+uint32_t hashMultilinearSSE41(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
+    uint64_t sum = *(randomsource++);
+    randomsource++;// skipp
+    __m128i counter =  _mm_setzero_si128 ();
+    for(size_t i = 0; i < length;i+=4) {
+    	__m128i randvec1 = _mm_load_si128 ((__m128i*) randomsource);
+    	randomsource += 2;
+    	__m128i randvec2 = _mm_load_si128 ((__m128i*) randomsource);
+    	randomsource += 2;
+    	__m128i datavec = _mm_load_si128 ((__m128i*) string);
+    	string += 4;
+    	
+    	__m128i iterm1 =  _mm_slli_epi64 ( _mm_mul_epu32 (randvec1, datavec), 32);
+    	counter = _mm_add_epi64 (counter, iterm1);
+    	__m128i iterm2 =    _mm_mul_epu32 ( _mm_slli_si128(randvec1,4), datavec);
+    	counter = _mm_add_epi64 (counter, iterm2);
+    	datavec = _mm_slli_si128(datavec,4);
+    	__m128i iterm3 =  _mm_slli_epi64 ( _mm_mul_epu32 (randvec2, datavec), 32);
+    	counter = _mm_add_epi64 (counter, iterm3);
+    	__m128i iterm4 =    _mm_mul_epu32 ( _mm_slli_si128(randvec2,4), datavec);
+    	counter = _mm_add_epi64 (counter, iterm4);
+    }
+
+    sum +=  _mm_extract_epi64 (counter,0);
+    sum +=  _mm_extract_epi64 (counter,1);
+
+    sum += *randomsource;
+
+    return (int) (sum>>32);
+}
+
 
 // Rabin-Karp Hashing
 uint32_t hashRabinKarp(const uint64_t * , const uint32_t *  string, const size_t length) {
@@ -140,11 +176,12 @@ static __inline__ ticks fancystopRDTSCP (void) {
 
 typedef uint32_t (*hashFunction)(const uint64_t *  ,const  uint32_t * , const size_t );
 
-#define HowManyFunctions 5
+#define HowManyFunctions 6
 
-hashFunction funcArr[HowManyFunctions] = {&hashMultilinear, &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
+hashFunction funcArr[HowManyFunctions] = {&hashMultilinear, &hashMultilinearSSE41, &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
 
- const char* functionnames[HowManyFunctions] = {"Multilinear  (strongly universal)", 
+ const char* functionnames[HowManyFunctions] = {"Multilinear   (strongly universal)",
+ 												"MultilinearSSE(strongly universal)", 
                                                  "RabinKarp                        ",
                                                  "FNV1                             ",
                                                  "FNV1a                            ",
