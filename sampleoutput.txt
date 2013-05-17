@@ -1,0 +1,30 @@
+Using: 
+gcc version 4.7.2 (Ubuntu/Linaro 4.7.2-2ubuntu1) 
+Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+
+I got:
+
+
+For documentation, see Strongly universal string hashing is fast at http://arxiv.org/abs/1202.4961Reporting the number of cycles per byte and the billions of bytes processed per second.
+test #1
+Multilinear  (strongly universal) CPU cycle/byte = 0.204122 	 billions of bytes per second =  17.594199    
+RabinKarp                         CPU cycle/byte = 0.946225 	 billions of bytes per second =  3.795443    
+FNV1                              CPU cycle/byte = 0.945703 	 billions of bytes per second =  3.797519    
+FNV1a                             CPU cycle/byte = 0.945615 	 billions of bytes per second =  3.797889    
+SAX                               CPU cycle/byte = 1.184066 	 billions of bytes per second =  3.033061    
+
+test #2
+Multilinear  (strongly universal) CPU cycle/byte = 0.195023 	 billions of bytes per second =  18.414948    
+RabinKarp                         CPU cycle/byte = 0.946038 	 billions of bytes per second =  3.796192    
+FNV1                              CPU cycle/byte = 0.945662 	 billions of bytes per second =  3.797702    
+FNV1a                             CPU cycle/byte = 0.945662 	 billions of bytes per second =  3.797684    
+SAX                               CPU cycle/byte = 1.182228 	 billions of bytes per second =  3.037764    
+
+test #3
+Multilinear  (strongly universal) CPU cycle/byte = 0.194489 	 billions of bytes per second =  18.465589    
+RabinKarp                         CPU cycle/byte = 0.945792 	 billions of bytes per second =  3.797184    
+FNV1                              CPU cycle/byte = 0.945778 	 billions of bytes per second =  3.797216    
+FNV1a                             CPU cycle/byte = 0.945590 	 billions of bytes per second =  3.797970    
+SAX                               CPU cycle/byte = 1.186842 	 billions of bytes per second =  3.025967    
+
+# ignore this #-808326016
