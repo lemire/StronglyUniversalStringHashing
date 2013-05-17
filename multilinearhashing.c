@@ -103,19 +103,19 @@ ticks rdtsc() {
         : "%ebx", "%ecx");     /* clobbers*/
     return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
 }
-ticks oldstartRDTSC (void) {
-	return rdtsc();
+ticks startRDTSC (void) {
+    return rdtsc();
 }
 
-ticks oldstopRDTSCP (void) {
-	return rdtsc();
+ticks stopRDTSCP (void) {
+    return rdtsc();
 }
 // start and stop are as recommended by 
 // Gabriele Paoloni, How to Benchmark Code Execution Times on Intel® IA-32 and IA-64 Instruction Set Architectures
 // September 2010
 // http://edc.intel.com/Link.aspx?id=3954
 
-static __inline__ ticks startRDTSC (void) {
+static __inline__ ticks fancystartRDTSC (void) {
   unsigned cycles_low, cycles_high;
   asm volatile ("CPUID\n\t"
                 "RDTSC\n\t"
@@ -125,7 +125,7 @@ static __inline__ ticks startRDTSC (void) {
   return ((ticks)cycles_high << 32) | cycles_low;
 }
 
-static __inline__ ticks stopRDTSCP (void) {
+static __inline__ ticks fancystopRDTSCP (void) {
   unsigned cycles_low, cycles_high;
 /// This should work fine on most machines, if the RDTSCP thing
 /// fails for you, use the  rdtsc() call instead.
@@ -145,28 +145,28 @@ typedef uint32_t (*hashFunction)(const uint64_t *  ,const  uint32_t * , const si
 hashFunction funcArr[HowManyFunctions] = {&hashMultilinear, &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
 
  const char* functionnames[HowManyFunctions] = {"Multilinear  (strongly universal)", 
- 												"RabinKarp                        ",
- 												"FNV1                             ",
- 												"FNV1a                            ",
- 												"SAX                              "};
+                                                 "RabinKarp                        ",
+                                                 "FNV1                             ",
+                                                 "FNV1a                            ",
+                                                 "SAX                              "};
 
 int main(int , char **) {
     const int N = 1024; // should be divisible by two!
     const int  SHORTTRIALS = 1000000;
-	const int HowManyRepeats = 3;
-	int i,k,j;
-	int elapsed;
-	hashFunction thisfunc;
-	const char * functionname;
-	ticks bef,aft;
-	struct timeval start, finish;
+    const int HowManyRepeats = 3;
+    int i,k,j;
+    int elapsed;
+    hashFunction thisfunc;
+    const char * functionname;
+    ticks bef,aft;
+    struct timeval start, finish;
     uint64_t randbuffer[N + 3];  
     uint32_t sumToFoolCompiler = 0;
     uint32_t intstring[N];// // could force 16-byte alignment with  __attribute__ ((aligned (16)));
-    for (i=0; i < N + 2; ++i) {
+    for (i = 0; i < N + 3; ++i) {
         randbuffer[i]=rand()| ((uint64_t)(rand())<<32);
     }
-    for (i=0; i < N + 1; ++i) {
+    for ( i = 0; i < N; ++i) {
         intstring[i] = rand();
     }
     printf("For documentation, see Strongly universal string hashing is fast at http://arxiv.org/abs/1202.4961");
@@ -184,7 +184,8 @@ int main(int , char **) {
             aft = stopRDTSCP();
             gettimeofday( &finish, 0);  
             elapsed = ( 1000000*(finish.tv_sec - start.tv_sec) + (finish.tv_usec - start.tv_usec));
-            printf("%s CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",functionname,(aft-bef)*1.0/(4.0*SHORTTRIALS*N),(4.0*SHORTTRIALS*N)/(1000.*elapsed));
+            printf("%s CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",functionname,
+              (aft-bef)*1.0/(4.0*SHORTTRIALS*N),(4.0*SHORTTRIALS*N)/(1000.*elapsed));
         }
         printf("\n");
     }
