@@ -23,8 +23,9 @@
 //  
 // Reference: Owen Kaser and Daniel Lemire, Strongly universal string hashing is fast, Computer Journal 
 // http://arxiv.org/abs/1202.4961
-#ifdef __GNUC__
-__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation in some cases
+#if defined(__GNUC__) && !( defined(__clang__) || defined(__INTEL_COMPILER  ))
+__attribute__((optimize("no-tree-vectorize")))
+// GCC has buggy SSE2 code generation in some cases
 #endif
 uint32_t hashMultilinear(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
     const uint32_t * const endstring = string + length;
@@ -36,11 +37,8 @@ uint32_t hashMultilinear(const uint64_t *  randomsource, const uint32_t *  strin
     return (int) (sum>>32);
 }
 
-#ifdef __GNUC__
-__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation in some cases
-#endif
 uint32_t hashMultilinear2by2(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
-    assert ( length / 2 * 2 == length );// length is pair
+    assert ( length / 2 * 2 == length );// length is even
     const uint32_t * const endstring = string + length;
     uint64_t sum = *(randomsource++);
     for(; string!= endstring; randomsource+=2,string+=2 ) {
@@ -50,11 +48,8 @@ uint32_t hashMultilinear2by2(const uint64_t *  randomsource, const uint32_t *  s
     return (int) (sum>>32);
 }
 
-#ifdef __GNUC__
-__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation in some cases
-#endif
 uint32_t hashMultilinearhalf(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
-    assert ( length / 2 * 2 == length );// length is pair
+    assert ( length / 2 * 2 == length );// length is even
     const uint32_t * const endstring = string + length;
     uint64_t sum = *(randomsource++);
     for(; string!= endstring; randomsource+=2,string+=2 ) {
@@ -64,8 +59,9 @@ uint32_t hashMultilinearhalf(const uint64_t *  randomsource, const uint32_t *  s
     return (int) (sum>>32);
 }
 
-#ifdef __GNUC__
-__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation in some cases
+#if defined(__GNUC__) && !( defined(__clang__) || defined(__INTEL_COMPILER  ))
+__attribute__((optimize("no-tree-vectorize")))
+// GCC has buggy SSE2 code generation in some cases
 #endif
 uint32_t hashMultilineardouble(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
     assert ( length / 2 * 2 == length );// length is pair
