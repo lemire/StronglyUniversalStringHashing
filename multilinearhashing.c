@@ -26,6 +26,7 @@
 #if defined(__GNUC__) && !( defined(__clang__) || defined(__INTEL_COMPILER  ))
 __attribute__((optimize("no-tree-vectorize")))
 // GCC has buggy SSE2 code generation in some cases
+// Thanks to Nathan Kurz for noticing that GCC 4.7 requires no-tree-vectorize to produce correct results.
 #endif
 uint32_t hashMultilinear(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
     const uint32_t * const endstring = string + length;

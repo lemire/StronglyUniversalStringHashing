@@ -12,3 +12,5 @@ For a C++ equivalent, see:
 
 https://github.com/lemire/fasthashing
 
+
+Thanks to Nathan Kurz for noticing that GCC 4.7 requires no-tree-vectorize to produce correct results.
