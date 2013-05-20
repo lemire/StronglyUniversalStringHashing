@@ -37,6 +37,10 @@ uint32_t hashMultilinear(const uint64_t *  randomsource, const uint32_t *  strin
     return (int) (sum>>32);
 }
 
+#if defined(__GNUC__) && !( defined(__clang__) || defined(__INTEL_COMPILER  ))
+__attribute__((optimize("no-tree-vectorize")))
+// GCC has buggy SSE2 code generation in some cases
+#endif
 uint32_t hashMultilinear2by2(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
     assert ( length / 2 * 2 == length );// length is even
     const uint32_t * const endstring = string + length;
@@ -48,6 +52,10 @@ uint32_t hashMultilinear2by2(const uint64_t *  randomsource, const uint32_t *  s
     return (int) (sum>>32);
 }
 
+#if defined(__GNUC__) && !( defined(__clang__) || defined(__INTEL_COMPILER  ))
+__attribute__((optimize("no-tree-vectorize")))
+// GCC has buggy SSE2 code generation in some cases
+#endif
 uint32_t hashMultilinearhalf(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
     assert ( length / 2 * 2 == length );// length is even
     const uint32_t * const endstring = string + length;
