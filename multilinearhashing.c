@@ -23,7 +23,9 @@
 //  
 // Reference: Owen Kaser and Daniel Lemire, Strongly universal string hashing is fast, Computer Journal 
 // http://arxiv.org/abs/1202.4961
-//__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation in some cases
+#ifdef __GNUC__
+__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation in some cases
+#endif
 uint32_t hashMultilinear(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
     const uint32_t * const endstring = string + length;
     uint64_t sum = *(randomsource++);
@@ -31,6 +33,50 @@ uint32_t hashMultilinear(const uint64_t *  randomsource, const uint32_t *  strin
         sum+= (*randomsource *  (uint64_t)(*string)) ;
     }
     sum += *randomsource;
+    return (int) (sum>>32);
+}
+
+#ifdef __GNUC__
+__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation in some cases
+#endif
+uint32_t hashMultilinear2by2(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
+    assert ( length / 2 * 2 == length );// length is pair
+    const uint32_t * const endstring = string + length;
+    uint64_t sum = *(randomsource++);
+    for(; string!= endstring; randomsource+=2,string+=2 ) {
+        sum+= (*randomsource *  (uint64_t)(*string)) + (*(randomsource+1) *  (uint64_t)(*(string+1)))  ;
+    }
+    sum += *randomsource;
+    return (int) (sum>>32);
+}
+
+#ifdef __GNUC__
+__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation in some cases
+#endif
+uint32_t hashMultilinearhalf(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
+    assert ( length / 2 * 2 == length );// length is pair
+    const uint32_t * const endstring = string + length;
+    uint64_t sum = *(randomsource++);
+    for(; string!= endstring; randomsource+=2,string+=2 ) {
+        sum+= (*randomsource +  (uint64_t)(*string)) * (*(randomsource+1) +  (uint64_t)(*(string+1)))  ;
+    }
+    sum += *randomsource;
+    return (int) (sum>>32);
+}
+
+#ifdef __GNUC__
+__attribute__ ((__target__ ("no-sse2"))) // GCC has buggy SSE2 code generation in some cases
+#endif
+uint32_t hashMultilineardouble(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
+    assert ( length / 2 * 2 == length );// length is pair
+    const uint32_t * const endstring = string + length;
+    uint64_t sum = *(randomsource++);
+    uint64_t s2 = 0;
+    for(; string!= endstring; randomsource+=2,string+=2 ) {
+        sum += *randomsource *  (uint64_t)(*string);
+        s2 +=  *(randomsource+1) *  (uint64_t)(*(string+1))  ;
+    }
+    sum += *randomsource + s2;
     return (int) (sum>>32);
 }
 
@@ -147,15 +193,19 @@ static __inline__ ticks fancystopRDTSCP (void) {
 
 typedef uint32_t (*hashFunction)(const uint64_t *  ,const  uint32_t * , const size_t );
 
-#define HowManyFunctions 5
+#define HowManyFunctions 8
 
-hashFunction funcArr[HowManyFunctions] = {&hashMultilinear, &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
+hashFunction funcArr[HowManyFunctions] = {&hashMultilinear,&hashMultilinear2by2 ,&hashMultilinearhalf, &hashMultilineardouble,
+ &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
 
- const char* functionnames[HowManyFunctions] = {"Multilinear   (strongly universal)",
-                                                 "RabinKarp                        ",
-                                                 "FNV1                             ",
-                                                 "FNV1a                            ",
-                                                 "SAX                              "};
+ const char* functionnames[HowManyFunctions] = {"Multilinear     (strongly universal)",
+                                                "Multilinear2x2  (strongly universal)",
+                                                "Multilinearhalf (strongly universal)",
+                                                "Multilineardouble (strongly u.)     ",
+                                                "RabinKarp                           ",
+                                                "FNV1                                ",
+                                                "FNV1a                               ",
+                                                "SAX                                 "};
 
 int main(int c, char ** arg) {
     (void) (c);
@@ -178,7 +228,7 @@ int main(int c, char ** arg) {
     for ( i = 0; i < N; ++i) {
         intstring[i] = rand();
     }
-    printf("For documentation, see Strongly universal string hashing is fast at http://arxiv.org/abs/1202.4961");
+    printf("For documentation, see Strongly universal string hashing is fast at http://arxiv.org/abs/1202.4961 \n");
 
     printf("Reporting the number of cycles per byte and the billions of bytes processed per second.\n");
     for(k = 0; k<HowManyRepeats; ++k) {
