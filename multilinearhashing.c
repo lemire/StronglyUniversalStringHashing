@@ -16,7 +16,6 @@
  #include <stdlib.h>
  #include <stdio.h>
  #include <sys/time.h>
- #include <smmintrin.h>
  #include <assert.h>
 //
 // this is strongly universal. Condition: randomsource must be at least as long as 
