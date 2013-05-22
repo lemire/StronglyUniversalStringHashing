@@ -204,16 +204,17 @@ typedef uint32_t (*hashFunction)(const uint64_t *  ,const  uint32_t * , const si
 
 #include "clmul.h"
 
-#define HowManyFunctions 10
+#define HowManyFunctions 11
 
 
-hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear, &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,&hashMultilinearhalf, &hashMultilineardouble,
+hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldfast,&hashGaloisFieldMultilinear, &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,&hashMultilinearhalf, &hashMultilineardouble,
  &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
 
-const char* functionnames[HowManyFunctions] = { "GFMultilinear   (strongly universal)",
-												"GFMultilinearhalf   (str. universal)",
-												"Multilinear     (strongly universal)",
- 												"Multilinear2x2  (strongly universal)",
+const char* functionnames[HowManyFunctions] = { "Fast GFMultilinear (str. universal) ",
+                                                "GFMultilinear   (strongly universal)",
+						"GFMultilinearhalf   (str. universal)",
+						"Multilinear     (strongly universal)",
+ 						"Multilinear2x2  (strongly universal)",
                                                 "Multilinearhalf (strongly universal)",
                                                 "Multilineardouble (strongly u.)     ",
                                                 "RabinKarp                           ",
@@ -231,7 +232,7 @@ hashFunction funcArr[HowManyFunctions] = {&hashMultilinear,&hashMultilinear2by2 
  &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
 
 const char* functionnames[HowManyFunctions] = {"Multilinear  (strongly universal)",
- 												"Multilinear2x2  (strongly universal)",
+ 						"Multilinear2x2  (strongly universal)",
                                                 "Multilinearhalf (strongly universal)",
                                                 "Multilineardouble (strongly u.)     ",
                                                 "RabinKarp                           ",
