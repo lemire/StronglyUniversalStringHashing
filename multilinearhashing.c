@@ -17,6 +17,7 @@
  #include <stdio.h>
  #include <sys/time.h>
  #include <assert.h>
+ 
 //
 // this is strongly universal. Condition: randomsource must be at least as long as 
 // the string length  + 3.
@@ -198,19 +199,48 @@ static __inline__ ticks fancystopRDTSCP (void) {
 
 typedef uint32_t (*hashFunction)(const uint64_t *  ,const  uint32_t * , const size_t );
 
-#define HowManyFunctions 8
 
-hashFunction funcArr[HowManyFunctions] = {&hashMultilinear,&hashMultilinear2by2 ,&hashMultilinearhalf, &hashMultilineardouble,
+#ifdef __PCLMUL__
+
+#include "clmul.h"
+
+#define HowManyFunctions 10
+
+
+hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear, &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,&hashMultilinearhalf, &hashMultilineardouble,
  &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
 
- const char* functionnames[HowManyFunctions] = {"Multilinear     (strongly universal)",
-                                                "Multilinear2x2  (strongly universal)",
+const char* functionnames[HowManyFunctions] = { "GFMultilinear   (strongly universal)",
+												"GFMultilinearhalf   (str. universal)",
+												"Multilinear     (strongly universal)",
+ 												"Multilinear2x2  (strongly universal)",
                                                 "Multilinearhalf (strongly universal)",
                                                 "Multilineardouble (strongly u.)     ",
                                                 "RabinKarp                           ",
                                                 "FNV1                                ",
                                                 "FNV1a                               ",
                                                 "SAX                                 "};
+#else
+
+
+
+#define HowManyFunctions 8
+
+
+hashFunction funcArr[HowManyFunctions] = {&hashMultilinear,&hashMultilinear2by2 ,&hashMultilinearhalf, &hashMultilineardouble,
+ &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
+
+const char* functionnames[HowManyFunctions] = {"Multilinear  (strongly universal)",
+ 												"Multilinear2x2  (strongly universal)",
+                                                "Multilinearhalf (strongly universal)",
+                                                "Multilineardouble (strongly u.)     ",
+                                                "RabinKarp                           ",
+                                                "FNV1                                ",
+                                                "FNV1a                               ",
+                                                "SAX                                 "};
+
+
+#endif
 
 int main(int c, char ** arg) {
     (void) (c);
@@ -239,6 +269,7 @@ int main(int c, char ** arg) {
     for(k = 0; k<HowManyRepeats; ++k) {
         printf("test #%d\n",k+1);
         for(i=0; i<HowManyFunctions; ++i) {
+        	sumToFoolCompiler = 0;
             thisfunc = funcArr[i];
             functionname = functionnames[i];
             gettimeofday( &start, 0);
@@ -250,6 +281,8 @@ int main(int c, char ** arg) {
             elapsed = ( 1000000*(finish.tv_sec - start.tv_sec) + (finish.tv_usec - start.tv_usec));
             printf("%s CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",functionname,
               (aft-bef)*1.0/(4.0*SHORTTRIALS*N),(4.0*SHORTTRIALS*N)/(1000.*elapsed));
+                  printf("# ignore this #%d\n",sumToFoolCompiler);
+
         }
         printf("\n");
     }
