@@ -255,9 +255,9 @@ int main(int c, char ** arg) {
     const char * functionname;
     ticks bef,aft;
     struct timeval start, finish;
-    uint64_t randbuffer[N + 3];  
+    uint64_t randbuffer[N + 3]  __attribute__ ((aligned (16)));  
     uint32_t sumToFoolCompiler = 0;
-    uint32_t intstring[N];// // could force 16-byte alignment with  __attribute__ ((aligned (16)));
+    uint32_t intstring[N]  __attribute__ ((aligned (16)));// // could force 16-byte alignment with  __attribute__ ((aligned (16)));
     for (i = 0; i < N + 3; ++i) {
         randbuffer[i]=rand()| ((uint64_t)(rand())<<32);
     }

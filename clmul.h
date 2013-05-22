@@ -61,8 +61,9 @@ uint32_t hashGaloisFieldMultilinearHalfMultiplications(const uint64_t*  randomso
 	assert(length / 2 * 2 == length); // if not, we need special handling (omitted)
 	const uint32_t * const endstring = string + length;
 	const uint32_t *  randomsource32 = ( const uint32_t * )randomsource;
-    __m128i acc = _mm_set_epi64x(0,*(randomsource32++));
-    for(; string!= endstring; randomsource32+=2,string+=2 ) {
+    __m128i acc = _mm_set_epi64x(0,*(randomsource32));
+    randomsource32 += 4;
+     for(; string!= endstring; randomsource32+=2,string+=2 ) {
     	__m128i temp1 = _mm_set_epi64x(*randomsource32,*(randomsource32+1));
     	__m128i temp2 = _mm_set_epi64x(*string,*(string+1));
     	__m128i twosums = _mm_xor_si128(temp1,temp2); 
@@ -72,11 +73,13 @@ uint32_t hashGaloisFieldMultilinearHalfMultiplications(const uint64_t*  randomso
     return barrettWithoutPrecomputation(acc);
 }
 
+// A fast version of hashGaloisFieldMultilinearHalfMultiplications 
 uint32_t hashGaloisFieldfast(const uint64_t*  randomsource, const uint32_t *  string, const size_t length) {
 	assert(length / 4 * 4 == length); // if not, we need special handling (omitted)
 	const uint32_t * const endstring = string + length;
 	const uint32_t *  randomsource32 = ( const uint32_t * )randomsource;
-    __m128i acc = _mm_set_epi64x(0,*(randomsource32++));
+     __m128i acc = _mm_set_epi64x(0,*(randomsource32));
+    randomsource32 += 4;
     const __m128i zero =  _mm_setzero_si128 ();
     for(; string!= endstring; randomsource32+=4,string+=4 ) {
     	const __m128i temp1 = _mm_load_si128((__m128i * )randomsource32);
