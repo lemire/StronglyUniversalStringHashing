@@ -1,33 +1,75 @@
 For documentation, see Strongly universal string hashing is fast at http://arxiv.org/abs/1202.4961 
 Reporting the number of cycles per byte and the billions of bytes processed per second.
 test #1
-Multilinear     (strongly universal) CPU cycle/byte = 0.303310 	 billions of bytes per second =  11.840443    
-Multilinear2x2  (strongly universal) CPU cycle/byte = 0.276746 	 billions of bytes per second =  12.977015    
-Multilinearhalf (strongly universal) CPU cycle/byte = 0.302325 	 billions of bytes per second =  11.879075    
-Multilineardouble (strongly u.)      CPU cycle/byte = 0.284665 	 billions of bytes per second =  12.616042    
-RabinKarp                            CPU cycle/byte = 0.976584 	 billions of bytes per second =  3.677454    
-FNV1                                 CPU cycle/byte = 0.946243 	 billions of bytes per second =  3.795351    
-FNV1a                                CPU cycle/byte = 0.946247 	 billions of bytes per second =  3.795355    
-SAX                                  CPU cycle/byte = 1.212297 	 billions of bytes per second =  2.962429    
+Fast GFMultilinear (str. universal)  CPU cycle/byte = 1.138765 	 billions of bytes per second =  2.978922    
+# ignore this #914158208
+GFMultilinear   (strongly universal) CPU cycle/byte = 2.359330 	 billions of bytes per second =  1.437821    
+# ignore this #917566336
+GFMultilinearhalf   (str. universal) CPU cycle/byte = 1.543004 	 billions of bytes per second =  2.198498    
+# ignore this #914158208
+Multilinear     (strongly universal) CPU cycle/byte = 0.294319 	 billions of bytes per second =  11.525918    
+# ignore this #1586054848
+Multilinear2x2  (strongly universal) CPU cycle/byte = 0.274194 	 billions of bytes per second =  12.371894    
+# ignore this #1586054848
+Multilinearhalf (strongly universal) CPU cycle/byte = 0.304484 	 billions of bytes per second =  11.141122    
+# ignore this #265124096
+Multilineardouble (strongly u.)      CPU cycle/byte = 0.269117 	 billions of bytes per second =  12.605249    
+# ignore this #1586054848
+RabinKarp                            CPU cycle/byte = 0.936445 	 billions of bytes per second =  3.622519    
+# ignore this #-1133617088
+FNV1                                 CPU cycle/byte = 0.908522 	 billions of bytes per second =  3.733857    
+# ignore this #863518784
+FNV1a                                CPU cycle/byte = 0.907909 	 billions of bytes per second =  3.736377    
+# ignore this #999278528
+SAX                                  CPU cycle/byte = 1.165665 	 billions of bytes per second =  2.910178    
+# ignore this #-1953171648
 
 test #2
-Multilinear     (strongly universal) CPU cycle/byte = 0.289604 	 billions of bytes per second =  12.400885    
-Multilinear2x2  (strongly universal) CPU cycle/byte = 0.276775 	 billions of bytes per second =  12.975411    
-Multilinearhalf (strongly universal) CPU cycle/byte = 0.302062 	 billions of bytes per second =  11.889454    
-Multilineardouble (strongly u.)      CPU cycle/byte = 0.276380 	 billions of bytes per second =  12.994223    
-RabinKarp                            CPU cycle/byte = 0.975746 	 billions of bytes per second =  3.680617    
-FNV1                                 CPU cycle/byte = 0.946155 	 billions of bytes per second =  3.795703    
-FNV1a                                CPU cycle/byte = 0.946314 	 billions of bytes per second =  3.795063    
-SAX                                  CPU cycle/byte = 1.215881 	 billions of bytes per second =  2.953698    
+Fast GFMultilinear (str. universal)  CPU cycle/byte = 1.135097 	 billions of bytes per second =  2.988549    
+# ignore this #914158208
+GFMultilinear   (strongly universal) CPU cycle/byte = 2.359610 	 billions of bytes per second =  1.437650    
+# ignore this #917566336
+GFMultilinearhalf   (str. universal) CPU cycle/byte = 1.532577 	 billions of bytes per second =  2.213456    
+# ignore this #914158208
+Multilinear     (strongly universal) CPU cycle/byte = 0.290905 	 billions of bytes per second =  11.661144    
+# ignore this #1586054848
+Multilinear2x2  (strongly universal) CPU cycle/byte = 0.271593 	 billions of bytes per second =  12.490318    
+# ignore this #1586054848
+Multilinearhalf (strongly universal) CPU cycle/byte = 0.298923 	 billions of bytes per second =  11.348367    
+# ignore this #265124096
+Multilineardouble (strongly u.)      CPU cycle/byte = 0.265976 	 billions of bytes per second =  12.754165    
+# ignore this #1586054848
+RabinKarp                            CPU cycle/byte = 0.932673 	 billions of bytes per second =  3.637171    
+# ignore this #-1133617088
+FNV1                                 CPU cycle/byte = 0.903786 	 billions of bytes per second =  3.753425    
+# ignore this #863518784
+FNV1a                                CPU cycle/byte = 0.904827 	 billions of bytes per second =  3.749106    
+# ignore this #999278528
+SAX                                  CPU cycle/byte = 1.158031 	 billions of bytes per second =  2.929361    
+# ignore this #-1953171648
 
 test #3
-Multilinear     (strongly universal) CPU cycle/byte = 0.289437 	 billions of bytes per second =  12.408023    
-Multilinear2x2  (strongly universal) CPU cycle/byte = 0.276709 	 billions of bytes per second =  12.978536    
-Multilinearhalf (strongly universal) CPU cycle/byte = 0.302030 	 billions of bytes per second =  11.890455    
-Multilineardouble (strongly u.)      CPU cycle/byte = 0.276375 	 billions of bytes per second =  12.994470    
-RabinKarp                            CPU cycle/byte = 0.975718 	 billions of bytes per second =  3.680719    
-FNV1                                 CPU cycle/byte = 0.946236 	 billions of bytes per second =  3.795400    
-FNV1a                                CPU cycle/byte = 0.946321 	 billions of bytes per second =  3.795042    
-SAX                                  CPU cycle/byte = 1.212306 	 billions of bytes per second =  2.962408    
+Fast GFMultilinear (str. universal)  CPU cycle/byte = 1.124778 	 billions of bytes per second =  3.015967    
+# ignore this #914158208
+GFMultilinear   (strongly universal) CPU cycle/byte = 2.337189 	 billions of bytes per second =  1.451442    
+# ignore this #917566336
+GFMultilinearhalf   (str. universal) CPU cycle/byte = 1.530590 	 billions of bytes per second =  2.216330    
+# ignore this #914158208
+Multilinear     (strongly universal) CPU cycle/byte = 0.291636 	 billions of bytes per second =  11.631936    
+# ignore this #1586054848
+Multilinear2x2  (strongly universal) CPU cycle/byte = 0.271452 	 billions of bytes per second =  12.496796    
+# ignore this #1586054848
+Multilinearhalf (strongly universal) CPU cycle/byte = 0.300569 	 billions of bytes per second =  11.286234    
+# ignore this #265124096
+Multilineardouble (strongly u.)      CPU cycle/byte = 0.266175 	 billions of bytes per second =  12.744561    
+# ignore this #1586054848
+RabinKarp                            CPU cycle/byte = 0.932456 	 billions of bytes per second =  3.638017    
+# ignore this #-1133617088
+FNV1                                 CPU cycle/byte = 0.904648 	 billions of bytes per second =  3.749848    
+# ignore this #863518784
+FNV1a                                CPU cycle/byte = 0.904219 	 billions of bytes per second =  3.751627    
+# ignore this #999278528
+SAX                                  CPU cycle/byte = 1.158135 	 billions of bytes per second =  2.929099    
+# ignore this #-1953171648
 
-# ignore this #-1487010240
+# ignore this #-1953171648
