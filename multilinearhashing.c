@@ -103,7 +103,7 @@ void __hashMulti(const uint64_t *  randomsource, const uint32_t *  string, uint3
 } 
 
 
-// this function is 4/2**32 almost universal on the first 32 bits
+// this function is 4/2**32 almost universal on 32 bits
 // it uses at most 8KB of random bits (for strings having 32-bit lengths)
 // code not thoroughly checked
 uint32_t pyramidal_Multilinear(const uint64_t *  randomsource, const uint32_t *  string, const size_t len) {
