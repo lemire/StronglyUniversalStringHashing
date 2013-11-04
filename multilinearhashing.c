@@ -87,6 +87,50 @@ uint32_t hashMultilineardouble(const uint64_t *  randomsource, const uint32_t * 
 }
 
 
+
+// used by pyramidal_Multilinear below
+// code not thoroughly checked
+void __hashMulti(const uint64_t *  randomsource, const uint32_t *  string, uint32_t *  output, int length, int blocksize) {
+    int bufferpos = 0;
+    int offset = length - length/blocksize*blocksize;
+    for(; bufferpos<length/blocksize;++bufferpos) {
+          output[bufferpos] = hashMultilinear(randomsource, string+bufferpos*blocksize, blocksize);
+    } 
+    if(offset>0) {
+        output[length/blocksize] = hashMultilinear(randomsource, string+length/blocksize*blocksize, 
+        offset);
+    }
+} 
+
+
+// this function is 4/2**32 almost universal on the first 32 bits
+// it uses at most 8KB of random bits (for strings having 32-bit lengths)
+// code not thoroughly checked
+uint32_t pyramidal_Multilinear(const uint64_t *  randomsource, const uint32_t *  string, const size_t len) {
+	size_t length = len;
+    int blocksize = 256;  
+    int newlength = ((length+blocksize-1)/blocksize);
+    uint32_t * array = malloc(newlength * sizeof(uint32_t));
+    __hashMulti(randomsource, string, array,  length, blocksize);
+    randomsource+=blocksize+1;
+    length = newlength;
+    while(length>1) {
+        newlength = ((length+blocksize-1)/blocksize);
+        uint32_t * array2 = malloc(newlength * sizeof(uint32_t));
+        __hashMulti(randomsource, array, array2,  length, blocksize);
+        randomsource+=blocksize+1;
+        free(array);
+        array = array2;
+        length = newlength;
+        if(length == 1) {
+        }
+    }
+    uint32_t answer = array[0];
+    free(array);
+    return answer;
+}
+
+
 // Rabin-Karp Hashing
 uint32_t hashRabinKarp(const uint64_t * useless, const uint32_t *  string, const size_t length) {
     (void) (useless);
@@ -204,23 +248,26 @@ typedef uint32_t (*hashFunction)(const uint64_t *  ,const  uint32_t * , const si
 
 #include "clmul.h"
 
-#define HowManyFunctions 11
+#define HowManyFunctions 12
 
 
-hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldfast,&hashGaloisFieldMultilinear, &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,&hashMultilinearhalf, &hashMultilineardouble,
- &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
+hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldfast,&hashGaloisFieldMultilinear,
+ &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
+ &hashMultilinearhalf, &hashMultilineardouble,
+ &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear};
 
 const char* functionnames[HowManyFunctions] = { "Fast GFMultilinear (str. universal) ",
                                                 "GFMultilinear   (strongly universal)",
-						"GFMultilinearhalf   (str. universal)",
-						"Multilinear     (strongly universal)",
- 						"Multilinear2x2  (strongly universal)",
+                                                "GFMultilinearhalf   (str. universal)",
+                                                "Multilinear     (strongly universal)",
+                                                "Multilinear2x2  (strongly universal)",
                                                 "Multilinearhalf (strongly universal)",
                                                 "Multilineardouble (strongly u.)     ",
                                                 "RabinKarp                           ",
                                                 "FNV1                                ",
                                                 "FNV1a                               ",
-                                                "SAX                                 "};
+                                                "SAX                                 ",
+                                                "Pyramidal multilinear (a. univ.)    "};
 #else
 
 
@@ -228,17 +275,19 @@ const char* functionnames[HowManyFunctions] = { "Fast GFMultilinear (str. univer
 #define HowManyFunctions 8
 
 
-hashFunction funcArr[HowManyFunctions] = {&hashMultilinear,&hashMultilinear2by2 ,&hashMultilinearhalf, &hashMultilineardouble,
- &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX};
+hashFunction funcArr[HowManyFunctions] = {&hashMultilinear,&hashMultilinear2by2 ,
+&hashMultilinearhalf, &hashMultilineardouble,
+ &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear};
 
 const char* functionnames[HowManyFunctions] = {"Multilinear  (strongly universal)",
- 						"Multilinear2x2  (strongly universal)",
+                                                "Multilinear2x2  (strongly universal)",
                                                 "Multilinearhalf (strongly universal)",
                                                 "Multilineardouble (strongly u.)     ",
                                                 "RabinKarp                           ",
                                                 "FNV1                                ",
                                                 "FNV1a                               ",
-                                                "SAX                                 "};
+                                                "SAX                                 ",
+                                                "Pyramidal multilinear (a. univ.)    "};
 
 
 #endif
@@ -270,7 +319,7 @@ int main(int c, char ** arg) {
     for(k = 0; k<HowManyRepeats; ++k) {
         printf("test #%d\n",k+1);
         for(i=0; i<HowManyFunctions; ++i) {
-        	sumToFoolCompiler = 0;
+            sumToFoolCompiler = 0;
             thisfunc = funcArr[i];
             functionname = functionnames[i];
             gettimeofday( &start, 0);
