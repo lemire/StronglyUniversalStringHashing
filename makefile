@@ -9,7 +9,8 @@ all:  multilinearhashing
 multilinearhashing: multilinearhashing.c clmul.h 
 	$(CC) $(CFLAGS) -o multilinearhashing multilinearhashing.c  
 
-
+multilinearhashingcl: multilinearhashing.c  
+	$(CC) $(CFLAGS) -mpclmul -o multilinearhashingcl multilinearhashing.c  
 
 clean: 
 	rm -f multilinearhashing
