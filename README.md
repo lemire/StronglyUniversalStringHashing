@@ -3,6 +3,7 @@ StronglyUniversalStringHashing
 
 Benchmark showing the we can randomly hash strings very quickly with good strong universality 
 
+This code assumes that you understand random hashing and what it entails.
 
  Reference: Owen Kaser and Daniel Lemire, Strongly universal string hashing is fast, Computer Journal (to appear)
  http://arxiv.org/abs/1202.4961
