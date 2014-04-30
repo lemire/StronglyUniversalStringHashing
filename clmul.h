@@ -57,6 +57,8 @@ uint32_t hashGaloisFieldMultilinear(const uint64_t *  randomsource, const uint32
     return barrettWithoutPrecomputation(acc);
 }
 
+
+
 uint32_t hashGaloisFieldMultilinearHalfMultiplications(const uint64_t*  randomsource, const uint32_t *  string, const size_t length) {
 	assert(length / 2 * 2 == length); // if not, we need special handling (omitted)
 	const uint32_t * const endstring = string + length;
@@ -86,14 +88,35 @@ uint32_t hashGaloisFieldfast(const uint64_t*  randomsource, const uint32_t *  st
     	const __m128i temp2 = _mm_load_si128((__m128i *) string);
     	const __m128i twosums = _mm_xor_si128(temp1,temp2); 
     	const __m128i part1 = _mm_unpacklo_epi32(twosums,zero);
-	const __m128i clprod1  = _mm_clmulepi64_si128( part1, part1, 0x10);
+	    const __m128i clprod1  = _mm_clmulepi64_si128( part1, part1, 0x10);
         acc = _mm_xor_si128 (clprod1,acc);   
     	const __m128i part2 = _mm_unpackhi_epi32(twosums,zero);
-	const __m128i clprod2  = _mm_clmulepi64_si128( part2, part2, 0x10);
+	    const __m128i clprod2  = _mm_clmulepi64_si128( part2, part2, 0x10);
         acc = _mm_xor_si128 (clprod2,acc);   
      }
     return barrettWithoutPrecomputation(acc);
 }
+
+// a buggy version, just to test speed
+uint32_t hashGaloisFieldfasttest(const uint64_t*  randomsource, const uint32_t *  string, const size_t length) {
+	assert(length / 4 * 4 == length); // if not, we need special handling (omitted)
+	const uint32_t * const endstring = string + length;
+	const uint32_t *  randomsource32 = ( const uint32_t * )randomsource;
+     __m128i acc = _mm_set_epi64x(0,*(randomsource32));
+    randomsource32 += 4;
+    const __m128i zero =  _mm_setzero_si128 ();
+    for(; string!= endstring; randomsource32+=4,string+=4 ) {
+    	const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource32);
+    	const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
+	    const __m128i clprod1  = _mm_clmulepi64_si128( temp1, temp2, 0x00);
+	    const __m128i clprod2  = _mm_clmulepi64_si128( temp1, temp2 0x11);
+        acc = _mm_xor_si128 (clprod1,acc);   
+        acc = _mm_xor_si128 (clprod1,acc);   
+    }
+    return barrettWithoutPrecomputation(acc);// reduction is 32-bit but need 64-bit
+}
+
+
 
 #endif
 

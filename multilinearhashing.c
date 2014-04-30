@@ -248,15 +248,16 @@ typedef uint32_t (*hashFunction)(const uint64_t *  ,const  uint32_t * , const si
 
 #include "clmul.h"
 
-#define HowManyFunctions 12
+#define HowManyFunctions 13
 
 
-hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldfast,&hashGaloisFieldMultilinear,
+hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldfasttest,&hashGaloisFieldfast,&hashGaloisFieldMultilinear,
  &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
  &hashMultilinearhalf, &hashMultilineardouble,
  &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear};
 
-const char* functionnames[HowManyFunctions] = { "Fast GFMultilinear (str. universal) ",
+const char* functionnames[HowManyFunctions] = { "test GFMultilinear (buggy prototype) ",
+                                                "Fast GFMultilinear (str. universal) ",
                                                 "GFMultilinear   (strongly universal)",
                                                 "GFMultilinearhalf   (str. universal)",
                                                 "Multilinear     (strongly universal)",
