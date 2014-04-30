@@ -251,12 +251,12 @@ typedef uint32_t (*hashFunction)(const uint64_t *  ,const  uint32_t * , const si
 #define HowManyFunctions 13
 
 
-hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldfasttest,&hashGaloisFieldfast,&hashGaloisFieldMultilinear,
+hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldfast64,&hashGaloisFieldfast,&hashGaloisFieldMultilinear,
  &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
  &hashMultilinearhalf, &hashMultilineardouble,
  &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear};
 
-const char* functionnames[HowManyFunctions] = { "test GFMultilinear (buggy prototype) ",
+const char* functionnames[HowManyFunctions] = { "test GFMultilinear (64-bit proto)   ",
                                                 "Fast GFMultilinear (str. universal) ",
                                                 "GFMultilinear   (strongly universal)",
                                                 "GFMultilinearhalf   (str. universal)",
@@ -273,7 +273,7 @@ const char* functionnames[HowManyFunctions] = { "test GFMultilinear (buggy proto
 
 
 
-#define HowManyFunctions 8
+#define HowManyFunctions 9
 
 
 hashFunction funcArr[HowManyFunctions] = {&hashMultilinear,&hashMultilinear2by2 ,
