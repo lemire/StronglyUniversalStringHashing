@@ -118,6 +118,25 @@ uint32_t hashGaloisFieldfast64(const uint64_t*  randomsource, const uint32_t *  
 }
 
 
+// a buggy version, just to test speed
+// uses the fact that we actually have 64x64->128
+uint32_t hashGaloisFieldfast64half(const uint64_t*  randomsource, const uint32_t *  string, const size_t length) {
+	assert(length / 4 * 4 == length); // if not, we need special handling (omitted)
+	const uint32_t * const endstring = string + length;
+	const uint32_t *  randomsource32 = ( const uint32_t * )randomsource;
+     __m128i acc = _mm_set_epi64x(0,*(randomsource));
+    randomsource32 += 8;
+    for(; string!= endstring; randomsource32+=4,string+=4 ) {
+    	const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource32);
+    	const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
+        const __m128i add1 =  _mm_xor_si128 (temp1,temp2);   
+ 	const __m128i clprod1  = _mm_clmulepi64_si128( add1, add1, 0x10);
+        acc = _mm_xor_si128 (clprod1,acc);   
+    }
+    return barrettWithoutPrecomputation(acc);// reduction is 32-bit but need 64-bit
+}
+
+
 
 #endif
 
