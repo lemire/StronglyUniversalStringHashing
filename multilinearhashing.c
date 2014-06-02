@@ -96,13 +96,9 @@ uint32_t hashNH(const uint64_t *  randomsource, const uint32_t *  string, const 
     uint64_t sum = 0;
     const uint32_t *  randomsource32 = ( const uint32_t * )randomsource;
     for(; string!= endstring; randomsource32+=2,string+=2 ) {
-        sum+= (
-        ((uint64_t) *randomsource32)+ 
-        *string
-        ) * (
-        ((uint64_t)*(randomsource32 + 1)) 
-        + *(string+1)
-        );
+        sum+= 
+        (uint64_t) ( *randomsource32+ *string) * 
+        (*(randomsource32 + 1) + *(string+1));
     }
     return sum>>32;
 }
