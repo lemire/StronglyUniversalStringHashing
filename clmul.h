@@ -115,6 +115,7 @@ uint64_t hashGaloisFieldfast64(const uint64_t*  randomsource, const uint64_t *  
         acc = _mm_xor_si128 (clprod1,acc);   
         acc = _mm_xor_si128 (clprod2,acc);   
     }
+    assert(string == endstring);
     return barrettWithoutPrecomputation64(acc);
 }
 
@@ -132,28 +133,30 @@ uint64_t hashGaloisFieldfast64half(const uint64_t*  randomsource, const uint64_t
         const __m128i clprod1  = _mm_clmulepi64_si128( add1, add1, 0x10);
         acc = _mm_xor_si128 (clprod1,acc);   
     }
+    assert(string == endstring);
     return barrettWithoutPrecomputation64(acc);
 }
 
 
 // a 64-bit version with half the number of multiplications
 uint64_t hashGaloisFieldfast64halfunrolled(const uint64_t*  randomsource, const uint64_t *  string, const size_t length) {
-    assert(length / 4 * 4 == length); // if not, we need special handling (omitted)
-    const uint64_t * const endstring = string + length*4/4;
+    assert(length / 2 * 2 == length); // if not, we need special handling (omitted)
+    const uint64_t * const endstring = string + length*2/2;
      __m128i acc = _mm_set_epi64x(0,*(randomsource));
     randomsource += 1;
     for(; string!= endstring; randomsource+=4,string+=4 ) {
-        {const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource);
+        const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource);
         const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
         const __m128i add1 =  _mm_xor_si128 (temp1,temp2);   
         const __m128i clprod1  = _mm_clmulepi64_si128( add1, add1, 0x10);
-        acc = _mm_xor_si128 (clprod1,acc);}   
-        {const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource);
-        const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
-        const __m128i add1 =  _mm_xor_si128 (temp1,temp2);   
-        const __m128i clprod1  = _mm_clmulepi64_si128( add1, add1, 0x10);
-        acc = _mm_xor_si128 (clprod1,acc);}
-    }
+        acc = _mm_xor_si128 (clprod1,acc);   
+        const __m128i temp12 = _mm_lddqu_si128((__m128i * )(randomsource + 2));
+        const __m128i temp22 = _mm_lddqu_si128((__m128i *) (string+2));
+        const __m128i add12 =  _mm_xor_si128 (temp12,temp22);   
+        const __m128i clprod12  = _mm_clmulepi64_si128( add12, add12, 0x10);
+        acc = _mm_xor_si128 (clprod12,acc);   
+     }
+    assert(string == endstring);
     return barrettWithoutPrecomputation64(acc);
 }
 

@@ -259,9 +259,11 @@ hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
  &hashMultilinearhalf, &hashMultilineardouble,
  &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear};
 
-const char* functionnames64[HowManyFunctions64] = { "GFMultilinear (64-bit proto)   ",
-                                                "GFMultilinear (64-bit half)    ",                                                "GFMultilinear (64-bit half, unrolled)    ",
-                                                "Reference (Like MHH)    "};
+const char* functionnames64[HowManyFunctions64] = { 
+                                                "GFMultilinear (64-bit proto)        ",
+                                                "GFMultilinear (64-bit half)         ",
+                                                "GFMultilinear (64-bit half, unrol)  ",
+                                                "Reference (Like MHH)                "};
                                                 
                                                 const char* functionnames[HowManyFunctions] = {
                                                 "GFMultilinear   (strongly universal)",
@@ -324,10 +326,10 @@ int main(int c, char ** arg) {
     printf("For documentation, see Strongly universal string hashing is fast at http://arxiv.org/abs/1202.4961 \n");
 
     printf("Reporting the number of cycles per byte and the billions of bytes processed per second.\n");
-#ifdef __PCLMUL__
-    hashFunction64 thisfunc64;
     for(k = 0; k<HowManyRepeats; ++k) {
-        printf("test #%d\n",k+1);
+        printf("test #%d (64-bit hash values)\n",k+1);
+#ifdef __PCLMUL__
+        hashFunction64 thisfunc64;
         for(i=0; i<HowManyFunctions64; ++i) {
             sumToFoolCompiler = 0;
             thisfunc64 = funcArr64[i];
@@ -346,11 +348,8 @@ int main(int c, char ** arg) {
 
         }
         printf("\n");
-    }
-
 #endif 
-    for(k = 0; k<HowManyRepeats; ++k) {
-        printf("test #%d\n",k+1);
+        printf("test #%d (32-bit hash values)\n",k+1);
         for(i=0; i<HowManyFunctions; ++i) {
             sumToFoolCompiler = 0;
             thisfunc = funcArr[i];
