@@ -242,23 +242,28 @@ static __inline__ ticks fancystopRDTSCP (void) {
 
 
 typedef uint32_t (*hashFunction)(const uint64_t *  ,const  uint32_t * , const size_t );
+typedef uint64_t (*hashFunction64)(const uint64_t *  ,const  uint64_t * , const size_t );
 
 
 #ifdef __PCLMUL__
 
 #include "clmul.h"
 
-#define HowManyFunctions 14
+#define HowManyFunctions 11
+#define HowManyFunctions64 4
 
+hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,&hashGaloisFieldfast64half,&hashGaloisFieldfast64halfunrolled,&referenceproduct};
 
-hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldfast64,&hashGaloisFieldfast64half,&hashGaloisFieldfast,&hashGaloisFieldMultilinear,
+hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
  &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
  &hashMultilinearhalf, &hashMultilineardouble,
  &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear};
 
-const char* functionnames[HowManyFunctions] = { "test GFMultilinear (64-bit proto)   ",
-                                                "test GFMultilinear (64-bit half)    ",
-                                                "Fast GFMultilinear (str. universal) ",
+const char* functionnames64[HowManyFunctions64] = { "GFMultilinear (64-bit proto)   ",
+                                                "GFMultilinear (64-bit half)    ",                                                "GFMultilinear (64-bit half, unrolled)    ",
+                                                "Reference (Like MHH)    "};
+                                                
+                                                const char* functionnames[HowManyFunctions] = {
                                                 "GFMultilinear   (strongly universal)",
                                                 "GFMultilinearhalf   (str. universal)",
                                                 "Multilinear     (strongly universal)",
@@ -303,6 +308,7 @@ int main(int c, char ** arg) {
     int i,k,j;
     int elapsed;
     hashFunction thisfunc;
+    
     const char * functionname;
     ticks bef,aft;
     struct timeval start, finish;
@@ -318,6 +324,31 @@ int main(int c, char ** arg) {
     printf("For documentation, see Strongly universal string hashing is fast at http://arxiv.org/abs/1202.4961 \n");
 
     printf("Reporting the number of cycles per byte and the billions of bytes processed per second.\n");
+#ifdef __PCLMUL__
+    hashFunction64 thisfunc64;
+    for(k = 0; k<HowManyRepeats; ++k) {
+        printf("test #%d\n",k+1);
+        for(i=0; i<HowManyFunctions64; ++i) {
+            sumToFoolCompiler = 0;
+            thisfunc64 = funcArr64[i];
+            functionname = functionnames64[i];
+            gettimeofday( &start, 0);
+            bef = startRDTSC();
+            assert(N/2*2==N);
+            for(j=0; j < SHORTTRIALS; ++j)
+                sumToFoolCompiler += thisfunc64( &randbuffer[0],(uint64_t *)&intstring[0], N/2);
+            aft = stopRDTSCP();
+            gettimeofday( &finish, 0);  
+            elapsed = ( 1000000*(finish.tv_sec - start.tv_sec) + (finish.tv_usec - start.tv_usec));
+            printf("%s CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",functionname,
+              (aft-bef)*1.0/(4.0*SHORTTRIALS*N),(4.0*SHORTTRIALS*N)/(1000.*elapsed));
+                  printf("# ignore this #%d\n",sumToFoolCompiler);
+
+        }
+        printf("\n");
+    }
+
+#endif 
     for(k = 0; k<HowManyRepeats; ++k) {
         printf("test #%d\n",k+1);
         for(i=0; i<HowManyFunctions; ++i) {
