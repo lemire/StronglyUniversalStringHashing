@@ -60,15 +60,25 @@ uint32_t barrettWithoutPrecomputation64( __m128i A) {
     const __m128i Q1 = _mm_srli_si128 (A, 8);
     const __m128i Q2 = _mm_clmulepi64_si128( Q1, C, 0x00);// A div x^n
     const __m128i Q3 = _mm_srli_si128 (Q2, 8);
-    // commenting out the long way derived from the paper (following two lines are enough)
-    //__m128i R1 = _mm_and_si128 (maskm128,A);
-    //__m128i R2 = _mm_and_si128 (maskm128,_mm_clmulepi64_si128( Q3, C, 0x00));
-    //__m128i final  = _mm_xor_si128 (R1, R2);
     const __m128i Q4 = _mm_clmulepi64_si128( Q3, C, 0x00);
     const __m128i final  = _mm_xor_si128 (A, Q4);        
     return _mm_cvtsi128_si64(final); 
 }
 
+uint16_t barrettWithoutPrecomputation16( __m128i A) {
+    ///http://www.jjj.de/mathdata/minweight-primpoly.txt
+    const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<3)+(1UL<<5)+(1UL<<16);
+    // it is important, for the algo. we have chosen that 5 is smaller 
+    // equal than 8=16/2
+    const int n = 16;// degree of the polynomial
+    const __m128i C = _mm_set_epi64x(0,irredpoly);// C is the irreducible poly.
+    const __m128i Q1 = _mm_srli_epi64 (A, n);
+    const __m128i Q2 = _mm_clmulepi64_si128( Q1, C, 0x00);// A div x^n
+    const __m128i Q3 = _mm_srli_epi64 (Q2, n);
+    const __m128i Q4 = _mm_clmulepi64_si128( Q3, C, 0x00);
+    const __m128i final  = _mm_xor_si128 (A, Q4);        
+    return (uint16_t) _mm_cvtsi128_si32(final); 
+}
 
 uint32_t hashGaloisFieldMultilinear(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
     const uint32_t * const endstring = string + length;
@@ -172,6 +182,86 @@ uint64_t referenceproduct(const uint64_t*  randomsource, const uint64_t *  strin
 	return low+high;// should be modulo
 }
 
+
+void clmulunittest1() {
+	printf("CLMUL test 1...\n");
+
+	// A * x = y ought to be invertible.
+	// brute force check is hard, but we can do some checking
+   for(int a = 1; a< 1<<16;a+=32) {
+    __m128i A = _mm_set_epi32(0,0,0,2*a);
+    int counter[1<<16];
+    for(int j = 0; j < 1<<16;++j) counter[j] = 0; 	
+	for(int k = 0; k< 1<<16;++k) {
+		__m128i v1 = _mm_set_epi16(0,0,0,0,0,0,0,k);
+		__m128i clprod1  = _mm_clmulepi64_si128( A, v1, 0x00);
+		uint64_t m64 = barrettWithoutPrecomputation64(clprod1);
+		uint32_t m32 = barrettWithoutPrecomputation32(_mm_set_epi32(0,0,0,m64));
+		uint16_t m16 = barrettWithoutPrecomputation16(_mm_set_epi32(0,0,0,m32));
+		counter[m16]++;
+	}
+    for(int j = 0; j < 1<<16;++j) {
+      //printf("j= %i c = %i\n",j,counter[j]);
+      if(counter[j] != 1) {printf("bug\n");abort();}
+    }
+   } 	
+}
+
+void clmulunittest2() {
+	printf("CLMUL test 2...\n");
+
+	// A * x = y ought to be invertible.
+	// brute force check is hard, but we can do some checking
+   for(int a = 1; a< 1<<16;a+=32) {
+    __m128i A = _mm_set_epi32(0,0,0,2*a);
+    int counter[1<<16];
+    for(int j = 0; j < 1<<16;++j) counter[j] = 0; 	
+	for(int k = 0; k< 1<<16;++k) {
+		__m128i v1 = _mm_set_epi16(0,0,0,0,0,0,k,0);
+		__m128i clprod1  = _mm_clmulepi64_si128( A, v1, 0x00);
+		uint64_t m64 = barrettWithoutPrecomputation64(clprod1);
+		uint32_t m32 = barrettWithoutPrecomputation32(_mm_set_epi32(0,0,0,m64));
+		uint16_t m16 = barrettWithoutPrecomputation16(_mm_set_epi32(0,0,0,m32));
+		counter[m16]++;
+	}
+    for(int j = 0; j < 1<<16;++j) {
+      //printf("j= %i c = %i\n",j,counter[j]);
+      if(counter[j] != 1) {printf("bug\n");abort();}
+    }
+   } 	
+}
+
+void clmulunittest3() {
+	printf("CLMUL test 3...\n");
+
+	// A * x = y ought to be invertible.
+	// brute force check is hard, but we can do some checking
+   for(int a = 1; a< 1<<16;a+=32) {
+    __m128i A = _mm_set_epi32(0,0,0,2*a);
+    int counter[1<<16];
+    for(int j = 0; j < 1<<16;++j) counter[j] = 0; 	
+	for(int k = 0; k< 1<<16;++k) {
+		__m128i v1 = _mm_set_epi16(0,0,0,0,k,0,0,0);
+		__m128i clprod1  = _mm_clmulepi64_si128( A, v1, 0x00);
+		uint64_t m64 = barrettWithoutPrecomputation64(clprod1);
+		uint32_t m32 = barrettWithoutPrecomputation32(_mm_set_epi32(0,0,0,m64));
+		uint16_t m16 = barrettWithoutPrecomputation16(_mm_set_epi32(0,0,0,m32));
+		counter[m16]++;
+	}
+    for(int j = 0; j < 1<<16;++j) {
+      //printf("j= %i c = %i\n",j,counter[j]);
+      if(counter[j] != 1) {printf("bug\n");abort();}
+    }
+   } 	
+}
+
+void clmulunittests() {
+	printf("Testing CLMUL code...\n");
+	clmulunittest1();
+	clmulunittest2();
+	clmulunittest3();
+	printf("CLMUL code looks ok.\n");
+}
 
 #endif
 
