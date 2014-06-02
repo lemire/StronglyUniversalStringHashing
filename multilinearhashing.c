@@ -1,28 +1,28 @@
 
 /////////////////////////////////////
-// This C code is a companion to the paper 
+// This C code is a companion to the paper
 //
-// Reference: Owen Kaser and Daniel Lemire, Strongly universal string hashing is fast, Computer Journal 
+// Reference: Owen Kaser and Daniel Lemire, Strongly universal string hashing is fast, Computer Journal
 // http://arxiv.org/abs/1202.4961
 //
 // It shows that we can compute strongly universal hash functions very quickly.
 /////////////////////////////////////
 
 //
-// this code will hash strings of 32-bit characters. To use on 
+// this code will hash strings of 32-bit characters. To use on
 // strings of 8-bit characters, you may need some adequate padding.
-// 
- #include <stdint.h>
- #include <stdlib.h>
- #include <stdio.h>
- #include <sys/time.h>
- #include <assert.h>
- 
 //
-// this is strongly universal. Condition: randomsource must be at least as long as 
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/time.h>
+#include <assert.h>
+
+//
+// this is strongly universal. Condition: randomsource must be at least as long as
 // the string length  + 3.
-//  
-// Reference: Owen Kaser and Daniel Lemire, Strongly universal string hashing is fast, Computer Journal 
+//
+// Reference: Owen Kaser and Daniel Lemire, Strongly universal string hashing is fast, Computer Journal
 // http://arxiv.org/abs/1202.4961
 #if defined(__GNUC__) && !( defined(__clang__) || defined(__INTEL_COMPILER  ))
 __attribute__((optimize("no-tree-vectorize")))
@@ -93,22 +93,22 @@ uint32_t hashMultilineardouble(const uint64_t *  randomsource, const uint32_t * 
 void __hashMulti(const uint64_t *  randomsource, const uint32_t *  string, uint32_t *  output, int length, int blocksize) {
     int bufferpos = 0;
     int offset = length - length/blocksize*blocksize;
-    for(; bufferpos<length/blocksize;++bufferpos) {
-          output[bufferpos] = hashMultilinear(randomsource, string+bufferpos*blocksize, blocksize);
-    } 
-    if(offset>0) {
-        output[length/blocksize] = hashMultilinear(randomsource, string+length/blocksize*blocksize, 
-        offset);
+    for(; bufferpos<length/blocksize; ++bufferpos) {
+        output[bufferpos] = hashMultilinear(randomsource, string+bufferpos*blocksize, blocksize);
     }
-} 
+    if(offset>0) {
+        output[length/blocksize] = hashMultilinear(randomsource, string+length/blocksize*blocksize,
+                                   offset);
+    }
+}
 
 
 // this function is 4/2**32 almost universal on 32 bits
 // it uses at most 8KB of random bits (for strings having 32-bit lengths)
 // code not thoroughly checked
 uint32_t pyramidal_Multilinear(const uint64_t *  randomsource, const uint32_t *  string, const size_t len) {
-	size_t length = len;
-    int blocksize = 256;  
+    size_t length = len;
+    int blocksize = 256;
     int newlength = ((length+blocksize-1)/blocksize);
     uint32_t * array = malloc(newlength * sizeof(uint32_t));
     __hashMulti(randomsource, string, array,  length, blocksize);
@@ -146,7 +146,7 @@ uint32_t hashRabinKarp(const uint64_t * useless, const uint32_t *  string, const
 //D. J. Bernstein, CDB–Constant Database, http://cr.yp.to/cdb.html
 uint32_t hashBernstein(const uint64_t * useless,const uint32_t *  string, const size_t length) {
     (void) (useless);
-     int sum = 0;
+    int sum = 0;
     const int L = 3;
     for(size_t i = 0; i < length; ++i) {
         sum= (( sum<< L) + sum) ^ string[i] ;
@@ -213,31 +213,31 @@ ticks startRDTSC (void) {
 ticks stopRDTSCP (void) {
     return rdtsc();
 }
-// start and stop are as recommended by 
+// start and stop are as recommended by
 // Gabriele Paoloni, How to Benchmark Code Execution Times on Intel® IA-32 and IA-64 Instruction Set Architectures
 // September 2010
 // http://edc.intel.com/Link.aspx?id=3954
 
 static __inline__ ticks fancystartRDTSC (void) {
-  unsigned cycles_low, cycles_high;
-  asm volatile ("CPUID\n\t"
-                "RDTSC\n\t"
-                "mov %%edx, %0\n\t"
-                "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::
-                "%rax", "%rbx", "%rcx", "%rdx");
-  return ((ticks)cycles_high << 32) | cycles_low;
+    unsigned cycles_low, cycles_high;
+    asm volatile ("CPUID\n\t"
+                  "RDTSC\n\t"
+                  "mov %%edx, %0\n\t"
+                  "mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::
+                  "%rax", "%rbx", "%rcx", "%rdx");
+    return ((ticks)cycles_high << 32) | cycles_low;
 }
 
 static __inline__ ticks fancystopRDTSCP (void) {
-  unsigned cycles_low, cycles_high;
+    unsigned cycles_low, cycles_high;
 /// This should work fine on most machines, if the RDTSCP thing
 /// fails for you, use the  rdtsc() call instead.
-  asm volatile("RDTSCP\n\t"
-               "mov %%edx, %0\n\t"
-               "mov %%eax, %1\n\t"
-               "CPUID\n\t": "=r" (cycles_high), "=r" (cycles_low):: "%rax",
-               "%rbx", "%rcx", "%rdx");
-  return ((ticks)cycles_high << 32) | cycles_low;
+    asm volatile("RDTSCP\n\t"
+                 "mov %%edx, %0\n\t"
+                 "mov %%eax, %1\n\t"
+                 "CPUID\n\t": "=r" (cycles_high), "=r" (cycles_low):: "%rax",
+                 "%rbx", "%rcx", "%rdx");
+    return ((ticks)cycles_high << 32) | cycles_low;
 }
 
 
@@ -255,28 +255,31 @@ typedef uint64_t (*hashFunction64)(const uint64_t *  ,const  uint64_t * , const 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,&hashGaloisFieldfast64half,&hashGaloisFieldfast64halfunrolled,&referenceproduct};
 
 hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
- &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
- &hashMultilinearhalf, &hashMultilineardouble,
- &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear};
+        &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
+        &hashMultilinearhalf, &hashMultilineardouble,
+        &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear
+                                         };
 
-const char* functionnames64[HowManyFunctions64] = { 
-                                                "GFMultilinear (64-bit proto)        ",
-                                                "GFMultilinear (64-bit half)         ",
-                                                "GFMultilinear (64-bit half, unrol)  ",
-                                                "Reference (Like MHH)                "};
-                                                
-                                                const char* functionnames[HowManyFunctions] = {
-                                                "GFMultilinear   (strongly universal)",
-                                                "GFMultilinearhalf   (str. universal)",
-                                                "Multilinear     (strongly universal)",
-                                                "Multilinear2x2  (strongly universal)",
-                                                "Multilinearhalf (strongly universal)",
-                                                "Multilineardouble (strongly u.)     ",
-                                                "RabinKarp                           ",
-                                                "FNV1                                ",
-                                                "FNV1a                               ",
-                                                "SAX                                 ",
-                                                "Pyramidal multilinear (a. univ.)    "};
+const char* functionnames64[HowManyFunctions64] = {
+    "GFMultilinear (64-bit proto)        ",
+    "GFMultilinear (64-bit half)         ",
+    "GFMultilinear (64-bit half, unrol)  ",
+    "Reference (Like MHH)                "
+};
+
+const char* functionnames[HowManyFunctions] = {
+    "GFMultilinear   (strongly universal)",
+    "GFMultilinearhalf   (str. universal)",
+    "Multilinear     (strongly universal)",
+    "Multilinear2x2  (strongly universal)",
+    "Multilinearhalf (strongly universal)",
+    "Multilineardouble (strongly u.)     ",
+    "RabinKarp                           ",
+    "FNV1                                ",
+    "FNV1a                               ",
+    "SAX                                 ",
+    "Pyramidal multilinear (a. univ.)    "
+};
 #else
 
 
@@ -285,18 +288,20 @@ const char* functionnames64[HowManyFunctions64] = {
 
 
 hashFunction funcArr[HowManyFunctions] = {&hashMultilinear,&hashMultilinear2by2 ,
-&hashMultilinearhalf, &hashMultilineardouble,
- &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear};
+        &hashMultilinearhalf, &hashMultilineardouble,
+        &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear
+                                         };
 
 const char* functionnames[HowManyFunctions] = {"Multilinear  (strongly universal)",
-                                                "Multilinear2x2  (strongly universal)",
-                                                "Multilinearhalf (strongly universal)",
-                                                "Multilineardouble (strongly u.)     ",
-                                                "RabinKarp                           ",
-                                                "FNV1                                ",
-                                                "FNV1a                               ",
-                                                "SAX                                 ",
-                                                "Pyramidal multilinear (a. univ.)    "};
+        "Multilinear2x2  (strongly universal)",
+        "Multilinearhalf (strongly universal)",
+        "Multilineardouble (strongly u.)     ",
+        "RabinKarp                           ",
+        "FNV1                                ",
+        "FNV1a                               ",
+        "SAX                                 ",
+        "Pyramidal multilinear (a. univ.)    "
+                                              };
 
 
 #endif
@@ -313,7 +318,7 @@ int main(int c, char ** arg) {
     const char * functionname;
     ticks bef,aft;
     struct timeval start, finish;
-    uint64_t randbuffer[N + 3]  __attribute__ ((aligned (16)));  
+    uint64_t randbuffer[N + 3]  __attribute__ ((aligned (16)));
     uint32_t sumToFoolCompiler = 0;
     uint32_t intstring[N]  __attribute__ ((aligned (16)));// // could force 16-byte alignment with  __attribute__ ((aligned (16)));
 #ifdef __PCLMUL__
@@ -342,15 +347,15 @@ int main(int c, char ** arg) {
             for(j=0; j < SHORTTRIALS; ++j)
                 sumToFoolCompiler += thisfunc64( &randbuffer[0],(uint64_t *)&intstring[0], N/2);
             aft = stopRDTSCP();
-            gettimeofday( &finish, 0);  
+            gettimeofday( &finish, 0);
             elapsed = ( 1000000*(finish.tv_sec - start.tv_sec) + (finish.tv_usec - start.tv_usec));
             printf("%s CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",functionname,
-              (aft-bef)*1.0/(4.0*SHORTTRIALS*N),(4.0*SHORTTRIALS*N)/(1000.*elapsed));
-                  printf("# ignore this #%d\n",sumToFoolCompiler);
+                   (aft-bef)*1.0/(4.0*SHORTTRIALS*N),(4.0*SHORTTRIALS*N)/(1000.*elapsed));
+            printf("# ignore this #%d\n",sumToFoolCompiler);
 
         }
         printf("\n");
-#endif 
+#endif
         printf("test #%d (32-bit hash values)\n",k+1);
         for(i=0; i<HowManyFunctions; ++i) {
             sumToFoolCompiler = 0;
@@ -361,11 +366,11 @@ int main(int c, char ** arg) {
             for(j=0; j < SHORTTRIALS; ++j)
                 sumToFoolCompiler += thisfunc( &randbuffer[0],&intstring[0], N);
             aft = stopRDTSCP();
-            gettimeofday( &finish, 0);  
+            gettimeofday( &finish, 0);
             elapsed = ( 1000000*(finish.tv_sec - start.tv_sec) + (finish.tv_usec - start.tv_usec));
             printf("%s CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",functionname,
-              (aft-bef)*1.0/(4.0*SHORTTRIALS*N),(4.0*SHORTTRIALS*N)/(1000.*elapsed));
-                  printf("# ignore this #%d\n",sumToFoolCompiler);
+                   (aft-bef)*1.0/(4.0*SHORTTRIALS*N),(4.0*SHORTTRIALS*N)/(1000.*elapsed));
+            printf("# ignore this #%d\n",sumToFoolCompiler);
 
         }
         printf("\n");
