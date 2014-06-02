@@ -80,48 +80,6 @@ uint64_t barrettWithoutPrecomputation64( __m128i A) {
     return _mm_cvtsi128_si64(final);
 }
 
-uint64_t verbosebarrettWithoutPrecomputation64( __m128i A) {
-    ///http://www.jjj.de/mathdata/minweight-primpoly.txt
-    // it is important, for the algo. we have chosen that 4 is smaller
-    // equal than 32=64/2
-    const int n = 64;// degree of the polynomial
-    const __m128i C = _mm_set_epi64x(1U,(1U<<4)+(1U<<3)+(1U<<1)+(1U<<0));// C is the irreducible poly. (64,4,3,1,0)
-    /////////////////
-    /// This algo. requires two multiplications (_mm_clmulepi64_si128)
-    /// They are probably the bottleneck.
-    /// Note: Barrett's original algorithm also required two multiplications.
-    ////////////////
-    assert(n/8==8);
-    printf ("A = ");
-    printme64(A);
-    printf("\n");
-
-    const __m128i Q1 = _mm_srli_si128 (A, 8);
-    printf ("Q1 = ");
-    printme64(Q1);
-    printf("\n");
-    const __m128i Q2 = _mm_clmulepi64_si128( Q1, C, 0x00);// A div x^n
-    printf ("Q2 = ");
-    printme64(Q2);
-    printf("\n");
-    const __m128i Q3 = _mm_srli_si128 (Q2, 8);
-    printf ("Q3 = ");
-    printme64(Q3);
-    printf("\n");
-    const __m128i Q4 = _mm_clmulepi64_si128( Q3, C, 0x00);
-    printf ("Q4 = ");
-    printme64(Q4);
-    printf("\n");
-
-    const __m128i final  = _mm_xor_si128 (A, Q4);
-    printf ("final = ");
-    printme64(final);
-    printf("\n");
-
-
-    return _mm_cvtsi128_si64(final);
-}
-
 
 uint16_t barrettWithoutPrecomputation16( __m128i A) {
     ///http://www.jjj.de/mathdata/minweight-primpoly.txt
@@ -313,7 +271,6 @@ void clmulunittest3() {
                 printf("clprod1=");
                 printme64(clprod1);
                 printf("\n");
-                verbosebarrettWithoutPrecomputation64(clprod1);
                 printf("bug\n");
                 abort();
             }
@@ -339,7 +296,6 @@ void clmulunittest3a() {
                 printf("clprod1=");
                 printme64(clprod1);
                 printf("\n");
-                verbosebarrettWithoutPrecomputation64(clprod1);
                 printf("bug\n");
                 abort();
             }

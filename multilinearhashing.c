@@ -88,6 +88,26 @@ uint32_t hashMultilineardouble(const uint64_t *  randomsource, const uint32_t * 
 
 
 
+//Black, J.; Halevi, S.; Krawczyk, H.; Krovetz, T. (1999). "UMAC: Fast and Secure Message Authentication". Advances in Cryptology (CRYPTO '99)., Equation 1
+// just high bits
+uint32_t hashNH(const uint64_t *  randomsource, const uint32_t *  string, const size_t length) {
+	assert ( length / 2 * 2 == length );// length is pair
+    const uint32_t * const endstring = string + length;
+    uint64_t sum = 0;
+    const uint32_t *  randomsource32 = ( const uint32_t * )randomsource;
+    for(; string!= endstring; randomsource32+=2,string+=2 ) {
+        sum+= (
+        ((uint64_t) *randomsource32)+ 
+        *string
+        ) * (
+        ((uint64_t)*(randomsource32 + 1)) 
+        + *(string+1)
+        );
+    }
+    return sum>>32;
+}
+
+
 // used by pyramidal_Multilinear below
 // code not thoroughly checked
 void __hashMulti(const uint64_t *  randomsource, const uint32_t *  string, uint32_t *  output, int length, int blocksize) {
@@ -249,7 +269,7 @@ typedef uint64_t (*hashFunction64)(const uint64_t *  ,const  uint64_t * , const 
 
 #include "clmul.h"
 
-#define HowManyFunctions 11
+#define HowManyFunctions 12
 #define HowManyFunctions64 4
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,&hashGaloisFieldfast64half,&hashGaloisFieldfast64halfunrolled,&referenceproduct};
@@ -257,7 +277,7 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,&hashGalo
 hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
         &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
         &hashMultilinearhalf, &hashMultilineardouble,
-        &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear
+        &hashNH,&hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear
                                          };
 
 const char* functionnames64[HowManyFunctions64] = {
@@ -274,6 +294,7 @@ const char* functionnames[HowManyFunctions] = {
     "Multilinear2x2  (strongly universal)",
     "Multilinearhalf (strongly universal)",
     "Multilineardouble (strongly u.)     ",
+    "NH (high bits)                      ",
     "RabinKarp                           ",
     "FNV1                                ",
     "FNV1a                               ",
@@ -284,18 +305,19 @@ const char* functionnames[HowManyFunctions] = {
 
 
 
-#define HowManyFunctions 9
+#define HowManyFunctions 10
 
 
 hashFunction funcArr[HowManyFunctions] = {&hashMultilinear,&hashMultilinear2by2 ,
         &hashMultilinearhalf, &hashMultilineardouble,
-        &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear
+        &hashNH, &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear
                                          };
 
 const char* functionnames[HowManyFunctions] = {"Multilinear  (strongly universal)",
         "Multilinear2x2  (strongly universal)",
         "Multilinearhalf (strongly universal)",
         "Multilineardouble (strongly u.)     ",
+        "NH (high bits)                      ",
         "RabinKarp                           ",
         "FNV1                                ",
         "FNV1a                               ",
