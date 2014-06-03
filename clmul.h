@@ -192,7 +192,45 @@ uint64_t referenceproduct(const uint64_t*  randomsource, const uint64_t *  strin
 
     uint64_t low = 0;
     uint64_t high = 0;
-    for(size_t i = 0; i<length; ++i) {
+    size_t i = 0;
+    for(; i<length/8*8; i+=8) {
+    __asm__ (
+    "movq (%[u]),%%rax\n"
+    "mulq (%[v])\n"
+    "addq %%rax,  %[rl]\n"
+    "movq 8(%[u]),%%rax\n"
+    "adcq %%rdx,  %[rh]\n"
+    "mulq 8(%[v])\n"
+    "addq %%rax,  %[rl]\n"
+    "movq 16(%[u]),%%rax\n"
+    "adcq %%rdx,  %[rh]\n"
+    "mulq 16(%[v])\n"
+    "addq %%rax,  %[rl]\n"
+    "movq 24(%[u]),%%rax\n"
+    "adcq %%rdx,  %[rh]\n"
+    "mulq 24(%[v])\n"
+    "addq %%rax,  %[rl]\n"
+    "movq 32(%[u]),%%rax\n"
+    "adcq %%rdx,  %[rh]\n"
+    "mulq 32(%[v])\n"
+    "addq %%rax,  %[rl]\n"
+    "movq 40(%[u]),%%rax\n"
+    "adcq %%rdx,  %[rh]\n"
+    "mulq 40(%[v])\n"
+    "addq %%rax,  %[rl]\n"
+    "movq 48(%[u]),%%rax\n"
+    "adcq %%rdx,  %[rh]\n"
+    "mulq 48(%[v])\n"
+    "addq %%rax,  %[rl]\n"
+    "movq 56(%[u]),%%rax\n"
+    "adcq %%rdx,  %[rh]\n"
+    "mulq 56(%[v])\n"
+    "addq %%rax,  %[rl]\n"
+    "adcq %%rdx,  %[rh]\n"
+                 :  [rh] "+r" (high) , [rl] "+r" (low)  : [u] "r" (randomsource+i), [v] "r" (string+i)  :"rdx","rax","memory","cc");
+	}
+
+    for(; i<length; ++i) {
         __asm__ ("mulq %[v]\n"
                  "addq %%rax,  %[rl]\n"
                  "adcq %%rdx,  %[rh]\n"
@@ -200,6 +238,19 @@ uint64_t referenceproduct(const uint64_t*  randomsource, const uint64_t *  strin
     }
     return low+high;// should be modulo
 }
+
+
+__uint128_t asmcarrylessscalarproduct(size_t length, const uint64_t * a, const uint64_t * x) {
+	uint64_t part1 = 0;
+	uint64_t part2 = 0;
+	assert(length / 8 * 8 == length);
+	return (((__uint128_t) part2)<<64)  + part1 ;
+}
+
+
+
+
+
 
 
 void clmulunittest1() {
