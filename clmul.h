@@ -8,7 +8,12 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <x86intrin.h>
-//#include <wmmintrin.h>
+
+
+//#define IACA
+#ifdef IACA
+#include </opt/intel/iaca/include/iacaMarks.h>
+#endif
 
 
 void printme(__m128i v1) {
@@ -117,13 +122,19 @@ uint32_t hashGaloisFieldMultilinearHalfMultiplications(const uint64_t*  randomso
     __m128i acc = _mm_set_epi64x(0,*(randomsource32));
     randomsource32 += 1;
     for(; string!= endstring; randomsource32+=2,string+=2 ) {
+#ifdef IACA
+        IACA_START;// place after for loop
+#endif
         __m128i temp1 = _mm_set_epi64x(*randomsource32,*(randomsource32+1));
         __m128i temp2 = _mm_set_epi64x(*string,*(string+1));
         __m128i twosums = _mm_xor_si128(temp1,temp2);
         __m128i clprod  = _mm_clmulepi64_si128( twosums, twosums, 0x10);
         acc = _mm_xor_si128 (clprod,acc);
     }
-    return barrettWithoutPrecomputation32(acc);
+#ifdef IACA
+        IACA_END;// place after loop
+#endif
+     return barrettWithoutPrecomputation32(acc);
 }
 
 
@@ -239,13 +250,6 @@ uint64_t referenceproduct(const uint64_t*  randomsource, const uint64_t *  strin
     return low+high;// should be modulo
 }
 
-
-__uint128_t asmcarrylessscalarproduct(size_t length, const uint64_t * a, const uint64_t * x) {
-	uint64_t part1 = 0;
-	uint64_t part2 = 0;
-	assert(length / 8 * 8 == length);
-	return (((__uint128_t) part2)<<64)  + part1 ;
-}
 
 
 
