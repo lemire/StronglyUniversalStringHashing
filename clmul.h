@@ -10,7 +10,7 @@
 #include <x86intrin.h>
 
 
-//#define IACA
+#define IACA
 #ifdef IACA
 #include </opt/intel/iaca/include/iacaMarks.h>
 #endif
@@ -130,11 +130,11 @@ uint32_t hashGaloisFieldMultilinearHalfMultiplications(const uint64_t*  randomso
         __m128i twosums = _mm_xor_si128(temp1,temp2);
         __m128i clprod  = _mm_clmulepi64_si128( twosums, twosums, 0x10);
         acc = _mm_xor_si128 (clprod,acc);
-    }
 #ifdef IACA
         IACA_END;// place after loop
 #endif
-     return barrettWithoutPrecomputation32(acc);
+    }
+    return barrettWithoutPrecomputation32(acc);
 }
 
 
