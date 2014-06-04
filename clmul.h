@@ -1,6 +1,8 @@
 #ifndef _CLMUL_H_
 #define _CLMUL_H_
-
+#ifdef __AVX__ // intel does not define PCLMUL
+#define __PCLMUL__ 1
+#endif
 
 #ifdef __PCLMUL__
 

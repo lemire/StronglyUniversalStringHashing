@@ -18,6 +18,9 @@
 #include <sys/time.h>
 #include <assert.h>
 
+#ifdef __AVX__
+#define __PCLMUL__ 1
+#endif 
 //
 // this is strongly universal. Condition: randomsource must be at least as long as
 // the string length  + 3.
@@ -126,13 +129,13 @@ uint32_t pyramidal_Multilinear(const uint64_t *  randomsource, const uint32_t * 
     size_t length = len;
     int blocksize = 256;
     int newlength = ((length+blocksize-1)/blocksize);
-    uint32_t * array = malloc(newlength * sizeof(uint32_t));
+    uint32_t * array = (uint32_t *)  malloc(newlength * sizeof(uint32_t));
     __hashMulti(randomsource, string, array,  length, blocksize);
     randomsource+=blocksize+1;
     length = newlength;
     while(length>1) {
         newlength = ((length+blocksize-1)/blocksize);
-        uint32_t * array2 = malloc(newlength * sizeof(uint32_t));
+        uint32_t * array2 = (uint32_t *) malloc(newlength * sizeof(uint32_t));
         __hashMulti(randomsource, array, array2,  length, blocksize);
         randomsource+=blocksize+1;
         free(array);
