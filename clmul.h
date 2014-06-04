@@ -223,7 +223,21 @@ uint64_t hashGaloisFieldfast64halfunrolled(const uint64_t*  randomsource, const 
         const __m128i clprod12  = _mm_clmulepi64_si128( add12, add12, 0x10);
         acc = _mm_xor_si128 (clprod12,acc);
     }
-    assert(string == endstring);
+    if(string+1< endstring; ) {
+        const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource);
+        const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
+        const __m128i add1 =  _mm_xor_si128 (temp1,temp2);
+        const __m128i clprod1  = _mm_clmulepi64_si128( add1, add1, 0x10);
+        acc = _mm_xor_si128 (clprod1,acc);
+        randomsource+=2;
+        string+=2;
+    }
+    if(string < endstring) {
+        const __m128i temp1 = _mm_set_epi64x(0,*randomsource);
+        const __m128i temp2 = _mm_set_epi64x(0,*string);
+        const __m128i clprod1  = _mm_clmulepi64_si128( temp1, temp2, 0x00);
+        acc = _mm_xor_si128 (clprod1,acc);
+    }
     return barrettWithoutPrecomputation64(acc);
 }
 
