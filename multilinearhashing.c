@@ -269,9 +269,9 @@ typedef uint64_t (*hashFunction64)(const uint64_t *  ,const  uint64_t * , const 
 #include "clmul.h"
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 4
+#define HowManyFunctions64 6
 
-hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,&hashGaloisFieldfast64half,&hashGaloisFieldfast64halfunrolled,&referenceproduct};
+hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,&hashGaloisFieldfast64half,&hashGaloisFieldfast64halfunrolled,&referenceproduct,&hashGaloisFieldPoly64,&fasthashGaloisFieldPoly64};
 
 hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
         &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
@@ -280,10 +280,12 @@ hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
                                          };
 
 const char* functionnames64[HowManyFunctions64] = {
-    "GFMultilinear (64-bit proto)        ",
+    "GFMultilinear (64-bit regular)      ",
     "GFMultilinear (64-bit half)         ",
     "GFMultilinear (64-bit half, unrol)  ",
-    "Reference (Like MHH)                "
+    "Reference (Like MHH)                ",
+    "hashGaloisFieldPoly64               ",
+    "fasthashGaloisFieldPoly64           ",
 };
 
 const char* functionnames[HowManyFunctions] = {
@@ -312,7 +314,8 @@ hashFunction funcArr[HowManyFunctions] = {&hashMultilinear,&hashMultilinear2by2 
         &hashNH, &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear
                                          };
 
-const char* functionnames[HowManyFunctions] = {"Multilinear  (strongly universal)",
+const char* functionnames[HowManyFunctions] = {
+        "Multilinear  (strongly universal)",
         "Multilinear2x2  (strongly universal)",
         "Multilinearhalf (strongly universal)",
         "Multilineardouble (strongly u.)     ",

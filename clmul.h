@@ -12,10 +12,15 @@
 #include <x86intrin.h>
 
 
-//#define IACA
+#define IACA
 #ifdef IACA
 #include </opt/intel/iaca/include/iacaMarks.h>
+#else
+#define IACA_START
+#define IACA_END
 #endif
+
+
 
 
 void printme(__m128i v1) {
@@ -59,10 +64,7 @@ uint32_t barrettWithoutPrecomputation32( __m128i A) {
     const __m128i final  = _mm_xor_si128 (A, Q4);
     return _mm_cvtsi128_si32(final);
 }
-uint64_t barrettWithoutPrecomputation64( __m128i A) {
-#ifdef IACA
-        IACA_START;// place after for loop
-#endif
+__m128i barrettWithoutPrecomputation64_si128( __m128i A) {
      ///http://www.jjj.de/mathdata/minweight-primpoly.txt
     // it is important, for the algo. we have chosen that 4 is smaller
     // equal than 32=64/2
@@ -78,9 +80,12 @@ uint64_t barrettWithoutPrecomputation64( __m128i A) {
     Q2 = _mm_xor_si128(Q2,A);
     const __m128i Q4 = _mm_clmulepi64_si128( Q2, C, 0x01);
     const __m128i final  = _mm_xor_si128 (A, Q4);
-#ifdef IACA
-        IACA_END;// place after for loop
-#endif
+    return final;
+ }
+
+
+uint64_t barrettWithoutPrecomputation64( __m128i A) {
+    const __m128i final  = barrettWithoutPrecomputation64_si128(A);
     return _mm_cvtsi128_si64(final);
  }
 
@@ -121,24 +126,20 @@ uint32_t hashGaloisFieldMultilinearHalfMultiplications(const uint64_t*  randomso
     const uint32_t *  randomsource32 = ( const uint32_t * )randomsource;
     __m128i acc = _mm_set_epi64x(0,*(randomsource32));
     randomsource32 += 1;
-    for(; string < endstring; randomsource32+=4,string+=4 ) {
-   	const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource32);
-    	const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
-    	const __m128i twosums = _mm_xor_si128(temp1,temp2); 
-    	const __m128i part1 = _mm_unpacklo_epi32(twosums,_mm_setzero_si128());
-	const __m128i clprod1  = _mm_clmulepi64_si128( part1, part1, 0x10);
+    for(; string +3 < endstring; randomsource32+=4,string+=4 ) {
+        const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource32);
+        const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
+        const __m128i twosums = _mm_xor_si128(temp1,temp2); 
+        const __m128i part1 = _mm_unpacklo_epi32(twosums,_mm_setzero_si128());
+        const __m128i clprod1  = _mm_clmulepi64_si128( part1, part1, 0x10);
         acc = _mm_xor_si128 (clprod1,acc);   
-    	const __m128i part2 = _mm_unpackhi_epi32(twosums,_mm_setzero_si128());
-	const __m128i clprod2  = _mm_clmulepi64_si128( part2, part2, 0x10);
+        const __m128i part2 = _mm_unpackhi_epi32(twosums,_mm_setzero_si128());
+        const __m128i clprod2  = _mm_clmulepi64_si128( part2, part2, 0x10);
         acc = _mm_xor_si128 (clprod2,acc);   
-#ifdef IACA
-        IACA_END;// place after loop
-#endif
      }
-
     if(string + 1  < endstring) {
-    	__m128i temp1 = _mm_set_epi64x(*randomsource32,*(randomsource32+1));
-    	__m128i temp2 = _mm_set_epi64x(*string,*(string+1));
+        __m128i temp1 = _mm_set_epi64x(*randomsource32,*(randomsource32+1));
+        __m128i temp2 = _mm_set_epi64x(*string,*(string+1));
         __m128i twosums = _mm_xor_si128(temp1,temp2);
         __m128i clprod  = _mm_clmulepi64_si128( twosums, twosums, 0x10);
         acc = _mm_xor_si128 (clprod,acc);
@@ -155,11 +156,12 @@ uint32_t hashGaloisFieldMultilinearHalfMultiplications(const uint64_t*  randomso
 
 
 // a 64-bit version
+// strongly universal and regular
 uint64_t hashGaloisFieldfast64(const uint64_t*  randomsource, const uint64_t *  string, const size_t length) {
     const uint64_t * const endstring = string + length;
     __m128i acc = _mm_set_epi64x(0,*(randomsource));
     randomsource += 1;
-    for(; string!= endstring; randomsource+=2,string+=2 ) {
+    for(; string+1< endstring; randomsource+=2,string+=2 ) {
         const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource);
         const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
         const __m128i clprod1  = _mm_clmulepi64_si128( temp1, temp2, 0x00);
@@ -178,11 +180,12 @@ uint64_t hashGaloisFieldfast64(const uint64_t*  randomsource, const uint64_t *  
 
 
 // a 64-bit version with half the number of multiplications
+// strongly universal but not regular
 uint64_t hashGaloisFieldfast64half(const uint64_t*  randomsource, const uint64_t *  string, const size_t length) {
     const uint64_t * const endstring = string + length;
     __m128i acc = _mm_set_epi64x(0,*(randomsource));
     randomsource += 1;
-    for(; string!= endstring; randomsource+=2,string+=2 ) {
+    for(; string+1< endstring; randomsource+=2,string+=2 ) {
         const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource);
         const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
         const __m128i add1 =  _mm_xor_si128 (temp1,temp2);
@@ -202,10 +205,10 @@ uint64_t hashGaloisFieldfast64half(const uint64_t*  randomsource, const uint64_t
 // a 64-bit version with half the number of multiplications
 uint64_t hashGaloisFieldfast64halfunrolled(const uint64_t*  randomsource, const uint64_t *  string, const size_t length) {
     assert(length / 2 * 2 == length); // if not, we need special handling (omitted)
-    const uint64_t * const endstring = string + length*2/2;
+    const uint64_t * const endstring = string + length;
     __m128i acc = _mm_set_epi64x(0,*(randomsource));
     randomsource += 1;
-    for(; string!= endstring; randomsource+=4,string+=4 ) {
+    for(; string+3 < endstring; randomsource+=4,string+=4 ) {
         const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource);
         const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
         const __m128i add1 =  _mm_xor_si128 (temp1,temp2);
@@ -235,6 +238,75 @@ uint64_t hashGaloisFieldfast64halfunrolled(const uint64_t*  randomsource, const 
     return barrettWithoutPrecomputation64(acc);
 }
 
+
+// simple 64-bit polynomial hashing, uses only one key
+// not expected to be fast!
+uint64_t hashGaloisFieldPoly64(const uint64_t*  randomsource, const uint64_t *  string, const size_t length) {
+    assert(*randomsource != 0);//otherwise silly
+    const uint64_t * const endstring = string + length;
+    __m128i key = _mm_set_epi64x(0,*(randomsource));
+    __m128i acc = _mm_set_epi64x(0,*string);
+    ++string;
+    for(; string  < endstring; ++string ) {
+        const __m128i temp = _mm_set_epi64x(0,*string);
+        const __m128i multi = _mm_clmulepi64_si128( acc, key, 0x00);
+        acc = barrettWithoutPrecomputation64_si128(multi);
+        acc = _mm_xor_si128 (acc,temp);
+    }
+    return _mm_cvtsi128_si64(acc);
+}
+
+
+// fast 64-bit polynomial hashing, uses only one key
+// expected to be fast!
+uint64_t fasthashGaloisFieldPoly64(const uint64_t*  randomsource, const uint64_t *  string, const size_t length) {
+    assert(*randomsource != 0);//otherwise silly
+    const uint64_t * const endstring = string + length;
+    __m128i tkey1 = _mm_set_epi64x(0,*(randomsource));
+    __m128i tkey2 = barrettWithoutPrecomputation64_si128(
+       _mm_clmulepi64_si128( tkey1, tkey1, 0x00));
+    __m128i tkey3 = barrettWithoutPrecomputation64_si128(
+       _mm_clmulepi64_si128( tkey2, tkey2, 0x00));
+    __m128i tkey4 = barrettWithoutPrecomputation64_si128(
+       _mm_clmulepi64_si128( tkey3, tkey3, 0x00));
+
+    __m128i key = _mm_xor_si128(tkey1,_mm_slli_si128(tkey2,8));
+    __m128i key2 = _mm_xor_si128(tkey3,_mm_slli_si128(tkey4,8));
+    
+    __m128i acc = _mm_set_epi64x(0,*string);
+    __m128i mask = _mm_set_epi64x(0,-1);
+    ++string;
+    for(; string+3< endstring; string+=4 ) {
+        IACA_START;
+        __m128i temp = _mm_lddqu_si128((__m128i *) string);
+        __m128i temp2 = _mm_lddqu_si128((__m128i *) (string + 2));
+        const __m128i x1 =  _mm_and_si128 (temp,mask);
+        const __m128i clprod1  = _mm_clmulepi64_si128( temp, key, 0x01);
+        const __m128i clprod2  = _mm_clmulepi64_si128( temp2, key, 0x10);
+        const __m128i clprod3  = _mm_clmulepi64_si128( temp2, key2, 0x01);
+        
+        acc  = _mm_clmulepi64_si128( acc, key2, 0x10);        
+        acc = _mm_xor_si128 (acc,_mm_xor_si128 (_mm_xor_si128 (x1,clprod1),_mm_xor_si128 (clprod2,clprod3)));
+        IACA_END;
+    }
+    for(; string+1< endstring; string+=2 ) {
+        __m128i temp = _mm_lddqu_si128((__m128i *) string);
+        const __m128i clprod1  = _mm_clmulepi64_si128( temp, key, 0x01);
+        acc  = _mm_clmulepi64_si128( acc, key, 0x10);
+        acc = _mm_xor_si128 (clprod1,acc);
+        acc = _mm_xor_si128 (acc,_mm_and_si128 (temp,mask));
+        acc = barrettWithoutPrecomputation64_si128(acc);
+    }
+    if(string < endstring) {
+        const __m128i temp = _mm_set_epi64x(0,*string);
+        const __m128i multi = _mm_clmulepi64_si128( acc, key, 0x00);
+        acc = barrettWithoutPrecomputation64_si128(multi);
+        acc = _mm_xor_si128 (acc,temp);
+    }
+    //printf("fasthashGaloisFieldPoly64 loop");
+
+    return _mm_cvtsi128_si64(acc);
+}
 
 // like MHH
 uint64_t referenceproduct(const uint64_t*  randomsource, const uint64_t *  string, const size_t length) {
@@ -277,7 +349,7 @@ uint64_t referenceproduct(const uint64_t*  randomsource, const uint64_t *  strin
     "addq %%rax,  %[rl]\n"
     "adcq %%rdx,  %[rh]\n"
                  :  [rh] "+r" (high) , [rl] "+r" (low)  : [u] "r" (randomsource+i), [v] "r" (string+i)  :"rdx","rax","memory","cc");
-	}
+    }
 
     for(; i<length; ++i) {
         __asm__ ("mulq %[v]\n"
