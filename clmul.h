@@ -253,26 +253,28 @@ uint64_t hashGaloisFieldPoly64(const uint64_t*  randomsource, const uint64_t *  
         acc = barrettWithoutPrecomputation64_si128(multi);
         acc = _mm_xor_si128 (acc,temp);
     }
-    return _mm_cvtsi128_si64(acc);
+    multi = _mm_clmulepi64_si128( acc, key, 0x00);
+    return barrettWithoutPrecomputation64(multi);
 }
 
 
 // fast 64-bit polynomial hashing, uses only one key
 // expected to be fast!
+//TODO: can use more keys for increased universality
 uint64_t fasthashGaloisFieldPoly64(const uint64_t*  randomsource, const uint64_t *  string, const size_t length) {
     assert(*randomsource != 0);//otherwise silly
     const uint64_t * const endstring = string + length;
     __m128i tkey1 = _mm_set_epi64x(0,*(randomsource));
+    // we start by precomputing the powers of the key
     __m128i tkey2 = barrettWithoutPrecomputation64_si128(
        _mm_clmulepi64_si128( tkey1, tkey1, 0x00));
     __m128i tkey3 = barrettWithoutPrecomputation64_si128(
        _mm_clmulepi64_si128( tkey2, tkey2, 0x00));
     __m128i tkey4 = barrettWithoutPrecomputation64_si128(
        _mm_clmulepi64_si128( tkey3, tkey3, 0x00));
-
+    // powers of the key are packed into two registers
     __m128i key = _mm_xor_si128(tkey1,_mm_slli_si128(tkey2,8));
     __m128i key2 = _mm_xor_si128(tkey3,_mm_slli_si128(tkey4,8));
-    
     __m128i acc = _mm_set_epi64x(0,*string);
     __m128i mask = _mm_set_epi64x(0,-1);
     ++string;
@@ -284,7 +286,6 @@ uint64_t fasthashGaloisFieldPoly64(const uint64_t*  randomsource, const uint64_t
         const __m128i clprod1  = _mm_clmulepi64_si128( temp, key, 0x01);
         const __m128i clprod2  = _mm_clmulepi64_si128( temp2, key, 0x10);
         const __m128i clprod3  = _mm_clmulepi64_si128( temp2, key2, 0x01);
-        
         acc  = _mm_clmulepi64_si128( acc, key2, 0x10);        
         acc = _mm_xor_si128 (acc,_mm_xor_si128 (_mm_xor_si128 (x1,clprod1),_mm_xor_si128 (clprod2,clprod3)));
         IACA_END;
@@ -303,12 +304,12 @@ uint64_t fasthashGaloisFieldPoly64(const uint64_t*  randomsource, const uint64_t
         acc = barrettWithoutPrecomputation64_si128(multi);
         acc = _mm_xor_si128 (acc,temp);
     }
-    //printf("fasthashGaloisFieldPoly64 loop");
-
-    return _mm_cvtsi128_si64(acc);
+    multi = _mm_clmulepi64_si128( acc, key, 0x00);
+    return barrettWithoutPrecomputation64(multi);
 }
 
-// like MHH
+// like MHH, this is essentially multilinear with 64bit multiplication
+// summed up over a 128-bit counter 
 uint64_t referenceproduct(const uint64_t*  randomsource, const uint64_t *  string, const size_t length) {
 
     uint64_t low = 0;
