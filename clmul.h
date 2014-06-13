@@ -204,10 +204,20 @@ void initializeprecompm128() {
 		precompm128[a] = _mm_set_epi32(0,0,0,precompbuf64[a]);
 }
 
-__m128i precompbarrettWithoutPrecomputation64_si128( __m128i A) {
+__m128i oldprecompbarrettWithoutPrecomputation64_si128( __m128i A) {
     const __m128i C = _mm_set_epi64x(1U,(1U<<4)+(1U<<3)+(1U<<1)+(1U<<0));// C is the irreducible poly. (64,4,3,1,0)
     __m128i Q2 = _mm_clmulepi64_si128( A, C, 0x01);
     __m128i Q3 = _mm_set_epi64x(0,precompbuf64[_mm_extract_epi16(Q2,4)]);
+    __m128i Q4 =  _mm_xor_si128(Q2,A);
+    const __m128i final  = _mm_xor_si128(Q3,Q4);
+    return final;/// WARNING: HIGH 64 BITS CONTAIN GARBAGE
+ }
+__m128i precompbarrettWithoutPrecomputation64_si128( __m128i A) {
+    const __m128i C = _mm_set_epi64x(1U,(1U<<4)+(1U<<3)+(1U<<1)+(1U<<0));// C is the irreducible poly. (64,4,3,1,0)
+    __m128i Q2 = _mm_clmulepi64_si128( A, C, 0x01);
+    __m128i Q3 = //_mm_shuffle_epi8(_mm_lddqu_si128(precompbuf64),_mm_srli_si128(Q2,8));
+    		_mm_shuffle_epi8(_mm_setr_epi8(0,  27,  54,  45,  108,  119,  90,  65,  216,  195,  238,  245,  180,  175,  130,  153),
+    				_mm_srli_si128(Q2,8));
     __m128i Q4 =  _mm_xor_si128(Q2,A);
     const __m128i final  = _mm_xor_si128(Q3,Q4);
     return final;/// WARNING: HIGH 64 BITS CONTAIN GARBAGE
