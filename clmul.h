@@ -220,7 +220,11 @@ __m128i precompbarrettWithoutPrecomputation64_si128( __m128i A) {
 
     //__m128i Q3 = _mm_xor_si128(Q2,_mm_set_epi32(0,0,0,precompbuf64[_mm_extract_epi64(Q2,1)]));
     //__m128i Q3 = precompm128[_mm_extract_epi64(Q2,1)];
-    __m128i Q3 = _mm_set_epi32(0,0,0,precompbuf64[_mm_extract_epi64(Q2,1)]);
+//    __m128i Q3 = _mm_set_epi32(0,0,0,precompbuf64[_mm_extract_epi64(Q2,1)]);
+// __m128i Q3 = _mm_set_epi32(0,0,0,precompbuf64[_mm_extract_epi16(Q2,4)]);
+  __m128i Q3 = _mm_set_epi64x(0,precompbuf64[_mm_extract_epi16(Q2,4)]);
+
+
 
     __m128i Q4 =  _mm_xor_si128(Q2,A);
     //const __m128i final  = _mm_xor_si128 (A, Q3);
