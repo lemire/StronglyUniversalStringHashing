@@ -269,9 +269,9 @@ typedef uint64_t (*hashFunction64)(const uint64_t *  ,const  uint64_t * , const 
 #include "clmul.h"
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 7
+#define HowManyFunctions64 8
 
-hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,&hashGaloisFieldfast64half,&hashGaloisFieldfast64halfunrolled,&referenceproduct,&hashGaloisFieldPoly64,&precomphashGaloisFieldPoly64,&fasthashGaloisFieldPoly64};
+hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,&hashGaloisFieldfast64half,&hashGaloisFieldfast64halfunrolled,&referenceproduct,&hashGaloisFieldPoly64,&precomphashGaloisFieldPoly64,&precomp2hashGaloisFieldPoly64,&fasthashGaloisFieldPoly64};
 
 hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
         &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
@@ -286,6 +286,7 @@ const char* functionnames64[HowManyFunctions64] = {
     "Reference (Like MHH)                ",
     "hashGaloisFieldPoly64               ",
     "hashGaloisFieldPoly64  (precomp)    ",
+    "hashGaloisFieldPoly64  (precomp2)   ",
     "fasthashGaloisFieldPoly64           ",
 };
 
