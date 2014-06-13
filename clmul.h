@@ -11,7 +11,6 @@
 #include <assert.h>
 #include <x86intrin.h>
 
-
 //#define IACA
 #ifdef IACA
 #include </opt/intel/iaca/include/iacaMarks.h>
@@ -22,14 +21,104 @@
 
 
 
+int is_zero(__m128i a){
+	return _mm_testz_si128(a,a);
+}
 
-void printme(__m128i v1) {
-    printf(" %i %i %i %i times ", _mm_extract_epi32(v1,0), _mm_extract_epi32(v1,1), _mm_extract_epi32(v1,2), _mm_extract_epi32(v1,3));
+// checks to see if a == b
+int equal(__m128i a, __m128i b) {
+	__m128i xorm = _mm_xor_si128(a,b);
+	return _mm_testz_si128(xorm,xorm);
+
+}
+
+void printme32(__m128i v1) {
+    printf(" %lu %lu %lu %lu  ", _mm_extract_epi32(v1,0), _mm_extract_epi32(v1,1), _mm_extract_epi32(v1,2), _mm_extract_epi32(v1,3));
 }
 
 void printme64(__m128i v1) {
-    printf(" %llu %llu times ", _mm_extract_epi64(v1,0), _mm_extract_epi64(v1,1));
+    printf(" %llu %llu  ", _mm_extract_epi64(v1,0), _mm_extract_epi64(v1,1));
 }
+
+// useful for debugging, essentially determines the most significant bit set
+// return 0 if a is made solely of zeroes
+int degree(__m128i a) {
+	int x4 = _mm_extract_epi32 (a,3);
+	if(x4 != 0) {
+		return  32 - __builtin_clz(x4) + 3 * 32 - 1;
+	}
+	int x3 = _mm_extract_epi32 (a,2);
+	if(x3 != 0) {
+		return 32 - __builtin_clz(x3) + 2 * 32 - 1;
+	}
+	int x2 = _mm_extract_epi32 (a,1);
+	if(x2 != 0) {
+		return 32 - __builtin_clz(x2) +  32 - 1;
+	}
+	int x1 = _mm_extract_epi32 (a,0);
+	if(x1 != 0) {
+		return 32 - __builtin_clz(x1) - 1;
+	}
+	return 0;
+}
+
+typedef struct  {
+	__m128i x;
+	__m128i y;
+} PairOfVec;
+
+// 128bit x 128bit to 128bit multiplication
+__m128i fullcarrylessmultiply(__m128i a, __m128i b) {
+	__m128i part1 = _mm_clmulepi64_si128( a, b, 0x00);
+	__m128i part2 = _mm_clmulepi64_si128( a, b, 0x10);
+	part2 = _mm_slli_si128(part2,8);
+	__m128i part3 = _mm_clmulepi64_si128( a, b, 0x01);
+	part3 = _mm_slli_si128(part3,8);
+	return _mm_xor_si128( _mm_xor_si128(part1,part2),part3);
+
+}
+// useful for debugging. Divides a by b in carryless model
+// surely, there is a better way to do this...
+PairOfVec slowcarrylessdivision(__m128i a, __m128i b) {
+	__m128i copya = a;
+	int degreea = degree(a);
+	int degreeb = degree(b);
+	PairOfVec result ;
+	result.x = _mm_setzero_si128();
+	printf("degreea = %i degreeb = %i \n",degreea,degreeb);
+	while(degreea > 0) {
+		int off = degreea - degreeb;
+		if(off<0) break;
+		__m128i bitf = off>=64 ? _mm_set_epi64x(1ULL<<(off-64),0) : _mm_set_epi64x(0,1ULL<<off);
+		int degreebitf = degree(bitf);
+		if( degreebitf + degreeb != degreea) {
+			printme64(bitf);
+			printf("you would think that this would work %i %i %i %i \n", degreebitf,degreeb,degreea,off);
+		}
+		result.x = _mm_xor_si128(bitf,result.x);
+		__m128i rmult = fullcarrylessmultiply(b, bitf);
+		//printf("result of the multiplication %i %i  %i %i \n",degree(rmult),degreea,degreeb,degreebitf);
+		a = _mm_xor_si128(a,rmult);
+		int newdegreea = degree(a);
+		//printf("newdegreea = %i \n",newdegreea);
+		// printme64(a);
+		if(newdegreea >= degreea)
+			printf("this will not end well\n");
+		degreea = newdegreea;
+	}
+	result.y = a;
+	// now we check our result
+	if(!equal(_mm_xor_si128(fullcarrylessmultiply(result.x, b),result.y),copya)){
+		printf("Slow division is buggy\n");
+		abort();
+
+	};
+
+	return result;
+}
+
+
+
 /////////////////////////////////////////////////////////////////
 // working from
 // "Modular Reduction in GF(2n) without Pre-computational Phase"
@@ -41,8 +130,10 @@ void printme64(__m128i v1) {
 //(((A div x^n) * M ) div x^n) * M) mod x^n
 //+(A mod x^n)
 //////////////////////////////////////////////////
-uint32_t barrettWithoutPrecomputation32( __m128i A) {
-    ///http://www.jjj.de/mathdata/minweight-primpoly.txt
+/// WARNING: HIGH 96 BITS CONTAIN GARBAGE, must call _mm_cvtsi128_si32 to get
+/// meaningful bits.
+__m128i barrettWithoutPrecomputation32_si128( __m128i A) {
+	///http://www.jjj.de/mathdata/minweight-primpoly.txt
     const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<6)+(1UL<<7)+(1UL<<32);
     // it is important, for the algo. we have chosen that 7 is smaller
     // equal than 16=32/2
@@ -62,8 +153,15 @@ uint32_t barrettWithoutPrecomputation32( __m128i A) {
     //__m128i final  = _mm_xor_si128 (R1, R2);
     const __m128i Q4 = _mm_clmulepi64_si128( Q3, C, 0x00);
     const __m128i final  = _mm_xor_si128 (A, Q4);
-    return _mm_cvtsi128_si32(final);
+    return final; /// WARNING: HIGH 96 BITS CONTAIN GARBAGE
 }
+
+uint32_t barrettWithoutPrecomputation32( __m128i A) {
+	return _mm_cvtsi128_si32(barrettWithoutPrecomputation32_si128(A));
+}
+
+/// WARNING: HIGH 64 BITS CONTAIN GARBAGE, must call _mm_cvtsi128_si64 to get
+/// meaningful bits.
 __m128i barrettWithoutPrecomputation64_si128( __m128i A) {
      ///http://www.jjj.de/mathdata/minweight-primpoly.txt
     // it is important, for the algo. we have chosen that 4 is smaller
@@ -80,7 +178,7 @@ __m128i barrettWithoutPrecomputation64_si128( __m128i A) {
     Q2 = _mm_xor_si128(Q2,A);
     const __m128i Q4 = _mm_clmulepi64_si128( Q2, C, 0x01);
     const __m128i final  = _mm_xor_si128 (A, Q4);
-    return final;
+    return final;/// WARNING: HIGH 64 BITS CONTAIN GARBAGE
  }
 
 
@@ -253,7 +351,7 @@ uint64_t hashGaloisFieldPoly64(const uint64_t*  randomsource, const uint64_t *  
         acc = barrettWithoutPrecomputation64_si128(multi);
         acc = _mm_xor_si128 (acc,temp);
     }
-    multi = _mm_clmulepi64_si128( acc, key, 0x00);
+    __m128i multi = _mm_clmulepi64_si128( acc, key, 0x00);
     return barrettWithoutPrecomputation64(multi);
 }
 
@@ -304,7 +402,7 @@ uint64_t fasthashGaloisFieldPoly64(const uint64_t*  randomsource, const uint64_t
         acc = barrettWithoutPrecomputation64_si128(multi);
         acc = _mm_xor_si128 (acc,temp);
     }
-    multi = _mm_clmulepi64_si128( acc, key, 0x00);
+    __m128i multi = _mm_clmulepi64_si128( acc, key, 0x00);
     return barrettWithoutPrecomputation64(multi);
 }
 
@@ -365,8 +463,72 @@ uint64_t referenceproduct(const uint64_t*  randomsource, const uint64_t *  strin
 
 
 
+void clmulunittest0_64() {
+    printf("CLMUL test 0_64...\n");
+    const __m128i C = _mm_set_epi64x(1U,(1U<<4)+(1U<<3)+(1U<<1)+(1U<<0));// C is the irreducible poly. (64,4,3,1,0)
+	uint64_t mul1 = 4343232+(1ULL<<63)+(1ULL<<60)+(1ULL<<45);//random-like
+	uint64_t mul2 = 12344567788889+(1ULL<<62)+(1ULL<<61)+(1ULL<<55);//random-like
+    for(uint64_t a = 1; a< 1024; ++a) {
+        const __m128i A = _mm_set_epi64x(mul1*a,mul2*a);
+        __m128i sillymod = slowcarrylessdivision(A,A).y;
+        if(!is_zero(sillymod)) {
+        	  printme64(sillymod);
+              printf("silly mod is not zero?\n");
+              abort();
+        }
+        PairOfVec AdivC = slowcarrylessdivision(A,C);
+        __m128i slowmod = AdivC.y;
+        __m128i fastmod = barrettWithoutPrecomputation64_si128(A);
+        fastmod = _mm_and_si128(fastmod,_mm_set_epi64x(0,-1));// keep just the low 64 bits
+
+        if(!equal(slowmod,fastmod)) {
+        	printf("slowmod = ");
+        	printme64(slowmod);
+      	    printf("\n");
+      	    printf("fastmod = ");
+    	    printme64(fastmod);
+    	    printf("\n");
+    	    printf("64-bit bug slowmod and fastmod differs\n");
+    	    abort();
+        }
+    }
+    printf("Test passed!\n");
+
+}
 
 
+void clmulunittest0_32() {
+    printf("CLMUL test 0_32...\n");
+    const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<6)+(1UL<<7)+(1UL<<32);
+    const __m128i C = _mm_set_epi64x(0,irredpoly);// C is the irreducible poly.
+	uint64_t mul1 = 4343232+(1ULL<<63)+(1ULL<<60)+(1ULL<<45);//random-like
+	uint64_t mul2 = 12344567788889+(1ULL<<62)+(1ULL<<61)+(1ULL<<55);//random-like
+    for(uint64_t a = 1; a< 1024; ++a) {
+        const __m128i A = _mm_set_epi64x(mul1*a,mul2*a);
+        __m128i sillymod = slowcarrylessdivision(A,A).y;
+        if(!is_zero(sillymod)) {
+            printme64(sillymod);
+        	printf("silly mod is not zero?\n");
+        	abort();
+        }
+        __m128i slowmod = slowcarrylessdivision(A,C).y;
+        __m128i fastmod = barrettWithoutPrecomputation32_si128(A);
+        fastmod = _mm_and_si128(fastmod,_mm_set_epi32(0,0,0,-1));// keep just the low 32 bits
+
+        if(!equal(slowmod,fastmod)) {
+        	printf("slowmod = ");
+        	printme32(slowmod);
+        	printf("\n");
+        	printf("fastmod = ");
+        	printme32(fastmod);
+        	printf("\n");
+        	printf("32-bit bug slowmod and fastmod differs\n");
+        	abort();
+        }
+    }
+    printf("Test passed!\n");
+
+}
 
 void clmulunittest1() {
     printf("CLMUL test 1...\n");
@@ -412,7 +574,6 @@ void clmulunittest2() {
             if(m32 == 0) {
                 printf("bug\n");
                 abort();
-
             }
         }
     }
@@ -472,6 +633,8 @@ void clmulunittest3a() {
 
 void clmulunittests() {
     printf("Testing CLMUL code...\n");
+    clmulunittest0_64();
+    clmulunittest0_32();
     clmulunittest1();
     clmulunittest2();
     clmulunittest3();

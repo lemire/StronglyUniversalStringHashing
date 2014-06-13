@@ -2,7 +2,7 @@
 #
 .SUFFIXES: .cpp .o .c .h
 
-CFLAGS = -std=gnu99 -funroll-loops -O3 -Wall -march=native -Wextra  
+CFLAGS = -std=gnu99 -funroll-loops -O3 -Wall -mavx -march=native -Wextra  
 
 all:  multilinearhashing
 
