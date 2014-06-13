@@ -170,12 +170,43 @@ __m128i barrettWithoutPrecomputation64_si128( __m128i A) {
     ////////////////
     assert(n/8==8);
     __m128i Q2 = _mm_clmulepi64_si128( A, C, 0x01);
+    //static int c = 0;
+    //if( _mm_extract_epi64(Q2,1)!=0){
+    	//if(_mm_extract_epi64(Q2,1) > c) {
+    		//c = _mm_extract_epi64(Q2,1);
+    		//    	printf(" %i \n",c);
+    //	}
+    //}
+
     Q2 = _mm_xor_si128(Q2,A);
+//    printme64(Q2);
     const __m128i Q4 = _mm_clmulepi64_si128( Q2, C, 0x01);
     const __m128i final  = _mm_xor_si128 (A, Q4);
     return final;/// WARNING: HIGH 64 BITS CONTAIN GARBAGE
  }
 
+unsigned char precompbuf64[16] = {0,  27,  54,  45,  108,  119,  90,  65,  216,  195,  238,  245,  180,  175,  130,  153};
+
+__m128i precompbarrettWithoutPrecomputation64_si128( __m128i A) {
+     ///http://www.jjj.de/mathdata/minweight-primpoly.txt
+    // it is important, for the algo. we have chosen that 4 is smaller
+    // equal than 32=64/2
+    const int n = 64;// degree of the polynomial
+    const __m128i C = _mm_set_epi64x(1U,(1U<<4)+(1U<<3)+(1U<<1)+(1U<<0));// C is the irreducible poly. (64,4,3,1,0)
+    /////////////////
+    /// This algo. requires two multiplications (_mm_clmulepi64_si128)
+    /// They are probably the bottleneck.
+    /// Note: Barrett's original algorithm also required two multiplications.
+    ////////////////
+    assert(n/8==8);
+    __m128i Q2 = _mm_clmulepi64_si128( A, C, 0x01);
+    //__m128i Q3 = _mm_xor_si128(Q2,_mm_set_epi32(0,0,0,precompbuf64[_mm_extract_epi64(Q2,1)]));
+    __m128i Q3 = _mm_set_epi32(0,0,0,precompbuf64[_mm_extract_epi64(Q2,1)]);
+    __m128i Q4 =  _mm_xor_si128(Q2,A);
+    //const __m128i final  = _mm_xor_si128 (A, Q3);
+    const __m128i final  = _mm_xor_si128(Q3,Q4);
+    return final;/// WARNING: HIGH 64 BITS CONTAIN GARBAGE
+ }
 
 uint64_t barrettWithoutPrecomputation64( __m128i A) {
     const __m128i final  = barrettWithoutPrecomputation64_si128(A);
@@ -459,6 +490,16 @@ uint64_t referenceproduct(const uint64_t*  randomsource, const uint64_t *  strin
 }
 
 
+void displayfirst() {
+	for(uint64_t a = 0; a< 16; ++a) {
+		const __m128i A = _mm_set_epi64x(a,0);
+        __m128i fastmod = barrettWithoutPrecomputation64_si128(A);
+        printf(" %llu, ",_mm_extract_epi64(fastmod,0));
+
+	}
+	printf("\n");
+
+}
 
 
 
@@ -495,6 +536,38 @@ void clmulunittest0_64() {
 
 }
 
+void precompclmulunittest0_64() {
+    printf("CLMUL test precomp 0_64...\n");
+    const __m128i C = _mm_set_epi64x(1U,(1U<<4)+(1U<<3)+(1U<<1)+(1U<<0));// C is the irreducible poly. (64,4,3,1,0)
+	uint64_t mul1 = 4343232+(1ULL<<63)+(1ULL<<60)+(1ULL<<45);//random-like
+	uint64_t mul2 = 12344567788889+(1ULL<<62)+(1ULL<<61)+(1ULL<<55);//random-like
+    for(uint64_t a = 1; a< 1024; ++a) {
+        const __m128i A = _mm_set_epi64x(mul1*a,mul2*a);
+        __m128i sillymod = slowcarrylessdivision(A,A).y;
+        if(!is_zero(sillymod)) {
+        	  printme64(sillymod);
+              printf("silly mod is not zero?\n");
+              abort();
+        }
+        PairOfVec AdivC = slowcarrylessdivision(A,C);
+        __m128i slowmod = AdivC.y;
+        __m128i fastmod = precompbarrettWithoutPrecomputation64_si128(A);
+        fastmod = _mm_and_si128(fastmod,_mm_set_epi64x(0,-1));// keep just the low 64 bits
+
+        if(!equal(slowmod,fastmod)) {
+        	printf("slowmod = ");
+        	printme64(slowmod);
+      	    printf("\n");
+      	    printf("fastmod = ");
+    	    printme64(fastmod);
+    	    printf("\n");
+    	    printf("64-bit bug slowmod and fastmod differs\n");
+    	    abort();
+        }
+    }
+    printf("Test passed!\n");
+
+}
 
 void clmulunittest0_32() {
     printf("CLMUL test 0_32...\n");
@@ -657,6 +730,8 @@ void clmulunittest3a() {
 
 void clmulunittests() {
     printf("Testing CLMUL code...\n");
+    //displayfirst();
+    precompclmulunittest0_64();
     clmulunittest0_64();
     clmulunittest0_32();
     clmulunittest0_16();
