@@ -195,11 +195,18 @@ uint64_t barrettWithoutPrecomputation64( __m128i A) {
 
 unsigned char precompbuf64[16] = {0,  27,  54,  45,  108,  119,  90,  65,  216,  195,  238,  245,  180,  175,  130,  153};
 
+__m128i precompm128[16];
+
+void initializeprecompm128() {
+	for(int a = 0; a < 16; ++a)
+		precompm128[a] = _mm_set_epi32(0,0,0,precompbuf64[a]);
+
+}
+
 __m128i precompbarrettWithoutPrecomputation64_si128( __m128i A) {
      ///http://www.jjj.de/mathdata/minweight-primpoly.txt
     // it is important, for the algo. we have chosen that 4 is smaller
     // equal than 32=64/2
-    IACA_START;
 
     const int n = 64;// degree of the polynomial
     const __m128i C = _mm_set_epi64x(1U,(1U<<4)+(1U<<3)+(1U<<1)+(1U<<0));// C is the irreducible poly. (64,4,3,1,0)
@@ -212,12 +219,12 @@ __m128i precompbarrettWithoutPrecomputation64_si128( __m128i A) {
     __m128i Q2 = _mm_clmulepi64_si128( A, C, 0x01);
 
     //__m128i Q3 = _mm_xor_si128(Q2,_mm_set_epi32(0,0,0,precompbuf64[_mm_extract_epi64(Q2,1)]));
+    //__m128i Q3 = precompm128[_mm_extract_epi64(Q2,1)];
     __m128i Q3 = _mm_set_epi32(0,0,0,precompbuf64[_mm_extract_epi64(Q2,1)]);
 
     __m128i Q4 =  _mm_xor_si128(Q2,A);
     //const __m128i final  = _mm_xor_si128 (A, Q3);
     const __m128i final  = _mm_xor_si128(Q3,Q4);
-    IACA_END;
 
     return final;/// WARNING: HIGH 64 BITS CONTAIN GARBAGE
  }
@@ -413,7 +420,21 @@ uint64_t hashGaloisFieldPoly64(const uint64_t*  randomsource, const uint64_t *  
     __m128i multi = _mm_clmulepi64_si128( acc, key, 0x00);
     return barrettWithoutPrecomputation64(multi);
 }
-
+uint64_t precomphashGaloisFieldPoly64(const uint64_t*  randomsource, const uint64_t *  string, const size_t length) {
+    assert(*randomsource != 0);//otherwise silly
+    const uint64_t * const endstring = string + length;
+    __m128i key = _mm_set_epi64x(0,*(randomsource));
+    __m128i acc = _mm_set_epi64x(0,*string);
+    ++string;
+    for(; string  < endstring; ++string ) {
+        const __m128i temp = _mm_set_epi64x(0,*string);
+        const __m128i multi = _mm_clmulepi64_si128( acc, key, 0x00);
+        acc = precompbarrettWithoutPrecomputation64_si128(multi);
+        acc = _mm_xor_si128 (acc,temp);
+    }
+    __m128i multi = _mm_clmulepi64_si128( acc, key, 0x00);
+    return precompbarrettWithoutPrecomputation64(multi);
+}
 
 // fast 64-bit polynomial hashing, uses only one key
 // expected to be fast!
@@ -758,6 +779,7 @@ void clmulunittest3a() {
 void clmulunittests() {
     printf("Testing CLMUL code...\n");
     //displayfirst();
+    initializeprecompm128();
     precompclmulunittest0_64();
     clmulunittest0_64();
     clmulunittest0_32();
