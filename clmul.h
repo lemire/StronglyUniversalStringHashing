@@ -85,7 +85,6 @@ PairOfVec slowcarrylessdivision(__m128i a, __m128i b) {
 	int degreeb = degree(b);
 	PairOfVec result ;
 	result.x = _mm_setzero_si128();
-	printf("degreea = %i degreeb = %i \n",degreea,degreeb);
 	while(degreea > 0) {
 		int off = degreea - degreeb;
 		if(off<0) break;
@@ -97,11 +96,8 @@ PairOfVec slowcarrylessdivision(__m128i a, __m128i b) {
 		}
 		result.x = _mm_xor_si128(bitf,result.x);
 		__m128i rmult = fullcarrylessmultiply(b, bitf);
-		//printf("result of the multiplication %i %i  %i %i \n",degree(rmult),degreea,degreeb,degreebitf);
 		a = _mm_xor_si128(a,rmult);
 		int newdegreea = degree(a);
-		//printf("newdegreea = %i \n",newdegreea);
-		// printme64(a);
 		if(newdegreea >= degreea)
 			printf("this will not end well\n");
 		degreea = newdegreea;
@@ -111,9 +107,7 @@ PairOfVec slowcarrylessdivision(__m128i a, __m128i b) {
 	if(!equal(_mm_xor_si128(fullcarrylessmultiply(result.x, b),result.y),copya)){
 		printf("Slow division is buggy\n");
 		abort();
-
 	};
-
 	return result;
 }
 
@@ -132,6 +126,7 @@ PairOfVec slowcarrylessdivision(__m128i a, __m128i b) {
 //////////////////////////////////////////////////
 /// WARNING: HIGH 96 BITS CONTAIN GARBAGE, must call _mm_cvtsi128_si32 to get
 /// meaningful bits.
+//// It assumes that only the lesser 64 bits are used.
 __m128i barrettWithoutPrecomputation32_si128( __m128i A) {
 	///http://www.jjj.de/mathdata/minweight-primpoly.txt
     const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<6)+(1UL<<7)+(1UL<<32);
@@ -144,9 +139,9 @@ __m128i barrettWithoutPrecomputation32_si128( __m128i A) {
     /// They are probably the bottleneck.
     /// Note: Barrett's original algorithm also requires two multiplications.
     ////////////////
-    const __m128i Q1 = _mm_srli_epi64 (A, n);
+    const __m128i Q1 = _mm_srli_si128 (A, 4);
     const __m128i Q2 = _mm_clmulepi64_si128( Q1, C, 0x00);// A div x^n
-    const __m128i Q3 = _mm_srli_epi64 (Q2, n);
+    const __m128i Q3 = _mm_srli_si128 (Q2, 4);
     // commenting out the long way derived from the paper (following two lines are enough)
     //__m128i R1 = _mm_and_si128 (maskm128,A);
     //__m128i R2 = _mm_and_si128 (maskm128,_mm_clmulepi64_si128( Q3, C, 0x00));
@@ -188,19 +183,23 @@ uint64_t barrettWithoutPrecomputation64( __m128i A) {
  }
 
 
-uint16_t barrettWithoutPrecomputation16( __m128i A) {
+__m128i barrettWithoutPrecomputation16_si128( __m128i A) {
     ///http://www.jjj.de/mathdata/minweight-primpoly.txt
     const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<3)+(1UL<<5)+(1UL<<16);
     // it is important, for the algo. we have chosen that 5 is smaller
     // equal than 8=16/2
     const int n = 16;// degree of the polynomial
     const __m128i C = _mm_set_epi64x(0,irredpoly);// C is the irreducible poly.
-    const __m128i Q1 = _mm_srli_epi64 (A, n);
+    const __m128i Q1 = _mm_srli_si128 (A, 2);
     const __m128i Q2 = _mm_clmulepi64_si128( Q1, C, 0x00);// A div x^n
-    const __m128i Q3 = _mm_srli_epi64 (Q2, n);
+    const __m128i Q3 = _mm_srli_si128 (Q2, 2);
     const __m128i Q4 = _mm_clmulepi64_si128( Q3, C, 0x00);
     const __m128i final  = _mm_xor_si128 (A, Q4);
-    return (uint16_t) _mm_cvtsi128_si32(final);
+    return final;
+}
+
+uint16_t barrettWithoutPrecomputation16( __m128i A) {
+    return (uint16_t) _mm_cvtsi128_si32(barrettWithoutPrecomputation16_si128(A));
 }
 
 
@@ -501,10 +500,9 @@ void clmulunittest0_32() {
     printf("CLMUL test 0_32...\n");
     const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<6)+(1UL<<7)+(1UL<<32);
     const __m128i C = _mm_set_epi64x(0,irredpoly);// C is the irreducible poly.
-	uint64_t mul1 = 4343232+(1ULL<<63)+(1ULL<<60)+(1ULL<<45);//random-like
 	uint64_t mul2 = 12344567788889+(1ULL<<62)+(1ULL<<61)+(1ULL<<55);//random-like
     for(uint64_t a = 1; a< 1024; ++a) {
-        const __m128i A = _mm_set_epi64x(mul1*a,mul2*a);
+        const __m128i A = _mm_set_epi64x(0,mul2*a);
         __m128i sillymod = slowcarrylessdivision(A,A).y;
         if(!is_zero(sillymod)) {
             printme64(sillymod);
@@ -514,7 +512,6 @@ void clmulunittest0_32() {
         __m128i slowmod = slowcarrylessdivision(A,C).y;
         __m128i fastmod = barrettWithoutPrecomputation32_si128(A);
         fastmod = _mm_and_si128(fastmod,_mm_set_epi32(0,0,0,-1));// keep just the low 32 bits
-
         if(!equal(slowmod,fastmod)) {
         	printf("slowmod = ");
         	printme32(slowmod);
@@ -527,9 +524,36 @@ void clmulunittest0_32() {
         }
     }
     printf("Test passed!\n");
-
 }
-
+void clmulunittest0_16() {
+    printf("CLMUL test 0_16...\n");
+    const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<3)+(1UL<<5)+(1UL<<16);
+    const __m128i C = _mm_set_epi64x(0,irredpoly);// C is the irreducible poly.
+	uint32_t mul2 = 12344567788889+(1UL<<31);//random-like
+    for(uint64_t a = 1; a< 1024; ++a) {
+        const __m128i A = _mm_set_epi32(0,0,0,mul2*a);
+        __m128i sillymod = slowcarrylessdivision(A,A).y;
+        if(!is_zero(sillymod)) {
+            printme64(sillymod);
+        	printf("silly mod is not zero?\n");
+        	abort();
+        }
+        __m128i slowmod = slowcarrylessdivision(A,C).y;
+        __m128i fastmod = barrettWithoutPrecomputation16_si128(A);
+        fastmod = _mm_and_si128(fastmod,_mm_set_epi32(0,0,0,0xFFFF));// keep just the low 16 bits
+        if(!equal(slowmod,fastmod)) {
+        	printf("slowmod = ");
+        	printme32(slowmod);
+        	printf("\n");
+        	printf("fastmod = ");
+        	printme32(fastmod);
+        	printf("\n");
+        	printf("32-bit bug slowmod and fastmod differs\n");
+        	abort();
+        }
+    }
+    printf("Test passed!\n");
+}
 void clmulunittest1() {
     printf("CLMUL test 1...\n");
     // A * x = y ought to be invertible.
@@ -635,6 +659,7 @@ void clmulunittests() {
     printf("Testing CLMUL code...\n");
     clmulunittest0_64();
     clmulunittest0_32();
+    clmulunittest0_16();
     clmulunittest1();
     clmulunittest2();
     clmulunittest3();
