@@ -17,7 +17,7 @@
 // strongly universal and regular
 uint64_t hashGaloisFieldfast64(const void*  rs, const uint64_t *  string, const size_t length) {
     const uint64_t * const endstring = string + length;
-    const uint64_t *  randomsource = ( const uint64_t * )randomsource;
+    const uint64_t *  randomsource = ( const uint64_t * )rs;
     __m128i acc = _mm_set_epi64x(0,*(randomsource));
     randomsource += 1;
     for(; string+1< endstring; randomsource+=2,string+=2 ) {
