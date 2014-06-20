@@ -66,7 +66,7 @@ uint64_t hashGaloisFieldfast64half(const void*  rs, const uint64_t *  string, co
 uint64_t hashGaloisFieldfast64halfunrolled(const void*  rs, const uint64_t *  string, const size_t length) {
     assert(length / 2 * 2 == length); // if not, we need special handling (omitted)
     const uint64_t * const endstring = string + length;
-    const uint64_t *  randomsource = ( const uint64_t * )randomsource;
+    const uint64_t *  randomsource = ( const uint64_t * )rs;
     __m128i acc = _mm_set_epi64x(0,*(randomsource));
     randomsource += 1;
     for(; string+3 < endstring; randomsource+=4,string+=4 ) {
@@ -103,7 +103,7 @@ uint64_t hashGaloisFieldfast64halfunrolled(const void*  rs, const uint64_t *  st
 // simple 64-bit polynomial hashing, uses only one key
 // not expected to be fast!
 uint64_t hashGaloisFieldPoly64(const void*  rs, const uint64_t *  string, const size_t length) {
-    const uint64_t *  randomsource = ( const uint64_t * )randomsource;
+    const uint64_t *  randomsource = ( const uint64_t * )rs;
 	assert(*randomsource != 0);//otherwise silly
     const uint64_t * const endstring = string + length;
     __m128i key = _mm_set_epi64x(0,*(randomsource));
@@ -120,7 +120,7 @@ uint64_t hashGaloisFieldPoly64(const void*  rs, const uint64_t *  string, const 
 }
 
 uint64_t precomphashGaloisFieldPoly64(const void*  rs, const uint64_t *  string, const size_t length) {
-	const uint64_t *  randomsource = ( const uint64_t * )randomsource;
+	const uint64_t *  randomsource = ( const uint64_t * )rs;
 	assert(*randomsource != 0);//otherwise silly
     const uint64_t * const endstring = string + length;
     __m128i key = _mm_set_epi64x(0,*(randomsource));
