@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "clmul.h"
 #include "clmulpoly64bits.h"
 
@@ -380,12 +381,12 @@ void hornerrule() {
 				uint64_t l1 = basichorner(key,value1,value2,value3);
 				uint64_t l2 = fasthorner(key,value1,value2,value3);
 				if(l1 != l2) {
-					printf("bug %llu %llu \n",l1,l2);
+					printf("bug %" PRIu64 " %" PRIu64 " \n",l1,l2);
 					abort();
 				}
 				uint64_t l3 = fasthorner2(key,value1,value2,value3);
 				if(l1 != l2) {
-					printf("bug23 %llu %llu \n",l2,l3);
+					printf("bug23 %" PRIu64 " %" PRIu64 "  \n",l2,l3);
 					abort();
 				}
 			}
@@ -407,7 +408,7 @@ void polytest() {
 		h2 = fasthashGaloisFieldPoly64_2(&key,buffer,1);
 		h3 = fasthashGaloisFieldPoly64_4(&key,buffer,1);
 		if((h1!=h2)||(h2!=h3)) {
-			printf("bug1 %llu %llu %llu \n",h1,h2,h3);
+			printf("bug1 %" PRIu64 " %" PRIu64 " %" PRIu64 "  \n",h1,h2,h3);
 			abort();
 		}
 		for(int kk = 0; kk<64; kk+=5) {
@@ -417,7 +418,7 @@ void polytest() {
 			h2 = fasthashGaloisFieldPoly64_2(&key,buffer,2);
 			h3 = fasthashGaloisFieldPoly64_4(&key,buffer,2);
 			if((h1!=h2)||(h2!=h3)) {
-				printf("bug2 %llu %llu %llu \n",h1,h2,h3);
+				printf("bug2  %" PRIu64 " %" PRIu64 " %" PRIu64 "   \n",h1,h2,h3);
 				abort();
 			}
 			for(int kkk = 0; kkk<64; kkk+=5) {
@@ -427,8 +428,8 @@ void polytest() {
 				h2 = fasthashGaloisFieldPoly64_2(&key,buffer,3);
 				h3 = fasthashGaloisFieldPoly64_4(&key,buffer,3);
 				if((h1!=h2)||(h2!=h3)) {
-					printf("value1= %llu value2= %llu value 3= %llu \n",value1,value2,value3);
-					printf("bug3 %llu %llu %llu \n",h1,h2,h3);
+					printf("value1= %" PRIu64  " value2= %" PRIu64  " value 3= %" PRIu64  " \n",value1,value2,value3);
+					printf("bug3  %" PRIu64 " %" PRIu64 " %" PRIu64 " \n",h1,h2,h3);
 					abort();
 				}
 				for(int kkkk = 0; kkkk<64; kkkk+=5) {
@@ -438,7 +439,7 @@ void polytest() {
 					h2 = fasthashGaloisFieldPoly64_2(&key,buffer,4);
 					h3 = fasthashGaloisFieldPoly64_4(&key,buffer,4);
 					if((h1!=h2)||(h2!=h3)) {
-						printf("bug4 %llu %llu %llu \n",h1,h2,h3);
+						printf("bug4 %" PRIu64 " %" PRIu64 " %" PRIu64 " \n",h1,h2,h3);
 						abort();
 					}
 				}
@@ -463,7 +464,7 @@ void polytest2() {
 		h2 = fasthashGaloisFieldPoly64_2(&key,buffer,5);
 		h3 = fasthashGaloisFieldPoly64_4(&key,buffer,5);
 		if((h1!=h2)||(h2!=h3)) {
-			printf("bug k=%i %llu %llu %llu \n",k,h1,h2,h3);
+			printf("bug k=%i %" PRIu64 " %" PRIu64 " %" PRIu64 " \n",k,h1,h2,h3);
 			abort();
 		}
 	}
