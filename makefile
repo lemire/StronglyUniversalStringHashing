@@ -4,12 +4,12 @@
 
 CFLAGS = -std=gnu99 -funroll-loops -O3 -mavx  -march=native   
 
-all:  multilinearhashing
+all: clmulunit  multilinearhashing
 
 multilinearhashing: src/multilinearhashing.c include/*.h 
 	$(CC) $(CFLAGS) -o multilinearhashing src/multilinearhashing.c -Iinclude 
 
-clmulunit: src/clmulunit.c include/clmul.h
+clmulunit: src/clmulunit.c include/*.h
 	$(CC) $(CFLAGS) -o clmulunit src/clmulunit.c -Iinclude 
 
 
