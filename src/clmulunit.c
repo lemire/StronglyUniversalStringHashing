@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "clmul.h"
 #include "clmulpoly64bits.h"
 
@@ -449,11 +450,31 @@ void polytest() {
 
 }
 
+void polytest2() {
+	printf("Testing poly2...\n");
+
+	uint64_t buffer[5];
+	uint64_t key = 2;
+	uint64_t h1, h2, h3;
+	for(int k = 0; k<5; ++k){
+		memset(buffer,0,5*sizeof(uint64_t));
+		buffer[k] = 1;
+		h1 = precomphashGaloisFieldPoly64(&key,buffer,5);
+		h2 = fasthashGaloisFieldPoly64_2(&key,buffer,5);
+		h3 = fasthashGaloisFieldPoly64_4(&key,buffer,5);
+		if((h1!=h2)||(h2!=h3)) {
+			printf("bug k=%i %llu %llu %llu \n",k,h1,h2,h3);
+			abort();
+		}
+	}
+
+}
 void clmulunittests() {
 	printf("Testing CLMUL code...\n");
 	//displayfirst();
 	hornerrule();
 	polytest();
+	polytest2();
 	precompclmulunittest0_64();
 	clmulunittest0_64();
 	clmulunittest0_32();

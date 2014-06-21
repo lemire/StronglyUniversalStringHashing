@@ -124,9 +124,9 @@ uint64_t fasthashGaloisFieldPoly64_4(const void* rs, const uint64_t * string,
 				_mm_slli_si128(tkey2, 8));
 		if  (string + 3 < endstring) {
 			__m128i tkey3 = precompReduction64_si128(
-					_mm_clmulepi64_si128(tkey2, tkey2, 0x00));
+					_mm_clmulepi64_si128(tkey2, tkey1, 0x00));
 			__m128i tkey4 = precompReduction64_si128(
-					_mm_clmulepi64_si128(tkey3, tkey3, 0x00));
+					_mm_clmulepi64_si128(tkey2, tkey2, 0x00));
 			__m128i key2 = _mm_xor_si128(
 					_mm_and_si128(tkey3, _mm_set_epi64x(0, -1)),
 					_mm_slli_si128(tkey4, 8));
@@ -134,8 +134,8 @@ uint64_t fasthashGaloisFieldPoly64_4(const void* rs, const uint64_t * string,
 				__m128i temp = _mm_lddqu_si128((__m128i *) string); //a1 a2
 				__m128i temp2 = _mm_lddqu_si128((__m128i *) (string + 2)); //a3 a4
 				const __m128i x1 = _mm_srli_si128(temp2, 8); //a4
-				const __m128i clprod1 = _mm_clmulepi64_si128(temp, key2, 0x01); //a1*k^3
-				const __m128i clprod2 = _mm_clmulepi64_si128(temp, key, 0x10); //a2*k^2
+				const __m128i clprod1 = _mm_clmulepi64_si128(temp, key2, 0x00); //a1*k^3
+				const __m128i clprod2 = _mm_clmulepi64_si128(temp, key, 0x11); //a2*k^2
 				const __m128i clprod3 = _mm_clmulepi64_si128(temp2, key, 0x00); //a3*k
 				acc = _mm_clmulepi64_si128(acc, key2, 0x10); //k^4
 				acc = precompReduction64_si128(
