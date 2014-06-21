@@ -1,17 +1,19 @@
-/*
- * hashfunctions64bit.h
- *
- *  Created on: Jun 20, 2014
- *      Author: lemire
- */
+
 
 #ifndef HASHFUNCTIONS64BIT_H_
 #define HASHFUNCTIONS64BIT_H_
 
+#include "City.h"
 // first pointer is a random source,
 // next pointer is the data.
 // outputs a hash value
 typedef uint64_t (*hashFunction64)(const void *  ,const  uint64_t * , const size_t );
+
+
+// Google hash function
+uint64_t hashCity(const void*  rs, const uint64_t *  string, const size_t length) {
+	return CityHash64WithSeed((const char *) string, length * sizeof(uint64_t),*(uint64_t*)rs);
+}
 
 // like MHH, this is essentially multilinear with 64bit multiplication
 // summed up over a 128-bit counter

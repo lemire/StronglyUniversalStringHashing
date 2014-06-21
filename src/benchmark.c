@@ -81,14 +81,14 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #include "clmulpoly64bits.h"
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 13
+#define HowManyFunctions64 14
 
 
-hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,
+hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,&hashMMH_NonPyramidal,&hashGaloisFieldfast64,
 		&hashGaloisFieldfast64_precomp,
 		&hashGaloisFieldfast64_precomp_unroll,
 	&hashGaloisFieldfast64half,&hashGaloisFieldfast64half_precomp,
-	&hashGaloisFieldfast64halfunrolled,&hashMMH_NonPyramidal,&hashGaloisFieldPoly64,
+	&hashGaloisFieldfast64halfunrolled,&hashGaloisFieldPoly64,
 	&precomphashGaloisFieldPoly64,&fasthashGaloisFieldPoly64_2_noprecomp,
 	&fasthashGaloisFieldPoly64_2,&fasthashGaloisFieldPoly64_4,&fasthashGaloisFieldPoly64_8};
 
@@ -99,13 +99,14 @@ hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
 };
 
 const char* functionnames64[HowManyFunctions64] = {
+	"Google's City                       ",
+	"Non-pyramidal MMH                   ",
 	"GFMultilinear (64-bit regular)      ",
 	"GFMultilinear (64-bit regular pre)  ",
 	"GFMultilinear (64-bit  pre unroll)  ",
 	"GFMultilinear (64-bit half)         ",
 	"GFMultilinear (64-bit half pre)     ",
 	"GFMultilinear (64-bit half, unrol)  ",
-	"Non-pyramidal MMH                   ",
 	"hashGaloisFieldPoly64               ",
 	"hashGaloisFieldPoly64  (precomp)    ",
 	"fasthashGaloisFieldPoly64 (nopre 2) ",
@@ -131,13 +132,13 @@ const char* functionnames[HowManyFunctions] = {
 #else
 
 #define HowManyFunctions 10
-#define HowManyFunctions64 1
+#define HowManyFunctions64 2
 
 hashFunction funcArr[HowManyFunctions] = { &hashMultilinear,
 		&hashMultilinear2by2, &hashMultilinearhalf, &hashMultilineardouble,
 		&hashNH, &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,
 		&pyramidal_Multilinear };
-hashFunction64 funcArr64[HowManyFunctions64] = { &hashMMH_NonPyramidal };
+hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity, &hashMMH_NonPyramidal };
 
 const char* functionnames[HowManyFunctions] = {
 		"Multilinear  (strongly universal)",
@@ -151,6 +152,7 @@ const char* functionnames[HowManyFunctions] = {
 		"SAX                                 ",
 		"Pyramidal multilinear (a. univ.)    " };
 const char* functionnames64[HowManyFunctions64] = {
+		"Google's City                       ",
 		"Non-pyramidal MMH                   ", };
 
 #endif
