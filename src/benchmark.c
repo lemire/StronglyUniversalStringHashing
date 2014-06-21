@@ -81,7 +81,7 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #include "clmulpoly64bits.h"
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 12
+#define HowManyFunctions64 13
 
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,
@@ -89,7 +89,8 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashGaloisFieldfast64,
 		&hashGaloisFieldfast64_precomp_unroll,
 	&hashGaloisFieldfast64half,&hashGaloisFieldfast64half_precomp,
 	&hashGaloisFieldfast64halfunrolled,&hashMMH_NonPyramidal,&hashGaloisFieldPoly64,
-	&precomphashGaloisFieldPoly64,&fasthashGaloisFieldPoly64_2_noprecomp,&fasthashGaloisFieldPoly64_2,&fasthashGaloisFieldPoly64_4};
+	&precomphashGaloisFieldPoly64,&fasthashGaloisFieldPoly64_2_noprecomp,
+	&fasthashGaloisFieldPoly64_2,&fasthashGaloisFieldPoly64_4,&fasthashGaloisFieldPoly64_8};
 
 hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
 	&hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
@@ -110,6 +111,7 @@ const char* functionnames64[HowManyFunctions64] = {
 	"fasthashGaloisFieldPoly64 (nopre 2) ",
 	"fasthashGaloisFieldPoly64 (2)       ",
 	"fasthashGaloisFieldPoly64 (4)       ",
+	"fasthashGaloisFieldPoly64 (8)       ",
 };
 
 const char* functionnames[HowManyFunctions] = {
