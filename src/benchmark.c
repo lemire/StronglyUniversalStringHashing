@@ -93,8 +93,8 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
 	&hashGaloisFieldPoly64,
 	&precomphashGaloisFieldPoly64,&fasthashGaloisFieldPoly64_2_noprecomp,
 	&fasthashGaloisFieldPoly64_2,&fasthashGaloisFieldPoly64_4,&fasthashGaloisFieldPoly64_8,
-	&fasthashGaloisFieldPoly64_16,
-&halfhashGaloisFieldPoly64_8};
+	&fasthashGaloisFieldPoly64_16
+};
 
 hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
 	&hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
@@ -116,7 +116,6 @@ const char* functionnames64[HowManyFunctions64] = {
 	"fasthashGaloisFieldPoly64 (4)       ",
 	"fasthashGaloisFieldPoly64 (8)       ",
 	"fasthashGaloisFieldPoly64 (16)      ",
-	"halfhashGaloisFieldPoly64 (8)       ",
 };
 
 const char* functionnames[HowManyFunctions] = {
