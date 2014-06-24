@@ -81,7 +81,7 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #include "clmulpoly64bits.h"
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 14
+#define HowManyFunctions64 13
 
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
