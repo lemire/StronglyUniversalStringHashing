@@ -81,10 +81,11 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #include "clmulpoly64bits.h"
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 14
+#define HowManyFunctions64 15
 
 
-hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,&hashMMH_NonPyramidal,&hashGaloisFieldfast64,
+hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,&hashMMH_NonPyramidal,
+		&hashNH64,&hashGaloisFieldfast64,
 		&hashGaloisFieldfast64_precomp,
 		&hashGaloisFieldfast64_precomp_unroll,
 	&hashGaloisFieldfast64half,&hashGaloisFieldfast64half_precomp,
@@ -101,6 +102,7 @@ hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
 const char* functionnames64[HowManyFunctions64] = {
 	"Google's City                       ",
 	"Non-pyramidal MMH                   ",
+	"Simple NH64 (like VMAC)             ",
 	"GFMultilinear (64-bit regular)      ",
 	"GFMultilinear (64-bit regular pre)  ",
 	"GFMultilinear (64-bit  pre unroll)  ",
@@ -132,13 +134,13 @@ const char* functionnames[HowManyFunctions] = {
 #else
 
 #define HowManyFunctions 10
-#define HowManyFunctions64 2
+#define HowManyFunctions64 3
 
 hashFunction funcArr[HowManyFunctions] = { &hashMultilinear,
 		&hashMultilinear2by2, &hashMultilinearhalf, &hashMultilineardouble,
 		&hashNH, &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,
 		&pyramidal_Multilinear };
-hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity, &hashMMH_NonPyramidal };
+hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity, &hashMMH_NonPyramidal, &hashNH64 };
 
 const char* functionnames[HowManyFunctions] = {
 		"Multilinear  (strongly universal)",
@@ -153,7 +155,8 @@ const char* functionnames[HowManyFunctions] = {
 		"Pyramidal multilinear (a. univ.)    " };
 const char* functionnames64[HowManyFunctions64] = {
 		"Google's City                       ",
-		"Non-pyramidal MMH                   ", };
+		"Non-pyramidal MMH                   ",
+		"Simple NH64 (like VMAC)             ", };
 
 #endif
 

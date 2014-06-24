@@ -71,4 +71,167 @@ uint64_t hashMMH_NonPyramidal(const void*  rs, const uint64_t *  string, const s
 }
 
 
+
+
+
+
+
+/*******
+ * Next macros are take directly from the original VMAC/VHASH implementation
+ * by Ted Krovetz
+ ******/
+
+/* ----------------------------------------------------------------------- */
+#if (__GNUC__ && (__x86_64__ || __amd64__))
+/* ----------------------------------------------------------------------- */
+
+#define ADD128(rh,rl,ih,il)                                               \
+    asm ("addq %3, %1 \n\t"                                               \
+         "adcq %2, %0"                                                    \
+    : "+r"(rh),"+r"(rl)                                                   \
+    : "r"(ih),"r"(il) : "cc");
+
+#define MUL64(rh,rl,i1,i2)                                                \
+    asm ("mulq %3" : "=a"(rl), "=d"(rh) : "a"(i1), "r"(i2) : "cc")
+
+#define PMUL64 MUL64
+
+#define GET_REVERSED_64(p)                                                \
+    ({uint64_t x;                                                         \
+     asm ("bswapq %0" : "=r" (x) : "0"(*(uint64_t *)(p))); x;})
+
+/* ----------------------------------------------------------------------- */
+#elif (__GNUC__ && __i386__)
+/* ----------------------------------------------------------------------- */
+
+#define GET_REVERSED_64(p)                                                \
+    ({ uint64_t x;                                                        \
+    uint32_t *tp = (uint32_t *)(p);                                       \
+    asm  ("bswap %%edx\n\t"                                               \
+          "bswap %%eax"                                                   \
+    : "=A"(x)                                                             \
+    : "a"(tp[1]), "d"(tp[0]));                                            \
+    x; })
+
+/* ----------------------------------------------------------------------- */
+#elif (__GNUC__ && __ppc64__)
+/* ----------------------------------------------------------------------- */
+
+#define ADD128(rh,rl,ih,il)                                               \
+    asm volatile (  "addc %1, %1, %3 \n\t"                                \
+                    "adde %0, %0, %2"                                     \
+    : "+r"(rh),"+r"(rl)                                                   \
+    : "r"(ih),"r"(il));
+
+#define MUL64(rh,rl,i1,i2)                                                \
+{ uint64_t _i1 = (i1), _i2 = (i2);                                        \
+    rl = _i1 * _i2;                                                       \
+    asm volatile ("mulhdu %0, %1, %2" : "=r" (rh) : "r" (_i1), "r" (_i2));\
+}
+
+#define PMUL64 MUL64
+
+#define GET_REVERSED_64(p)                                                \
+    ({ uint32_t hi, lo, *_p = (uint32_t *)(p);                            \
+       asm volatile ("lwbrx %0, %1, %2" : "=r"(lo) : "b%"(0), "r"(_p) );  \
+       asm volatile ("lwbrx %0, %1, %2" : "=r"(hi) : "b%"(4), "r"(_p) );  \
+       ((uint64_t)hi << 32) | (uint64_t)lo; } )
+
+/* ----------------------------------------------------------------------- */
+#elif (__GNUC__ && (__ppc__ || __PPC__))
+/* ----------------------------------------------------------------------- */
+
+#define GET_REVERSED_64(p)                                                \
+    ({ uint32_t hi, lo, *_p = (uint32_t *)(p);                            \
+       asm volatile ("lwbrx %0, %1, %2" : "=r"(lo) : "b%"(0), "r"(_p) );  \
+       asm volatile ("lwbrx %0, %1, %2" : "=r"(hi) : "b%"(4), "r"(_p) );  \
+       ((uint64_t)hi << 32) | (uint64_t)lo; } )
+
+/* ----------------------------------------------------------------------- */
+#elif (__GNUC__ && (__ARMEL__ || __ARM__))
+/* ----------------------------------------------------------------------- */
+
+#define bswap32(v)                                                        \
+({ uint32_t tmp,out;                                                      \
+    asm volatile(                                                         \
+        "eor    %1, %2, %2, ror #16\n"                                    \
+        "bic    %1, %1, #0x00ff0000\n"                                    \
+        "mov    %0, %2, ror #8\n"                                         \
+        "eor    %0, %0, %1, lsr #8"                                       \
+    : "=r" (out), "=&r" (tmp)                                             \
+    : "r" (v));                                                           \
+    out;})
+
+/* ----------------------------------------------------------------------- */
+#elif _MSC_VER
+/* ----------------------------------------------------------------------- */
+
+#include <intrin.h>
+
+#if (_M_IA64 || _M_X64) && \
+    (!defined(__INTEL_COMPILER) || __INTEL_COMPILER >= 1000)
+#define MUL64(rh,rl,i1,i2)   (rl) = _umul128(i1,i2,&(rh));
+#pragma intrinsic(_umul128)
+#define PMUL64 MUL64
+#endif
+
+/* MSVC uses add, adc in this version */
+#define ADD128(rh,rl,ih,il)                                          \
+    {   uint64_t _il = (il);                                         \
+        (rl) += (_il);                                               \
+        (rh) += (ih) + ((rl) < (_il));                               \
+    }
+
+#if _MSC_VER >= 1300
+#define GET_REVERSED_64(p) _byteswap_uint64(*(uint64_t *)(p))
+#pragma intrinsic(_byteswap_uint64)
+#endif
+
+#if _MSC_VER >= 1400 && \
+    (!defined(__INTEL_COMPILER) || __INTEL_COMPILER >= 1000)
+#define MUL32(i1,i2)    (__emulu((uint32_t)(i1),(uint32_t)(i2)))
+#pragma intrinsic(__emulu)
+#endif
+
+/* ----------------------------------------------------------------------- */
+#endif
+/* ----------------------------------------------------------------------- */
+
+
+/*******
+ * End of bit taken from the VMAC/VHASH implementation by Ted Krovetz
+ */
+
+
+// like NH (from VHash) but without the pyramidal part nor any modulo reduction
+uint64_t hashNH64(const void*  rs, const uint64_t *  string, const size_t length) {
+	const uint64_t*  randomsource = (const uint64_t*) rs;
+	uint64_t low = 0;
+	uint64_t high = 0;
+	size_t i = 0 ;
+	for (; i + 7 < length; i+= 8) {
+		uint64_t thigh, tlow;
+	    MUL64(thigh,tlow,string[i]+randomsource[i],string[i+1]+randomsource[i+1]);
+	    ADD128(high,low,thigh,tlow);
+	    MUL64(thigh,tlow,string[i+2]+randomsource[i+2],string[i+3]+randomsource[i+3]);
+	    ADD128(high,low,thigh,tlow);
+	    MUL64(thigh,tlow,string[i+4]+randomsource[i+4],string[i+7]+randomsource[i+5]);
+	    ADD128(high,low,thigh,tlow);
+	    MUL64(thigh,tlow,string[i+6]+randomsource[i+6],string[i+7]+randomsource[i+7]);
+	    ADD128(high,low,thigh,tlow);
+	}
+	for (; i + 1 < length; i+= 2) {
+			uint64_t thigh, tlow;
+		    MUL64(thigh,tlow,string[i]+randomsource[i],string[i+1]+randomsource[i+1]);
+		    ADD128(high,low,thigh,tlow);
+	}
+	if(i < length) {
+		uint64_t thigh, tlow;
+	    MUL64(thigh,tlow,string[i]+randomsource[i],0+randomsource[i+1]);
+	    ADD128(high,low,thigh,tlow);
+	}
+    // we use the prime 2^64 + 13
+    return low + high * 13;// TODO: vhash actual computation is more complicated (and more expensive)
+}
+
 #endif /* HASHFUNCTIONS64BIT_H_ */
