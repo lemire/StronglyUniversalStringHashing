@@ -73,7 +73,6 @@ uint64_t hashGaloisFieldfast64_precomp_unroll(const void*  rs, const uint64_t * 
         const __m128i clprod2  = _mm_clmulepi64_si128( temp1, temp2, 0x11);
         acc = _mm_xor_si128 (clprod1,acc);
         acc = _mm_xor_si128 (clprod2,acc);
-
         const __m128i temp1_2 = _mm_lddqu_si128((__m128i * )(randomsource + 2));
         const __m128i temp2_2 = _mm_lddqu_si128((__m128i *) (string + 2));
         const __m128i clprod1_2  = _mm_clmulepi64_si128( temp1_2, temp2_2, 0x00);
