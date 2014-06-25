@@ -190,7 +190,9 @@ int main(int c, char ** arg) {
 	printf(
 			"Reporting the number of cycles per byte and the billions of bytes processed per second.\n");
 	for (k = 0; k < HowManyRepeats; ++k) {
-		printf("test #%d (64-bit hash values)\n", k + 1);
+		printf("test #%d (64-bit hash values) ", k + 1);
+		printf("(%d bytes) \n", N * 4);
+
 		hashFunction64 thisfunc64;
 		for (i = 0; i < HowManyFunctions64; ++i) {
 			sumToFoolCompiler = 0;
