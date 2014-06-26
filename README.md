@@ -21,12 +21,12 @@ Thanks to Nathan Kurz for noticing that GCC 4.7 requires no-tree-vectorize to pr
 Usage
 ======
 
-make
-./benchmark
+  make
+  ./benchmark
 
 
 If you plan to use clmul instructions, please run the corresponding
 tests:
 
-make clmulunit
-./clmulunit
+  make clmulunit
+  ./clmulunit
