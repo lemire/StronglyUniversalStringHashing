@@ -203,6 +203,7 @@ static void swap(uint64* a, uint64* b)
     *b = temp;
 }
 
+
 uint64 CityHash64(const char *s, size_t len) {
   if (len <= 32) {
     if (len <= 16) {
@@ -221,6 +222,7 @@ uint64 CityHash64(const char *s, size_t len) {
   uint64 z = HashLen16(Fetch64(s + len - 48) + len, Fetch64(s + len - 24));
   uint128 v = WeakHashLen32WithSeedsarray(s + len - 64, len, z);
   uint128 w = WeakHashLen32WithSeedsarray(s + len - 32, y + k1, x);
+
   x = x * k1 + Fetch64(s);
 
   // Decrease len to the nearest multiple of 64, and operate on 64-byte chunks.
