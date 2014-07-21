@@ -841,9 +841,6 @@ uint64_t clmulcachelinehalflong(const void* rs, const uint64_t * string,
 
 uint64_t clmulcachelinehalf(const void* rs, const uint64_t * string,
 		const size_t length) {
-	if(length>=512) {
-		return clmulcachelinehalflong(rs,string,length);// use two cache lines
-	}
 	const __m128i * randomsource = (const __m128i *) rs;
 	// 4 128-bit is a cache line!!!
 	__m128i key1 = _mm_lddqu_si128( randomsource);
