@@ -563,7 +563,7 @@ uint64_t halfhashGaloisFieldPoly64_16(const void* rs, const uint64_t * string,
 			__m128i key2 = _mm_xor_si128(
 					_mm_and_si128(tkey3, _mm_set_epi64x(0, -1)),
 					_mm_slli_si128(tkey4, 8));
-			if (string + 15 < endstring) {
+			if (string + 31 < endstring) {
 				__m128i tkey5 = precompReduction64_si128(
 						_mm_clmulepi64_si128(tkey2, tkey3, 0x00));
 				__m128i tkey6 = precompReduction64_si128(
