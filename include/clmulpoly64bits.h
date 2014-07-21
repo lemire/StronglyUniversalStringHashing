@@ -755,7 +755,7 @@ uint64_t clmulcacheline(const void* rs, const uint64_t * string,
 }
 
 
-
+//CLMULPoly64CL2
 uint64_t clmulcachelinehalflong(const void* rs, const uint64_t * string,
 		const size_t length) {
 	const __m128i * randomsource = (const __m128i *) rs;
@@ -868,7 +868,7 @@ uint64_t clmulcachelinehalflong(const void* rs, const uint64_t * string,
 }
 
 
-
+//CLMULPoly64CL1
 uint64_t clmulcachelinehalf(const void* rs, const uint64_t * string,
 		const size_t length) {
 	const __m128i * randomsource = (const __m128i *) rs;
