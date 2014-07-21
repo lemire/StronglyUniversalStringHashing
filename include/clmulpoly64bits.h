@@ -822,7 +822,37 @@ uint64_t clmulcachelinehalflong(const void* rs, const uint64_t * string,
 		R1 = _mm_xor_si128(R1,Q5);
 		acc = precompReduction64_si128(R1);
 	}
+	if(string + 7 < endstring) {
+		__m128i p1 = _mm_clmulepi64_si128(acc, key4, 0x00);
 
+		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
+		__m128i q1 = _mm_xor_si128(temp1,key1);
+		__m128i p2 = _mm_clmulepi64_si128(q1, q1, 0x01);
+
+
+		__m128i temp2 = _mm_lddqu_si128((__m128i *) (string + 2));
+		__m128i q2 = _mm_xor_si128(temp2,key2);
+		__m128i p3 = _mm_clmulepi64_si128(q2, q2, 0x01);
+
+		__m128i temp3 = _mm_lddqu_si128((__m128i *) (string + 4));
+		__m128i q3 = _mm_xor_si128(temp3,key3);
+		__m128i p4 = _mm_clmulepi64_si128(q3, q3, 0x01);
+
+
+		__m128i temp4 = _mm_lddqu_si128((__m128i *) (string + 6));
+		__m128i p5 = _mm_clmulepi64_si128(temp4, key4, 0x01);
+		__m128i p6 = _mm_slli_si128(temp4, 8);
+
+
+		__m128i Q1 = _mm_xor_si128(p1,p2);
+		__m128i Q2 = _mm_xor_si128(p3,p4);
+		__m128i Q3 = _mm_xor_si128(p5,p6);
+
+		__m128i r1 = _mm_xor_si128(Q1,Q2);
+		__m128i r2 = _mm_xor_si128(Q3,r1);
+		acc = precompReduction64_si128(r2);
+		string+=8;
+	}
 	for (;string + 1 < endstring;string+=2) {
 		__m128i p1 = _mm_clmulepi64_si128(acc, key4, 0x00);
 		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
