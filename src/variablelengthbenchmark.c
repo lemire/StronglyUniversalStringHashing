@@ -130,7 +130,7 @@ int main(int c, char ** arg) {
 	}
 	printf("\n");
 	fflush(stdout);
-	for(length = 2; length<=N; length *=2) {
+	for(length = 2; length<=N; length +=32) {
 		SHORTTRIALS = 40000000/length;
 		printf("%8d \t\t", length * 8);
 		hashFunction64 thisfunc64;
