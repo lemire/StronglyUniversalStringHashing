@@ -104,7 +104,6 @@ int main(int c, char ** arg) {
 	(void) (c);
 	(void) (arg);
 	const int N = 524288; // should be divisible by two!
-	const int HowManyRepeats = 3;
 	int i, k, j;
 	int length;
 	int elapsed;
@@ -113,10 +112,10 @@ int main(int c, char ** arg) {
 	const char * functionname;
 	ticks bef, aft;
 	struct timeval start, finish;
-	uint64_t randbuffer[4] __attribute__ ((aligned (16)));
+	uint64_t randbuffer[128] __attribute__ ((aligned (16)));
 	uint32_t sumToFoolCompiler = 0;
 	uint64_t * intstring = malloc(N*sizeof(uint64_t))  ; // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
-	for (i = 0; i < 4; ++i) {
+	for (i = 0; i < 128; ++i) {
 		randbuffer[i] = rand() | ((uint64_t)(rand()) << 32);
 	}
 	for (i = 0; i < N; ++i) {
