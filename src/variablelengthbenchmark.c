@@ -150,7 +150,7 @@ int main(int c, char ** arg) {
 					+ (finish.tv_usec - start.tv_usec));
 			printf(
 					" %f ",
-					(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * length));
+					(aft - bef) * 1.0 / (8.0 * SHORTTRIALS * length));
 		}
 		printf("\n");
 	}
