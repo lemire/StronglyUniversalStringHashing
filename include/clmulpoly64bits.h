@@ -812,4 +812,87 @@ uint64_t clmulcachelinehalf(const void* rs, const uint64_t * string,
 	return _mm_cvtsi128_si64(acc);
 }
 
+
+
+uint64_t clmulcachelinehalflong(const void* rs, const uint64_t * string,
+		const size_t length) {
+	const __m128i * randomsource = (const __m128i *) rs;
+	// 4 128-bit is a cache line!!!
+	__m128i key1 = _mm_lddqu_si128( randomsource);
+	__m128i key2 = _mm_lddqu_si128( randomsource + 1 );
+	__m128i key3 = _mm_lddqu_si128( randomsource + 2 );
+	__m128i key4 = _mm_lddqu_si128( randomsource + 3 );
+	__m128i key5 = _mm_lddqu_si128( randomsource + 4);
+	__m128i key6 = _mm_lddqu_si128( randomsource + 5 );
+	__m128i key7 = _mm_lddqu_si128( randomsource + 6 );
+	__m128i key8 = _mm_lddqu_si128( randomsource + 7 );
+
+	const uint64_t * const endstring = string + length;
+	__m128i acc = _mm_set_epi64x(0, *string);
+	++string;
+	for(;string + 15 < endstring;string+=16) {
+		__m128i p1 = _mm_clmulepi64_si128(acc, key4, 0x00);
+
+		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
+		__m128i q1 = _mm_xor_si128(temp1,key1);
+		__m128i p2 = _mm_clmulepi64_si128(q1, q1, 0x01);
+
+
+		__m128i temp2 = _mm_lddqu_si128((__m128i *) (string + 2));
+		__m128i q2 = _mm_xor_si128(temp2,key2);
+		__m128i p3 = _mm_clmulepi64_si128(q2, q2, 0x01);
+
+		__m128i temp3 = _mm_lddqu_si128((__m128i *) (string + 4));
+		__m128i q3 = _mm_xor_si128(temp3,key3);
+		__m128i p4 = _mm_clmulepi64_si128(q3, q3, 0x01);
+
+
+		__m128i temp4 = _mm_lddqu_si128((__m128i *) (string + 6));
+		__m128i q4 = _mm_xor_si128(temp4,key4);
+		__m128i p5 = _mm_clmulepi64_si128(q4, q4, 0x01);
+
+		__m128i temp5 = _mm_lddqu_si128((__m128i *) (string + 8));
+		__m128i q5 = _mm_xor_si128(temp5,key5);
+		__m128i p6 = _mm_clmulepi64_si128(q5, q5, 0x01);
+
+		__m128i temp6 = _mm_lddqu_si128((__m128i *) (string + 10));
+		__m128i q6 = _mm_xor_si128(temp6,key6);
+		__m128i p7 = _mm_clmulepi64_si128(q6, q6, 0x01);
+
+		__m128i temp7 = _mm_lddqu_si128((__m128i *) (string + 12));
+		__m128i q7 = _mm_xor_si128(temp7,key7);
+		__m128i p8 = _mm_clmulepi64_si128(q7, q7, 0x01);
+
+		__m128i temp8 = _mm_lddqu_si128((__m128i *) (string + 14));
+		__m128i p9 = _mm_clmulepi64_si128(temp8, key8, 0x01);
+		__m128i p10 = _mm_slli_si128(temp8, 8);
+
+
+		__m128i Q1 = _mm_xor_si128(p1,p2);
+		__m128i Q2 = _mm_xor_si128(p3,p4);
+		__m128i Q3 = _mm_xor_si128(p5,p6);
+		__m128i Q4 = _mm_xor_si128(p7,p8);
+		__m128i Q5 = _mm_xor_si128(p9,p10);
+
+		__m128i r1 = _mm_xor_si128(Q1,Q2);
+		__m128i r2 = _mm_xor_si128(Q3,Q4);
+		__m128i R1 = _mm_xor_si128(r1,r2);
+		R1 = _mm_xor_si128(R1,Q5);
+		acc = precompReduction64_si128(R1);
+	}
+
+	for (;string + 1 < endstring;string+=2) {
+		__m128i p1 = _mm_clmulepi64_si128(acc, key4, 0x00);
+		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
+		__m128i p2 = _mm_clmulepi64_si128(temp1, key4, 0x01);
+		__m128i p3 = _mm_slli_si128(temp1, 8);
+		acc = precompReduction64_si128(_mm_xor_si128(_mm_xor_si128(p1,p2),p3));
+	}
+	if(string<endstring){
+		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
+		acc = precompReduction64_si128(_mm_xor_si128(p1,_mm_set_epi64x(0, *string)));
+	}
+	return _mm_cvtsi128_si64(acc);
+}
+
 #endif /* CLMULPOLY64BITS_H_ */
