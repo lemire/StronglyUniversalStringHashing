@@ -85,8 +85,7 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
 			&fasthashGaloisFieldPoly64_16,
 			&halfhashGaloisFieldPoly64_8,
 			&halfhashGaloisFieldPoly64_16,
-	&clmulgarbage,&clmulgarbage2
-};
+			&clmulcacheline,&clmulcachelinehalf};
 
 const char* functionnames64[HowManyFunctions64] = {
 	"Google's City                       ",
@@ -96,8 +95,8 @@ const char* functionnames64[HowManyFunctions64] = {
 	"fasthashGaloisFieldPoly64 (16)      ",
 	"halfhashGaloisFieldPoly64 (8)       ",
 	"halfhashGaloisFieldPoly64 (16)      ",
-	"garbage                             ",
-	"garbage2                             ",
+	"clmulcacheline                      ",
+	"clmulcachelinehalf                  ",
 };
 
 int main(int c, char ** arg) {

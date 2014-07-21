@@ -695,8 +695,7 @@ uint64_t halfhashGaloisFieldPoly64_16(const void* rs, const uint64_t * string,
 }
 
 
-// PURE GARBAGE (just to test out ideas on the fly)
-uint64_t clmulgarbage(const void* rs, const uint64_t * string,
+uint64_t clmulcacheline(const void* rs, const uint64_t * string,
 		const size_t length) {
 	const __m128i * randomsource = (const __m128i *) rs;
 	// 4 128-bit is a cache line!!!
@@ -756,8 +755,7 @@ uint64_t clmulgarbage(const void* rs, const uint64_t * string,
 }
 
 
-// PURE GARBAGE (just to test out ideas on the fly)
-uint64_t clmulgarbage2(const void* rs, const uint64_t * string,
+uint64_t clmulcachelinehalf(const void* rs, const uint64_t * string,
 		const size_t length) {
 	const __m128i * randomsource = (const __m128i *) rs;
 	// 4 128-bit is a cache line!!!
@@ -797,8 +795,7 @@ uint64_t clmulgarbage2(const void* rs, const uint64_t * string,
 
 		__m128i r1 = _mm_xor_si128(Q1,Q2);
 		__m128i r2 = _mm_xor_si128(Q3,r1);
-		__m128i s1 = _mm_xor_si128(r1,r2);
-		acc = precompReduction64_si128(s1);
+		acc = precompReduction64_si128(r2);
 	}
 
 	for (;string + 1 < endstring;string+=2) {
