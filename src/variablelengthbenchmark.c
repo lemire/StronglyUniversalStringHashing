@@ -78,8 +78,9 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #define HowManyFunctions64 3
 
 
-hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,&halfhashGaloisFieldPoly64_16,
-	&clmulgarbage
+hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,&hashCity,&hashCity
+//,&halfhashGaloisFieldPoly64_16,
+	//&clmulgarbage
 };
 
 const char* functionnames64[HowManyFunctions64] = {
@@ -113,34 +114,35 @@ int main(int c, char ** arg) {
 	}
 	printf(
 			"Reporting the number of cycles per byte.\n");
-	printf("First number is input length in  bytes.");
+	printf("First number is input length in  bytes.\n\n\n");
 	for (i = 0; i < HowManyFunctions64; ++i) {
 		printf("%s ", functionnames64[i]);
 	}
 	printf("\n");
 	fflush(stdout);
-
-	for(length = 1; length<N; length *=2) {
+	for(length = 2; length<N; length *=2) {
 		SHORTTRIALS = 10000000/length;
 		printf("%d \t\t", N * 8);
 		hashFunction64 thisfunc64;
 		for (i = 0; i < HowManyFunctions64; ++i) {
-			thisfunc64 = funcArr64[i];
+			thisfunc64 =  funcArr64[i];
 			functionname = functionnames64[i];
+			printf("%s ", functionnames64[i]);
 			fflush(stdout);
 			gettimeofday(&start, 0);
 			bef = startRDTSC();
 			assert(N / 2 * 2 == N);
-			for (j = 0; j < SHORTTRIALS; ++j)
-				sumToFoolCompiler += thisfunc64(&randbuffer[0],
-						(uint64_t *) &intstring[0], N / 2);
+			//for (j = 0; j < SHORTTRIALS; ++j)
+			//thisfunc64
+				sumToFoolCompiler += hashCity(randbuffer,
+						intstring,2 );
 			aft = stopRDTSCP();
 			gettimeofday(&finish, 0);
 			elapsed = (1000000 * (finish.tv_sec - start.tv_sec)
 					+ (finish.tv_usec - start.tv_usec));
 			printf(
 					" %f ",
-					(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * N));
+					(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * length));
 		}
 		printf("\n");
 	}
