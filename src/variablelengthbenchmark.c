@@ -78,9 +78,9 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #define HowManyFunctions64 3
 
 
-hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,&hashCity,&hashCity
-//,&halfhashGaloisFieldPoly64_16,
-	//&clmulgarbage
+hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity
+,&halfhashGaloisFieldPoly64_16,
+	&clmulgarbage
 };
 
 const char* functionnames64[HowManyFunctions64] = {
@@ -93,7 +93,7 @@ const char* functionnames64[HowManyFunctions64] = {
 int main(int c, char ** arg) {
 	(void) (c);
 	(void) (arg);
-	const int N = 1024*1024*32; // should be divisible by two!
+	const int N = 524288; // should be divisible by two!
 	const int HowManyRepeats = 3;
 	int i, k, j;
 	int length;
@@ -105,7 +105,7 @@ int main(int c, char ** arg) {
 	struct timeval start, finish;
 	uint64_t randbuffer[4] __attribute__ ((aligned (16)));
 	uint32_t sumToFoolCompiler = 0;
-	uint64_t intstring[N] __attribute__ ((aligned (16))); // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
+	uint64_t * intstring = malloc(N*sizeof(uint64_t))  ; // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
 	for (i = 0; i < 4; ++i) {
 		randbuffer[i] = rand() | ((uint64_t)(rand()) << 32);
 	}
@@ -120,22 +120,19 @@ int main(int c, char ** arg) {
 	}
 	printf("\n");
 	fflush(stdout);
-	for(length = 2; length<N; length *=2) {
-		SHORTTRIALS = 10000000/length;
-		printf("%d \t\t", N * 8);
+	for(length = 2; length<=N; length *=2) {
+		SHORTTRIALS = 40000000/length;
+		printf("%8d \t\t", length * 8);
 		hashFunction64 thisfunc64;
 		for (i = 0; i < HowManyFunctions64; ++i) {
 			thisfunc64 =  funcArr64[i];
 			functionname = functionnames64[i];
-			printf("%s ", functionnames64[i]);
-			fflush(stdout);
 			gettimeofday(&start, 0);
 			bef = startRDTSC();
-			assert(N / 2 * 2 == N);
-			//for (j = 0; j < SHORTTRIALS; ++j)
-			//thisfunc64
-				sumToFoolCompiler += hashCity(randbuffer,
-						intstring,2 );
+			assert(length / 2 * 2 == length);
+			for (j = 0; j < SHORTTRIALS; ++j)
+				sumToFoolCompiler += thisfunc64(randbuffer,
+						intstring,length );
 			aft = stopRDTSCP();
 			gettimeofday(&finish, 0);
 			elapsed = (1000000 * (finish.tv_sec - start.tv_sec)
@@ -146,6 +143,7 @@ int main(int c, char ** arg) {
 		}
 		printf("\n");
 	}
+        free(intstring);
 	printf("# ignore this #%d\n", sumToFoolCompiler);
 
 }
