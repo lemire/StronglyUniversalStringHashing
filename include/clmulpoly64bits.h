@@ -635,10 +635,10 @@ uint64_t halfhashGaloisFieldPoly64_16(const void* rs, const uint64_t * string,
 					__m128i t2 = _mm_xor_si128(hkey2,temp2);
 					__m128i t3 = _mm_xor_si128(hkey3,temp3);
 					__m128i t4 = _mm_xor_si128(hkey4,temp4);
-					__m128i t5 = _mm_xor_si128(hkey5,temp);
-					__m128i t6 = _mm_xor_si128(hkey6,temp2);
-					__m128i t7 = _mm_xor_si128(hkey7,temp3);
-					__m128i t8 = _mm_xor_si128(hkey8,temp4);
+					__m128i t5 = _mm_xor_si128(hkey5,temp5);
+					__m128i t6 = _mm_xor_si128(hkey6,temp6);
+					__m128i t7 = _mm_xor_si128(hkey7,temp7);
+					__m128i t8 = _mm_xor_si128(hkey8,temp8);
 					__m128i clprod1 = _mm_clmulepi64_si128(t1,t1,0x10);
 					__m128i clprod2 = _mm_clmulepi64_si128(t2,t2,0x10);
 					__m128i clprod3 = _mm_clmulepi64_si128(t3,t3,0x10);
