@@ -130,7 +130,7 @@ int main(int c, char ** arg) {
 	}
 	printf("\n");
 	fflush(stdout);
-	for(length = 2; length<=N; length +=32) {
+	for(length = 2; length<=N; length+=8) {
 		SHORTTRIALS = 40000000/length;
 		printf("%8d \t\t", length * 8);
 		hashFunction64 thisfunc64;
@@ -140,9 +140,10 @@ int main(int c, char ** arg) {
 			gettimeofday(&start, 0);
 			bef = startRDTSC();
 			assert(length / 2 * 2 == length);
-			for (j = 0; j < SHORTTRIALS; ++j)
+			for (j = 0; j < SHORTTRIALS; ++j) {
 				sumToFoolCompiler += thisfunc64(randbuffer,
 						intstring,length );
+                        }
 			aft = stopRDTSCP();
 			gettimeofday(&finish, 0);
 			elapsed = (1000000 * (finish.tv_sec - start.tv_sec)
