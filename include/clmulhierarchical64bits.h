@@ -9,10 +9,9 @@
 #define CLMULHIERARCHICAL64BITS_H_
 
 
-
 // simplified version of hashGaloisFieldfast64halfunrolled_precomp for use with hashCLMULHierarchical
 uint64_t __clmulhalfscalarproduct(const void*  rs, const uint64_t *  string, const size_t length) {
-    assert(length / 2 * 2 == length); // if not, we need special handling (omitted)
+	assert(length / 4 * 4 == length); // if not, we need special handling (omitted)
     const uint64_t * const endstring = string + length;
     const uint64_t *  randomsource = ( const uint64_t * )rs;
     __m128i acc = _mm_set_epi64x(0,*(randomsource));
@@ -31,6 +30,43 @@ uint64_t __clmulhalfscalarproduct(const void*  rs, const uint64_t *  string, con
     }
     return precompReduction64(acc);
 }
+
+// simplified version of hashGaloisFieldfast64halfunrolled_precomp for use with hashCLMULHierarchical
+uint64_t __clmulhalfscalarproductwithtail(const void*  rs, const uint64_t *  string, const size_t length) {
+    const uint64_t * const endstring = string + length;
+    const uint64_t *  randomsource = ( const uint64_t * )rs;
+    __m128i acc = _mm_set_epi64x(0,*(randomsource));
+    randomsource += 1;
+    for(; string+3 < endstring; randomsource+=4,string+=4 ) {
+        const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource);
+        const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
+        const __m128i add1 =  _mm_xor_si128 (temp1,temp2);
+        const __m128i clprod1  = _mm_clmulepi64_si128( add1, add1, 0x10);
+        acc = _mm_xor_si128 (clprod1,acc);
+        const __m128i temp12 = _mm_lddqu_si128((__m128i * )(randomsource + 2));
+        const __m128i temp22 = _mm_lddqu_si128((__m128i *) (string+2));
+        const __m128i add12 =  _mm_xor_si128 (temp12,temp22);
+        const __m128i clprod12  = _mm_clmulepi64_si128( add12, add12, 0x10);
+        acc = _mm_xor_si128 (clprod12,acc);
+    }
+    if(string+1< endstring) {
+        const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource);
+        const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
+        const __m128i add1 =  _mm_xor_si128 (temp1,temp2);
+        const __m128i clprod1  = _mm_clmulepi64_si128( add1, add1, 0x10);
+        acc = _mm_xor_si128 (clprod1,acc);
+        randomsource+=2;
+        string+=2;
+    }
+    if(string < endstring) {
+        const __m128i temp1 = _mm_set_epi64x(0,*randomsource);
+        const __m128i temp2 = _mm_set_epi64x(0,*string);
+        const __m128i clprod1  = _mm_clmulepi64_si128( temp1, temp2, 0x00);
+        acc = _mm_xor_si128 (clprod1,acc);
+    }
+    return precompReduction64(acc);
+}
+
 // This should hash arbitrary strings fairly fast using no more than (256+1)*8 keys.
 uint64_t hashCLMULHierarchical(const void* rs, const uint64_t * string,
 		const size_t length) {
@@ -57,7 +93,7 @@ uint64_t hashCLMULHierarchical(const void* rs, const uint64_t * string,
 	uint64_t hashvalue = 0;
 	for(int j = 0; j<7; ++j) {
 		if(counters[j] > 0) {
-			hashvalue = __clmulhalfscalarproduct(rs+(m+1)*(j+1),hashtree[j],counters[j]);
+			hashvalue = __clmulhalfscalarproductwithtail(rs+(m+1)*(j+1),hashtree[j],counters[j]);
 			 hashtree[j+1][++counters[j+1]] = hashvalue;
 			 counters[j] = 0;
 		}
