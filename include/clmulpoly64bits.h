@@ -1,3 +1,7 @@
+/*
+ * These are polynomial hashing functions.
+ */
+
 #ifndef CLMULPOLY64BITS_H_
 #define CLMULPOLY64BITS_H_
 

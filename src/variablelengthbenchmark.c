@@ -74,16 +74,19 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #include "clmulhashfunctions32bits.h"
 #include "clmulhashfunctions64bits.h"
 #include "clmulpoly64bits.h"
+#include "clmulhierarchical64bits.h"
 
-#define HowManyFunctions64 5
+#define HowManyFunctions64 6
 
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashVHASH64,
+		&hashCLMULHierarchical,
 		    &hashCity,
 			&clmulcacheline,&clmulcachelinehalf,&clmulcachelinehalflong};
 
 const char* functionnames64[HowManyFunctions64] = {
 	"64-bit VHASH                        ",
+	"64-bit CLMUL hierarchical           ",
 	"Google's City                       ",
 	"clmulcacheline                      ",
 	"clmulcachelinehalf                  ",

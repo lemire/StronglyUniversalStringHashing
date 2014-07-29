@@ -1,4 +1,6 @@
-
+/*
+ * These are essentially scalar products functions.
+ */
 #ifndef CLMULHASFUNCTIONS32BITS_H_
 #define CLMULHASFUNCTIONS32BITS_H_
 #ifdef __PCLMUL__

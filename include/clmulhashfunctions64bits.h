@@ -1,8 +1,5 @@
 /*
- * clmulhashfunctions64bits.h
- *
- *  Created on: Jun 20, 2014
- *      Author: lemire
+ * These are essentially scalar products functions.
  */
 
 #ifndef CLMULHASHFUNCTIONS64BITS_H_
@@ -148,7 +145,6 @@ uint64_t hashGaloisFieldfast64half_precomp(const void*  rs, const uint64_t *  st
 
 // a 64-bit version with half the number of multiplications
 uint64_t hashGaloisFieldfast64halfunrolled(const void*  rs, const uint64_t *  string, const size_t length) {
-    assert(length / 2 * 2 == length); // if not, we need special handling (omitted)
     const uint64_t * const endstring = string + length;
     const uint64_t *  randomsource = ( const uint64_t * )rs;
     __m128i acc = _mm_set_epi64x(0,*(randomsource));
@@ -185,7 +181,6 @@ uint64_t hashGaloisFieldfast64halfunrolled(const void*  rs, const uint64_t *  st
 
 // a 64-bit version with half the number of multiplications
 uint64_t hashGaloisFieldfast64halfunrolled_precomp(const void*  rs, const uint64_t *  string, const size_t length) {
-    assert(length / 2 * 2 == length); // if not, we need special handling (omitted)
     const uint64_t * const endstring = string + length;
     const uint64_t *  randomsource = ( const uint64_t * )rs;
     __m128i acc = _mm_set_epi64x(0,*(randomsource));

@@ -4,7 +4,7 @@
 
 CFLAGS = -std=gnu99  -O2 -mavx  -march=native   
 
-all: clmulunit variablelengthbenchmark  benchmark City.o
+all: clmulunit variablelengthbenchmark  benchmark 
 
 benchmark: src/benchmark.c include/*.h City.o vmac.o 
 	$(CC) $(CFLAGS) -o benchmark src/benchmark.c City.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -IVHASH
