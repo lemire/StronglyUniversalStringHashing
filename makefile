@@ -2,7 +2,7 @@
 #
 .SUFFIXES: .cpp .o .c .h
 
-CFLAGS = -std=gnu99  -O2 -mavx  -march=native   
+CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native   
 
 all: clmulunit variablelengthbenchmark  benchmark 
 
