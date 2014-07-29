@@ -41,7 +41,7 @@ uint64_t hashVHASH64(const void*  rs, const uint64_t *  string, const size_t len
 		return vhash((unsigned char *)string, inputlengthinbytes, &tagl, &ctx);
 	} else {
 		size_t roundedlength = inputlengthinbytes/VMAC_NHBYTES*VMAC_NHBYTES;
-		vhash_update((unsigned char*)string, roundedlength, &ctx);
+		if(roundedlength > 0) vhash_update((unsigned char*)string, roundedlength, &ctx);
 		unsigned char lastBlock[VMAC_NHBYTES + 16];
 		unsigned char *alignedptr = (unsigned char*)(((uintptr_t)lastBlock+15) & ~ (uintptr_t)0x0F);
 		size_t remaining = inputlengthinbytes - roundedlength;
