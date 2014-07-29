@@ -57,7 +57,7 @@ uint64_t hashCLMULHierarchical(const void* rs, const uint64_t * string,
 	uint64_t hashvalue = 0;
 	for(int j = 0; j<7; ++j) {
 		if(counters[j] > 0) {
-			hashvalue = __clmulhalfscalarproduct(rs+(m+1)*(j+1),counters[j],m);
+			hashvalue = __clmulhalfscalarproduct(rs+(m+1)*(j+1),hashtree[j],counters[j]);
 			 hashtree[j+1][++counters[j+1]] = hashvalue;
 			 counters[j] = 0;
 		}
