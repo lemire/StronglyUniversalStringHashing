@@ -81,7 +81,7 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #include "clmulpoly64bits.h"
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 19
+#define HowManyFunctions64 10
 
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
@@ -91,10 +91,6 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
 		&hashGaloisFieldfast64_precomp,
 	&hashGaloisFieldfast64halfunrolled,
 	&hashGaloisFieldfast64halfunrolled_precomp,
-	&hashGaloisFieldPoly64,
-	&precomphashGaloisFieldPoly64,&fasthashGaloisFieldPoly64_2_noprecomp,
-	&fasthashGaloisFieldPoly64_2,&fasthashGaloisFieldPoly64_4,&fasthashGaloisFieldPoly64_8,
-	&fasthashGaloisFieldPoly64_16,&halfhashGaloisFieldPoly64_8,&halfhashGaloisFieldPoly64_16,
 	&clmulcacheline,&clmulcachelinehalf,&clmulcachelinehalflong
 };
 
@@ -112,15 +108,6 @@ const char* functionnames64[HowManyFunctions64] = {
 	"GFMultilinear (64-bit regular pre)  ",
 	"GFMultilinear (64-bit half, unrol)  ",
 	"GFMultilinear(64-bit half,unrol,pre)",
-	"hashGaloisFieldPoly64               ",
-	"hashGaloisFieldPoly64  (precomp)    ",
-	"fasthashGaloisFieldPoly64 (nopre 2) ",
-	"fasthashGaloisFieldPoly64 (2)       ",
-	"fasthashGaloisFieldPoly64 (4)       ",
-	"fasthashGaloisFieldPoly64 (8)       ",
-	"fasthashGaloisFieldPoly64 (16)      ",
-	"halfhashGaloisFieldPoly64 (8)       ",
-	"halfhashGaloisFieldPoly64 (16)      ",
 	"clmulcacheline                      ",
 	"clmulcachelinehalf                  ",
 	"clmulcachelinehalflong              ",
