@@ -164,7 +164,9 @@ uint64_t hashCLMULHierarchical128(const void* rs, const uint64_t * string,
 
 // just two levels like VHASH
 // at low level, we use multilinear that we aggregate using
-// a polynomial hash
+// a CLMUL polynomial hash
+// this uses 128 + 1 keys.(129*8 random bytes or about 1KB)
+// *UNFORTUNATELY* this has poor universality for long strings.
 uint64_t hashCLMUL2L(const void* rs, const uint64_t * string,
 		const size_t length) {
 	if (length == 0)
@@ -176,7 +178,7 @@ uint64_t hashCLMUL2L(const void* rs, const uint64_t * string,
 	__m128i tkey1 = _mm_set_epi64x(0, *(randomsource));
 	__m128i acc = _mm_set_epi64x(0, *string);
 
-	if ( m < length) {// long strings
+	if (m < length) { // long strings
 		size_t t = 0;
 		__m128i tkey2 = precompReduction64_si128(
 				_mm_clmulepi64_si128(tkey1, tkey1, 0x00));
@@ -193,24 +195,27 @@ uint64_t hashCLMUL2L(const void* rs, const uint64_t * string,
 			acc = _mm_xor_si128(acc, _mm_srli_si128(temp, 8));
 			acc = precompReduction64_si128(acc);
 		}
-		if(t+m < length) {
+		if (t + m < length) {
 			__m128i temp = _mm_set_epi64x(
 					__clmulhalfscalarproduct(rs64, string + t, m),
-					__clmulhalfscalarproductwithtail(rs64, string + t + m, length - t - m));
+					__clmulhalfscalarproductwithtail(rs64, string + t + m,
+							length - t - m));
 			acc = _mm_clmulepi64_si128(acc, key, 0x10);
 			const __m128i clprod1 = _mm_clmulepi64_si128(temp, key, 0x00);
 			acc = _mm_xor_si128(clprod1, acc);
 			acc = _mm_xor_si128(acc, _mm_srli_si128(temp, 8));
 			acc = precompReduction64_si128(acc);
-		} else  {
-			const __m128i temp = _mm_set_epi64x(0, __clmulhalfscalarproductwithtail(rs64, string + t + m, length - t - m));
+		} else {
+			const __m128i temp = _mm_set_epi64x(0,
+					__clmulhalfscalarproductwithtail(rs64, string + t + m,
+							length - t - m));
 			const __m128i multi = _mm_clmulepi64_si128(acc, tkey1, 0x00);
 			acc = precompReduction64_si128(multi);
 			acc = _mm_xor_si128(acc, temp);
 		}
 		return _mm_cvtsi128_si64(acc);
-	} else {// short strings
-		return __clmulhalfscalarproductwithtail(rs64, string , length);
+	} else { // short strings
+		return __clmulhalfscalarproductwithtail(rs64, string, length);
 	}
 }
 
