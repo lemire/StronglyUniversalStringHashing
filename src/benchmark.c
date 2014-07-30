@@ -83,7 +83,7 @@ static __inline__ ticks fancystopRDTSCP(void) {
 
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 12
+#define HowManyFunctions64 13
 
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
@@ -92,6 +92,7 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
 		&hashVHASH64,
 		&hashCLMULHierarchical128,
 		&hashCLMULHierarchical256,
+	    &hashCLMUL2L,
 		&hashGaloisFieldfast64_precomp,
 	&hashGaloisFieldfast64halfunrolled,
 	&hashGaloisFieldfast64halfunrolled_precomp,
@@ -111,6 +112,7 @@ const char* functionnames64[HowManyFunctions64] = {
 	"64-bit VHASH                        ",
 	"64-bit CLMUL hierarchical (128)     ",
 	"64-bit CLMUL hierarchical (256)     ",
+	"64-bit CLMUL 2L                     ",
 	"GFMultilinear (64-bit regular pre)  ",
 	"GFMultilinear (64-bit half, unrol)  ",
 	"GFMultilinear(64-bit half,unrol,pre)",
