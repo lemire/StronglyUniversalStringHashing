@@ -82,7 +82,7 @@ static __inline__ ticks fancystopRDTSCP(void) {
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashVHASH64,
 		&hashCLMULHierarchical128,
                 &hashCLMULHierarchical256,
-                &hashCLMUL2L,
+                &hashCLMUL2Level,
 		    &hashCity,
 			&clmulcacheline,&clmulcachelinehalf,&clmulcachelinehalflong};
 
