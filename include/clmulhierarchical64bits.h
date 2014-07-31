@@ -228,7 +228,7 @@ uint64_t hashCLMULHierarchical128(const void* rs, const uint64_t * string,
 // at low level, we use multilinear that we aggregate using
 // a CLMUL polynomial hash
 // this uses 128 + 1 keys.(129*8 random bytes or about 1KB)
-// *WARNING*  this is highly experimental
+// *WARNING*  this is highly experimental TODO: validate the result
 uint64_t hashCLMUL2Level(const void* rs, const uint64_t * string,
 		const size_t length) {
 	if (length == 0)
@@ -239,7 +239,7 @@ uint64_t hashCLMUL2Level(const void* rs, const uint64_t * string,
 	// we should check that polyvalue is non-zero
 	const __m128i * rs64 = (__m128i *) rs + 1;
 
-	// To handle variable length inputs, we should XOR the result with
+	// TODO: To handle variable length inputs, we should XOR the result with
 	// the hash value of the length
 
 	if (m < length) { // long strings
@@ -257,11 +257,11 @@ uint64_t hashCLMUL2Level(const void* rs, const uint64_t * string,
 			acc = _mm_and_si128(acc,h1);
 		}
 		acc = mod127fromlazy(acc);
-		return _mm_cvtsi128_si64(acc);// This is not correct, we need to hash it down (like VHASH)
+		return _mm_cvtsi128_si64(acc);// TODO: This is not correct, we need to hash it down (like VHASH)
 	} else { // short strings
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreduction(rs64, string, length);
 		acc = mod127fromlazy(acc);
-		return _mm_cvtsi128_si64(acc);// This is not correct, we need to hash it down (like VHASH)
+		return _mm_cvtsi128_si64(acc);// TODO: This is not correct, we need to hash it down (like VHASH)
 	}
 }
 
