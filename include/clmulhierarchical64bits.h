@@ -257,11 +257,11 @@ uint64_t hashCLMUL2Level(const void* rs, const uint64_t * string,
 			acc = _mm_and_si128(acc,h1);
 		}
 		acc = mod127fromlazy(acc);
-		return _mm_cvtsi128_si64(acc);// not sure that this is what we want to do here
+		return _mm_cvtsi128_si64(acc);// This is not correct, we need to hash it down (like VHASH)
 	} else { // short strings
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreduction(rs64, string, length);
 		acc = mod127fromlazy(acc);
-		return _mm_cvtsi128_si64(acc);// not sure that this is what we want to do here
+		return _mm_cvtsi128_si64(acc);// This is not correct, we need to hash it down (like VHASH)
 	}
 }
 
