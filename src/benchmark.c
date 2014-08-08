@@ -165,6 +165,15 @@ const char* functionnames64[HowManyFunctions64] = {
 
 #endif
 
+void force_computation( uint32_t forcedValue) {
+         // make sure forcedValue has to be computed, but avoid output (unless unlucky)
+         if (forcedValue % 277387 == 17) 
+                 printf("wow, what a coincidence! (in benchmark.c)");
+	 //printf("# ignore this #%d\n", force_computation);
+}
+
+
+
 int main(int c, char ** arg) {
 	(void) (c);
 	(void) (arg);
@@ -216,7 +225,7 @@ int main(int c, char ** arg) {
 					"CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",
 					(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * N),
 					(4.0 * SHORTTRIALS * N) / (1000. * elapsed));
-			printf("# ignore this #%d\n", sumToFoolCompiler);
+                        force_computation( sumToFoolCompiler);
 
 		}
 		printf("\n");
@@ -239,12 +248,12 @@ int main(int c, char ** arg) {
 					"CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",
 					(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * N),
 					(4.0 * SHORTTRIALS * N) / (1000. * elapsed));
-			printf("# ignore this #%d\n", sumToFoolCompiler);
+			force_computation( sumToFoolCompiler);
 
 		}
 		printf("\n");
 	}
-	printf("# ignore this #%d\n", sumToFoolCompiler);
+	force_computation( sumToFoolCompiler); // printf("# ignore this #%d\n", sumToFoolCompiler);
 
 }
 
