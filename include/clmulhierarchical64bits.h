@@ -33,9 +33,7 @@ static __m128i __clmulhalfscalarproductwithoutreduction(const __m128i * randomso
 	assert((length & 3) == 0); // if not, we need special handling (omitted)
 	const uint64_t * const endstring = string + length;
 	__m128i acc = _mm_setzero_si128();
-
-
-	// we process we expect length = 128
+	// we expect length = 128
 	for (; string + 3 < endstring; randomsource += 2, string += 4) {
 		const __m128i temp1 = _mm_load_si128( randomsource);
 		const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
