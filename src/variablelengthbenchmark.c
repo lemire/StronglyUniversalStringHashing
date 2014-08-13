@@ -120,7 +120,7 @@ int main(int c, char ** arg) {
 	}
 	printf("\n");
 	fflush(stdout);
-	for(length = 2; length<=N; length+=8) {
+	for(length = 1; length<=N; length+=(length<8?1:8)) {
 		SHORTTRIALS = 40000000/length;
 		printf("%8d \t\t", length * 8);
 		hashFunction64 thisfunc64;
@@ -129,7 +129,7 @@ int main(int c, char ** arg) {
 			functionname = functionnames64[i];
 			gettimeofday(&start, 0);
 			bef = startRDTSC();
-			assert(length / 2 * 2 == length);
+			//assert(length / 2 * 2 == length);
 			for (j = 0; j < SHORTTRIALS; ++j) {
 				sumToFoolCompiler += thisfunc64(randbuffer,
 						intstring,length );
