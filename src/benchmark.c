@@ -89,6 +89,7 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
 	&hashVHASH64,
 	&hashCLMUL2Level,
 	&hashGaloisFieldfast64_precomp_unroll,
+	//&hashGaloisFieldfast64_precomp_unroll,
 	&hashGaloisFieldfast64halfunrolled_precomp,
 };
 
