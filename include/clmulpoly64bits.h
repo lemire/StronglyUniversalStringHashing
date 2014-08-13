@@ -137,21 +137,40 @@ uint64_t fuck(const void* rs, const uint64_t * string,
 		string += 8;
 	}
 	assert(string+7>=endstring);
-	for (; string + 1 < endstring; string += 2) {
+	if (string + 3 < endstring) {
+		__m128i p1 = _mm_clmulepi64_si128(acc, key2, 0x00);
+
+		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
+		__m128i q1 = _mm_xor_si128(temp1, key1);
+		__m128i p2 = _mm_clmulepi64_si128(q1, q1, 0x01);
+
+		__m128i temp2 = _mm_lddqu_si128((__m128i *) (string + 2));
+		__m128i p3 = _mm_clmulepi64_si128(temp2, key2, 0x01);
+		__m128i p4 = _mm_slli_si128(temp2, 8);
+
+		__m128i Q1 = _mm_xor_si128(p1, p2);
+		__m128i Q2 = _mm_xor_si128(p3, p4);
+
+		__m128i r1 = _mm_xor_si128(Q1, Q2);
+		acc = precompReduction64_si128(r1);
+		string += 4;
+	}
+	assert(string+3>=endstring);
+	if(string + 1 < endstring) {
 		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
 		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
 		__m128i p2 = _mm_clmulepi64_si128(temp1, key1, 0x01);
 		__m128i p3 = _mm_slli_si128(temp1, 8);
 		acc = precompReduction64_si128(
 				_mm_xor_si128(_mm_xor_si128(p1, p2), p3));
+		string += 2;
 	}
 	assert(string+1>=endstring);
-/*
 	if (string < endstring) {
 		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
 		acc = precompReduction64_si128(
 				_mm_xor_si128(p1, _mm_loadl_epi64((__m128i  const *) string)));
-	}*/
+	}
 	return _mm_cvtsi128_si64(acc);
 
 }
@@ -263,16 +282,35 @@ uint64_t CLMULPoly64CL2(const void* rs, const uint64_t * string,
 		string += 8;
 	}
 	assert(string+7>=endstring);
-	for (; string + 1 < endstring; string += 2) {
+	if (string + 3 < endstring) {
+		__m128i p1 = _mm_clmulepi64_si128(acc, key2, 0x00);
+
+		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
+		__m128i q1 = _mm_xor_si128(temp1, key1);
+		__m128i p2 = _mm_clmulepi64_si128(q1, q1, 0x01);
+
+		__m128i temp2 = _mm_lddqu_si128((__m128i *) (string + 2));
+		__m128i p3 = _mm_clmulepi64_si128(temp2, key2, 0x01);
+		__m128i p4 = _mm_slli_si128(temp2, 8);
+
+		__m128i Q1 = _mm_xor_si128(p1, p2);
+		__m128i Q2 = _mm_xor_si128(p3, p4);
+
+		__m128i r1 = _mm_xor_si128(Q1, Q2);
+		acc = precompReduction64_si128(r1);
+		string += 4;
+	}
+	assert(string+3>=endstring);
+	if(string + 1 < endstring) {
 		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
 		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
 		__m128i p2 = _mm_clmulepi64_si128(temp1, key1, 0x01);
 		__m128i p3 = _mm_slli_si128(temp1, 8);
 		acc = precompReduction64_si128(
 				_mm_xor_si128(_mm_xor_si128(p1, p2), p3));
+		string += 2;
 	}
 	assert(string+1>=endstring);
-
 	if (string < endstring) {
 		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
 		acc = precompReduction64_si128(
