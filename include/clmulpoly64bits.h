@@ -32,158 +32,10 @@ void precomputePowers(uint64_t randomp, __m128i * out) {
 
 
 
+
+
 //CLMULPoly64CL2
 uint64_t CLMULPoly64CL2(const void* rs, const uint64_t * string,
-		const size_t length) {
-	const __m128i * randomsource = (const __m128i *) rs;
-	// 4 128-bit is a cache line!!!
-	assert(((uintptr_t) rs & 15) == 0); // we expect cache line alignment for the keys
-	if (length == 0)
-		return 0; // duh!
-
-//	if p is some 64-bit key, the numbered keys below should contain
-//	its reduced powers as follows
-//	key1=(p,p**2)
-//	key2=(p**3,p**4)
-//	...
-//	and so on
-
-	const __m128i key1 = _mm_load_si128(randomsource);
-	const __m128i key2 = _mm_load_si128(randomsource + 1);
-	const __m128i key3 = _mm_load_si128(randomsource + 2);
-	const __m128i key4 = _mm_load_si128(randomsource + 3);
-
-	const uint64_t * const endstring = string + length;
-	__m128i acc;
-	if((length & (length - 1)) == 0) {// power of two
-		acc= _mm_setzero_si128();
-	} else {
-	  acc= _mm_loadl_epi64((__m128i  const *) string);
-	  ++string;
-	}
-	if (string + 15 < endstring) {
-		const __m128i key5 = _mm_load_si128(randomsource + 4);
-		const __m128i key6 = _mm_load_si128(randomsource + 5);
-		const __m128i key7 = _mm_load_si128(randomsource + 6);
-		const __m128i key8 = _mm_load_si128(randomsource + 7);
-
-		for (; string + 15 < endstring; string += 16) {
-			__m128i p1 = _mm_clmulepi64_si128(acc, key8, 0x00);
-
-			__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
-			__m128i q1 = _mm_xor_si128(temp1, key1);
-			__m128i p2 = _mm_clmulepi64_si128(q1, q1, 0x01);
-
-			__m128i temp2 = _mm_lddqu_si128((__m128i *) (string + 2));
-			__m128i q2 = _mm_xor_si128(temp2, key2);
-			__m128i p3 = _mm_clmulepi64_si128(q2, q2, 0x01);
-
-			__m128i temp3 = _mm_lddqu_si128((__m128i *) (string + 4));
-			__m128i q3 = _mm_xor_si128(temp3, key3);
-			__m128i p4 = _mm_clmulepi64_si128(q3, q3, 0x01);
-
-			__m128i temp4 = _mm_lddqu_si128((__m128i *) (string + 6));
-			__m128i q4 = _mm_xor_si128(temp4, key4);
-			__m128i p5 = _mm_clmulepi64_si128(q4, q4, 0x01);
-
-			__m128i temp5 = _mm_lddqu_si128((__m128i *) (string + 8));
-			__m128i q5 = _mm_xor_si128(temp5, key5);
-			__m128i p6 = _mm_clmulepi64_si128(q5, q5, 0x01);
-
-			__m128i temp6 = _mm_lddqu_si128((__m128i *) (string + 10));
-			__m128i q6 = _mm_xor_si128(temp6, key6);
-			__m128i p7 = _mm_clmulepi64_si128(q6, q6, 0x01);
-
-			__m128i temp7 = _mm_lddqu_si128((__m128i *) (string + 12));
-			__m128i q7 = _mm_xor_si128(temp7, key7);
-			__m128i p8 = _mm_clmulepi64_si128(q7, q7, 0x01);
-
-			__m128i temp8 = _mm_lddqu_si128((__m128i *) (string + 14));
-			__m128i p9 = _mm_clmulepi64_si128(temp8, key8, 0x01);
-			__m128i p10 = _mm_slli_si128(temp8, 8);
-
-			__m128i Q1 = _mm_xor_si128(p1, p2);
-			__m128i Q2 = _mm_xor_si128(p3, p4);
-			__m128i Q3 = _mm_xor_si128(p5, p6);
-			__m128i Q4 = _mm_xor_si128(p7, p8);
-			__m128i Q5 = _mm_xor_si128(p9, p10);
-
-			__m128i r1 = _mm_xor_si128(Q1, Q2);
-			__m128i r2 = _mm_xor_si128(Q3, Q4);
-			__m128i R1 = _mm_xor_si128(r1, r2);
-			R1 = _mm_xor_si128(R1, Q5);
-			acc = precompReduction64_si128(R1);
-		}
-	}
-	if (string + 7 < endstring) {
-		__m128i p1 = _mm_clmulepi64_si128(acc, key4, 0x00);
-
-		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
-		__m128i q1 = _mm_xor_si128(temp1, key1);
-		__m128i p2 = _mm_clmulepi64_si128(q1, q1, 0x01);
-
-		__m128i temp2 = _mm_lddqu_si128((__m128i *) (string + 2));
-		__m128i q2 = _mm_xor_si128(temp2, key2);
-		__m128i p3 = _mm_clmulepi64_si128(q2, q2, 0x01);
-
-		__m128i temp3 = _mm_lddqu_si128((__m128i *) (string + 4));
-		__m128i q3 = _mm_xor_si128(temp3, key3);
-		__m128i p4 = _mm_clmulepi64_si128(q3, q3, 0x01);
-
-		__m128i temp4 = _mm_lddqu_si128((__m128i *) (string + 6));
-		__m128i p5 = _mm_clmulepi64_si128(temp4, key4, 0x01);
-		__m128i p6 = _mm_slli_si128(temp4, 8);
-
-		__m128i Q1 = _mm_xor_si128(p1, p2);
-		__m128i Q2 = _mm_xor_si128(p3, p4);
-		__m128i Q3 = _mm_xor_si128(p5, p6);
-
-		__m128i r1 = _mm_xor_si128(Q1, Q2);
-		__m128i r2 = _mm_xor_si128(Q3, r1);
-		acc = precompReduction64_si128(r2);
-		string += 8;
-	}
-	assert(string+7>=endstring);
-	if (string + 3 < endstring) {
-		__m128i p1 = _mm_clmulepi64_si128(acc, key2, 0x00);
-
-		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
-		__m128i q1 = _mm_xor_si128(temp1, key1);
-		__m128i p2 = _mm_clmulepi64_si128(q1, q1, 0x01);
-
-		__m128i temp2 = _mm_lddqu_si128((__m128i *) (string + 2));
-		__m128i p3 = _mm_clmulepi64_si128(temp2, key2, 0x01);
-		__m128i p4 = _mm_slli_si128(temp2, 8);
-
-		__m128i Q1 = _mm_xor_si128(p1, p2);
-		__m128i Q2 = _mm_xor_si128(p3, p4);
-
-		__m128i r1 = _mm_xor_si128(Q1, Q2);
-		acc = precompReduction64_si128(r1);
-		string += 4;
-	}
-	assert(string+3>=endstring);
-	if(string + 1 < endstring) {
-		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
-		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
-		__m128i p2 = _mm_clmulepi64_si128(temp1, key1, 0x01);
-		__m128i p3 = _mm_slli_si128(temp1, 8);
-		acc = precompReduction64_si128(
-				_mm_xor_si128(_mm_xor_si128(p1, p2), p3));
-		string += 2;
-	}
-	assert(string+1>=endstring);
-	if (string < endstring) {
-		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
-		acc = precompReduction64_si128(
-				_mm_xor_si128(p1, _mm_loadl_epi64((__m128i  const *) string)));
-	}
-	return _mm_cvtsi128_si64(acc);
-}
-
-
-//CLMULPoly64CL2
-uint64_t CLMULPoly64CL2Test(const void* rs, const uint64_t * string,
 		const size_t length) {
 	const __m128i * randomsource = (const __m128i *) rs;
 	// 4 128-bit is a cache line!!!
@@ -293,7 +145,6 @@ uint64_t CLMULPoly64CL2Test(const void* rs, const uint64_t * string,
 		acc = precompReduction64_si128(r2);
 		string += 8;
 	}
-	assert(string+7>=endstring);
 	if (string + 3 < endstring) {
 		__m128i p1 = _mm_clmulepi64_si128(acc, key2, 0x00);
 
@@ -312,7 +163,6 @@ uint64_t CLMULPoly64CL2Test(const void* rs, const uint64_t * string,
 		acc = precompReduction64_si128(r1);
 		string += 4;
 	}
-	assert(string+3>=endstring);
 	if(string + 1 < endstring) {
 		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
 		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
@@ -321,13 +171,6 @@ uint64_t CLMULPoly64CL2Test(const void* rs, const uint64_t * string,
 		acc = precompReduction64_si128(
 				_mm_xor_si128(_mm_xor_si128(p1, p2), p3));
 		string += 2;
-	}
-	assert(string+1>=endstring);
-	if (string < endstring) {
-		assert(1==0);
-		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
-		acc = precompReduction64_si128(
-				_mm_xor_si128(p1, _mm_loadl_epi64((__m128i  const *) string)));
 	}
 	return _mm_cvtsi128_si64(acc);
 }
