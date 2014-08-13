@@ -14,6 +14,7 @@ uint64_t CLMULPoly64CL2(const void* rs, const uint64_t * string,
 		const size_t length) {
 	const __m128i * randomsource = (const __m128i *) rs;
 	// 4 128-bit is a cache line!!!
+	assert(((uintptr_t) rs & 15) == 0);// we expect cache line alignment for the keys
 	__m128i key1 = _mm_lddqu_si128(randomsource);
 	__m128i key2 = _mm_lddqu_si128(randomsource + 1);
 	__m128i key3 = _mm_lddqu_si128(randomsource + 2);
