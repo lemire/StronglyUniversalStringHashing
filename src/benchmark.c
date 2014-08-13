@@ -89,7 +89,6 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
 	&hashVHASH64,
 	&hashCLMUL2Level,
 	&hashGaloisFieldfast64_precomp_unroll,
-	//&hashGaloisFieldfast64_precomp_unroll,
 	&hashGaloisFieldfast64halfunrolled_precomp,
 };
 
@@ -110,8 +109,8 @@ const char* functionnames64[HowManyFunctions64] = {
 };
 
 const char* functionnames[HowManyFunctions] = {
-	"GFMultilinear   (strongly universal)",
-	"GFMultilinearhalf   (str. universal)",
+	"GFMultilinear   (poorly optimized)  ",
+	"GFMultilinearhalf   (optimized)     ",
 	"Multilinear     (strongly universal)",
 	"Multilinear2x2  (strongly universal)",
 	"Multilinearhalf (strongly universal)",
