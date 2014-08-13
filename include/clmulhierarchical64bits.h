@@ -94,7 +94,7 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * 
 // just two levels like VHASH
 // at low level, we use a half-multiplication multilinear that we aggregate using
 // a CLMUL polynomial hash
-// this uses 128 + 1 keys.(129*8 random bytes or about 1KB)
+// this uses 128 + 2 keys.(130*8 random bytes or about 1KB)
 uint64_t hashCLMUL2Level(const void* rs, const uint64_t * string,
 		const size_t length) {
 	if (length == 0)
@@ -112,20 +112,26 @@ uint64_t hashCLMUL2Level(const void* rs, const uint64_t * string,
 		__m128i  acc =  __clmulhalfscalarproductwithoutreduction(rs64, string,m);
 		size_t t = m;
 		for (; t +  m <= length; t +=  m) {
+			// we compute something like
+			// acc+= polyvalue * acc + h1
 			acc =  mul128by128to128_lazymod127(polyvalue,acc);
 			__m128i h1 =  __clmulhalfscalarproductwithoutreduction(rs64, string+t,m);
-			acc = _mm_and_si128(acc,h1);
+			acc = _mm_xor_si128(acc,h1);
 		}
 		int remain = length - t;
 		if(remain > 0) {
+			// we compute something like
+			// acc+= polyvalue * acc + h1
 			acc =  mul128by128to128_lazymod127(polyvalue,acc);
 			__m128i h1 =  __clmulhalfscalarproductwithtailwithoutreduction(rs64, string+t,remain);
-			acc = _mm_and_si128(acc,h1);
+			acc = _mm_xor_si128(acc,h1);
 		}
-		return length ^ simple128to64hash(acc, _mm_load_si128(rs64 + m128neededperblock + 1));
+		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
+		return length ^ simple128to64hash(acc,finalkey );
 	} else { // short strings
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreduction(rs64, string, length);
-		return length ^ simple128to64hash(acc, _mm_load_si128(rs64 + m128neededperblock + 1));
+		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
+		return length ^ simple128to64hash(acc, finalkey);
 	}
 }
 
