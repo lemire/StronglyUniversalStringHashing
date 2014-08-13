@@ -19,6 +19,9 @@
 #define IACA_END
 #endif
 
+
+
+
 // multiplication with lazy reduction
 // assumes that the two highest bits of one of the inputs are zero
 // returns a lazy reduction
@@ -156,6 +159,17 @@ __m128i precompReduction64_si128( __m128i A) {
 uint64_t precompReduction64( __m128i A) {
 	return _mm_cvtsi128_si64(precompReduction64_si128(A));
 }
+
+
+// hashing the bits in value using the keys key1 and key2 (only the first 64 bits of key2 are used).
+// This is basically (a xor k1) * (b xor k2) mod p
+//
+uint64_t simple128to64hash( __m128i value, __m128i key) {
+    const __m128i add =  _mm_xor_si128 (value,key);
+    const __m128i clprod1  = _mm_clmulepi64_si128( add, add, 0x10);
+	return precompReduction64(clprod1);
+}
+
 
 __m128i barrettWithoutPrecomputation16_si128( __m128i A) {
 	///http://www.jjj.de/mathdata/minweight-primpoly.txt

@@ -76,25 +76,19 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #include "clmulpoly64bits.h"
 #include "clmulhierarchical64bits.h"
 
-#define HowManyFunctions64 8
+#define HowManyFunctions64 5
 
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashVHASH64,
-		&hashCLMULHierarchical128,
-                &hashCLMULHierarchical256,
                 &hashCLMUL2Level,
-		    &hashCity,
-			&clmulcacheline,&clmulcachelinehalf,&clmulcachelinehalflong};
+		    &hashCity,&CLMULPoly64CL1,&CLMULPoly64CL2};
 
 const char* functionnames64[HowManyFunctions64] = {
-	"64-bit VHASH                        ",
-	"64-bit CLMUL hierarchical (128)     ",
-	"64-bit CLMUL hierarchical (256)     ",
-	"64-bit CLMUL 2L                     ",
-	"Google's City                       ",
-	"clmulcacheline                      ",
-	"clmulcachelinehalf                  ",
-	"clmulcachelinehalflong              ",
+	"64-bit VHASH        ",
+	"64-bit CLMUL 2L     ",
+	"Google's City       ",
+	"CLMULPoly64CL1      ",
+	"CLMULPoly64CL2      ",
 };
 
 int main(int c, char ** arg) {
@@ -119,8 +113,9 @@ int main(int c, char ** arg) {
 		intstring[i] =  rand() | ((uint64_t)(rand()) << 32);
 	}
 	printf(
-			"Reporting the number of cycles per byte.\n");
-	printf("First number is input length in  bytes.\n\n\n");
+			"#Reporting the number of cycles per byte.\n");
+	printf("#First number is input length in  bytes.\n");
+	printf("#          ");
 	for (i = 0; i < HowManyFunctions64; ++i) {
 		printf("%s ", functionnames64[i]);
 	}

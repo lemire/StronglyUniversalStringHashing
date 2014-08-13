@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <assert.h>
-
+#include <unistd.h>
 #ifdef __AVX__
 #define __PCLMUL__ 1
 #endif 
@@ -81,22 +81,15 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #include "clmulpoly64bits.h"
 #include "clmulhierarchical64bits.h"
 
-
 #define HowManyFunctions 12
-#define HowManyFunctions64 13
-
+#define HowManyFunctions64 7
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
-		&hashMMH_NonPyramidal,
-		&hashNH64,
-		&hashVHASH64,
-		&hashCLMULHierarchical128,
-		&hashCLMULHierarchical256,
-	    &hashCLMUL2Level,
-		&hashGaloisFieldfast64_precomp,
-	&hashGaloisFieldfast64halfunrolled,
+		&CLMULPoly64CL1,&CLMULPoly64CL2,
+	&hashVHASH64,
+	&hashCLMUL2Level,
+	&hashGaloisFieldfast64_precomp_unroll,
 	&hashGaloisFieldfast64halfunrolled_precomp,
-	&clmulcacheline,&clmulcachelinehalf,&clmulcachelinehalflong
 };
 
 hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
@@ -107,18 +100,12 @@ hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
 
 const char* functionnames64[HowManyFunctions64] = {
 	"Google's City                       ",
-	"Non-pyramidal MMH                   ",
-	"Simple NH64 (like VMAC)             ",
+	"CLMULPoly64CL1                      ",
+	"CLMULPoly64CL2                      ",
 	"64-bit VHASH                        ",
-	"64-bit CLMUL hierarchical (128)     ",
-	"64-bit CLMUL hierarchical (256)     ",
 	"64-bit CLMUL 2L                     ",
-	"GFMultilinear (64-bit regular pre)  ",
-	"GFMultilinear (64-bit half, unrol)  ",
-	"GFMultilinear(64-bit half,unrol,pre)",
-	"clmulcacheline                      ",
-	"clmulcachelinehalf                  ",
-	"clmulcachelinehalflong              ",
+	"GFMultilinear                       ",
+	"GFMultilinear (half multiplication) ",
 
 };
 
@@ -145,7 +132,8 @@ hashFunction funcArr[HowManyFunctions] = { &hashMultilinear,
 		&hashMultilinear2by2, &hashMultilinearhalf, &hashMultilineardouble,
 		&hashNH, &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,
 		&pyramidal_Multilinear };
-hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity, &hashMMH_NonPyramidal, &hashNH64 };
+hashFunction64 funcArr64[HowManyFunctions64] = { &hashCity,
+		&hashMMH_NonPyramidal, &hashNH64 };
 
 const char* functionnames[HowManyFunctions] = {
 		"Multilinear  (strongly universal)",
@@ -165,21 +153,22 @@ const char* functionnames64[HowManyFunctions64] = {
 
 #endif
 
-void force_computation( uint32_t forcedValue) {
-         // make sure forcedValue has to be computed, but avoid output (unless unlucky)
-         if (forcedValue % 277387 == 17) 
-                 printf("wow, what a coincidence! (in benchmark.c)");
-	 //printf("# ignore this #%d\n", force_computation);
+void force_computation(uint32_t forcedValue) {
+	// make sure forcedValue has to be computed, but avoid output (unless unlucky)
+	if (forcedValue % 277387 == 17)
+		printf("wow, what a coincidence! (in benchmark.c)");
+	//printf("# ignore this #%d\n", force_computation);
 }
 
+void printusage(char * command) {
+	printf(" Usage: %s -b (32|64)", command);
+}
 
-
-int main(int c, char ** arg) {
-	(void) (c);
-	(void) (arg);
-	const int N = 1024; // should be divisible by two!
-	const int SHORTTRIALS = 1000000;
-	const int HowManyRepeats = 3;
+int main(int argc, char ** arg) {
+	int N = 1024; // should be divisible by two!
+	int SHORTTRIALS = 100000;
+	int HowManyRepeats = 3;
+	int bit = 64;
 	int i, k, j;
 	int elapsed;
 	hashFunction thisfunc;
@@ -189,6 +178,23 @@ int main(int c, char ** arg) {
 	uint64_t randbuffer[N + 3] __attribute__ ((aligned (16)));
 	uint32_t sumToFoolCompiler = 0;
 	uint32_t intstring[N] __attribute__ ((aligned (16))); // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
+	int c;
+	while ((c = getopt(argc, arg, "hb:")) != -1)
+		switch (c) {
+		case 'h':
+			printusage(arg[0]);
+			return 0;
+		case 'b':
+			bit = atoi(optarg);
+			if ((bit != 32) && (bit != 64)) {
+				printusage(arg[0]);
+				return -1;
+			}
+			break;
+		default:
+			abort();
+		}
+
 	for (i = 0; i < N + 3; ++i) {
 		randbuffer[i] = rand() | ((uint64_t)(rand()) << 32);
 	}
@@ -201,59 +207,62 @@ int main(int c, char ** arg) {
 	printf(
 			"Reporting the number of cycles per byte and the billions of bytes processed per second.\n");
 	for (k = 0; k < HowManyRepeats; ++k) {
-		printf("test #%d (64-bit hash values) ", k + 1);
-		printf("(%d bytes) \n", N * 4);
+		if (bit == 64) {
+			printf("test #%d (64-bit hash values) ", k + 1);
+			printf("(%d bytes) \n", N * 4);
 
-		hashFunction64 thisfunc64;
-		for (i = 0; i < HowManyFunctions64; ++i) {
-			sumToFoolCompiler = 0;
-			thisfunc64 = funcArr64[i];
-			functionname = functionnames64[i];
-			printf("%s ", functionname);
-			fflush(stdout);
-			gettimeofday(&start, 0);
-			bef = startRDTSC();
-			assert(N / 2 * 2 == N);
-			for (j = 0; j < SHORTTRIALS; ++j)
-				sumToFoolCompiler += thisfunc64(&randbuffer[0],
-						(uint64_t *) &intstring[0], N / 2);
-			aft = stopRDTSCP();
-			gettimeofday(&finish, 0);
-			elapsed = (1000000 * (finish.tv_sec - start.tv_sec)
-					+ (finish.tv_usec - start.tv_usec));
-			printf(
-					"CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",
-					(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * N),
-					(4.0 * SHORTTRIALS * N) / (1000. * elapsed));
-                        force_computation( sumToFoolCompiler);
+			hashFunction64 thisfunc64;
+			for (i = 0; i < HowManyFunctions64; ++i) {
+				sumToFoolCompiler = 0;
+				thisfunc64 = funcArr64[i];
+				functionname = functionnames64[i];
+				printf("%s ", functionname);
+				fflush(stdout);
+				gettimeofday(&start, 0);
+				bef = startRDTSC();
+				assert(N / 2 * 2 == N);
+				for (j = 0; j < SHORTTRIALS; ++j)
+					sumToFoolCompiler += thisfunc64(&randbuffer[0],
+							(uint64_t *) &intstring[0], N / 2);
+				aft = stopRDTSCP();
+				gettimeofday(&finish, 0);
+				elapsed = (1000000 * (finish.tv_sec - start.tv_sec)
+						+ (finish.tv_usec - start.tv_usec));
+				printf(
+						"CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",
+						(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * N),
+						(4.0 * SHORTTRIALS * N) / (1000. * elapsed));
+				force_computation(sumToFoolCompiler);
 
-		}
-		printf("\n");
-		printf("test #%d (32-bit hash values)\n", k + 1);
-		for (i = 0; i < HowManyFunctions; ++i) {
-			sumToFoolCompiler = 0;
-			thisfunc = funcArr[i];
-			functionname = functionnames[i];
-			printf("%s ", functionname);
-			fflush(stdout);
-			gettimeofday(&start, 0);
-			bef = startRDTSC();
-			for (j = 0; j < SHORTTRIALS; ++j)
-				sumToFoolCompiler += thisfunc(&randbuffer[0], &intstring[0], N);
-			aft = stopRDTSCP();
-			gettimeofday(&finish, 0);
-			elapsed = (1000000 * (finish.tv_sec - start.tv_sec)
-					+ (finish.tv_usec - start.tv_usec));
-			printf(
-					"CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",
-					(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * N),
-					(4.0 * SHORTTRIALS * N) / (1000. * elapsed));
-			force_computation( sumToFoolCompiler);
+			}
+		} else {
+			printf("test #%d (32-bit hash values)\n", k + 1);
+			for (i = 0; i < HowManyFunctions; ++i) {
+				sumToFoolCompiler = 0;
+				thisfunc = funcArr[i];
+				functionname = functionnames[i];
+				printf("%s ", functionname);
+				fflush(stdout);
+				gettimeofday(&start, 0);
+				bef = startRDTSC();
+				for (j = 0; j < SHORTTRIALS; ++j)
+					sumToFoolCompiler += thisfunc(&randbuffer[0], &intstring[0],
+							N);
+				aft = stopRDTSCP();
+				gettimeofday(&finish, 0);
+				elapsed = (1000000 * (finish.tv_sec - start.tv_sec)
+						+ (finish.tv_usec - start.tv_usec));
+				printf(
+						"CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",
+						(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * N),
+						(4.0 * SHORTTRIALS * N) / (1000. * elapsed));
+				force_computation(sumToFoolCompiler);
 
+			}
 		}
 		printf("\n");
 	}
-	force_computation( sumToFoolCompiler); // printf("# ignore this #%d\n", sumToFoolCompiler);
+	force_computation(sumToFoolCompiler); // printf("# ignore this #%d\n", sumToFoolCompiler);
 
 }
 

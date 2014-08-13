@@ -395,7 +395,7 @@ void hornerrule() {
 	}
 
 }
-
+/*
 void polytest() {
 	printf("Testing poly...\n");
 	uint64_t key = 0xF0F0F0F0F0F0F0F0UL;// randomly chosen
@@ -449,8 +449,9 @@ void polytest() {
 		}
 	}
 
-}
+}*/
 
+/*
 void polytest2() {
 	printf("Testing poly2...\n");
 
@@ -469,13 +470,13 @@ void polytest2() {
 		}
 	}
 
-}
+}*/
 void clmulunittests() {
 	printf("Testing CLMUL code...\n");
 	//displayfirst();
 	hornerrule();
-	polytest();
-	polytest2();
+	//polytest();
+	//polytest2();
 	precompclmulunittest0_64();
 	clmulunittest0_64();
 	clmulunittest0_32();
