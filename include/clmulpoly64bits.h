@@ -8,29 +8,61 @@
 #include "clmul.h"
 
 
+// given one 8-byte key, generate 128 bytes of powers (randomp, randomp**2, ...) or 2 cache lines.
+// could be used in conjunction with CLMULPoly64CL2
+void precomputePowers(uint64_t randomp, __m128i * out) {
+	assert(((uintptr_t) out & 15) == 0); // we expect cache line alignment for the keys
+	__m128i power1 = _mm_loadl_epi64((__m128i  const *) &randomp );
+	__m128i power2 = precompReduction64_si128(
+							_mm_clmulepi64_si128(power1, power1, 0x00));
+	// save power1, power2 in the first 128 bits
+	_mm_store_si128(out++,_mm_unpacklo_epi64(power1,power2));
+	__m128i powerodd = power1;
+	__m128i powereven = power2;
+	for(int k = 0; k<7; ++k) {
+		// we use the fact that if we have p**k1, p**(k1+1), we can get p**(k1+2), p**(k1+3)
+		// by multiply both by p**2
+		powerodd =  precompReduction64_si128(
+								_mm_clmulepi64_si128(powerodd, power2, 0x00));
+		powereven =  precompReduction64_si128(
+								_mm_clmulepi64_si128(powereven, power2, 0x00));
+		_mm_store_si128(out++,_mm_unpacklo_epi64(powerodd,powereven));
+	}
+}
+
 
 //CLMULPoly64CL2
 uint64_t CLMULPoly64CL2(const void* rs, const uint64_t * string,
 		const size_t length) {
 	const __m128i * randomsource = (const __m128i *) rs;
 	// 4 128-bit is a cache line!!!
-	assert(((uintptr_t) rs & 15) == 0);// we expect cache line alignment for the keys
-	__m128i key1 = _mm_lddqu_si128(randomsource);
-	__m128i key2 = _mm_lddqu_si128(randomsource + 1);
-	__m128i key3 = _mm_lddqu_si128(randomsource + 2);
-	__m128i key4 = _mm_lddqu_si128(randomsource + 3);
+	assert(((uintptr_t) rs & 15) == 0); // we expect cache line alignment for the keys
+	if (length == 0)
+		return 0; // duh!
+
+//	if p is some 64-bit key, the numbered keys below should contain
+//	its reduced powers as follows
+//	key1=(p,p**2)
+//	key2=(p**3,p**4)
+//	...
+//	and so on
+
+	const __m128i key1 = _mm_load_si128(randomsource);
+	const __m128i key2 = _mm_load_si128(randomsource + 1);
+	const __m128i key3 = _mm_load_si128(randomsource + 2);
+	const __m128i key4 = _mm_load_si128(randomsource + 3);
 
 	const uint64_t * const endstring = string + length;
-	__m128i acc = _mm_set_epi64x(0, *string);
+	__m128i acc = _mm_loadl_epi64((__m128i  const *) string);
 	++string;
 	if (string + 15 < endstring) {
-		__m128i key5 = _mm_lddqu_si128(randomsource + 4);
-		__m128i key6 = _mm_lddqu_si128(randomsource + 5);
-		__m128i key7 = _mm_lddqu_si128(randomsource + 6);
-		__m128i key8 = _mm_lddqu_si128(randomsource + 7);
+		const __m128i key5 = _mm_load_si128(randomsource + 4);
+		const __m128i key6 = _mm_load_si128(randomsource + 5);
+		const __m128i key7 = _mm_load_si128(randomsource + 6);
+		const __m128i key8 = _mm_load_si128(randomsource + 7);
 
 		for (; string + 15 < endstring; string += 16) {
-			__m128i p1 = _mm_clmulepi64_si128(acc, key4, 0x00);
+			__m128i p1 = _mm_clmulepi64_si128(acc, key8, 0x00);
 
 			__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
 			__m128i q1 = _mm_xor_si128(temp1, key1);
@@ -106,9 +138,9 @@ uint64_t CLMULPoly64CL2(const void* rs, const uint64_t * string,
 		string += 8;
 	}
 	for (; string + 1 < endstring; string += 2) {
-		__m128i p1 = _mm_clmulepi64_si128(acc, key4, 0x00);
+		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
 		__m128i temp1 = _mm_lddqu_si128((__m128i *) string);
-		__m128i p2 = _mm_clmulepi64_si128(temp1, key4, 0x01);
+		__m128i p2 = _mm_clmulepi64_si128(temp1, key1, 0x01);
 		__m128i p3 = _mm_slli_si128(temp1, 8);
 		acc = precompReduction64_si128(
 				_mm_xor_si128(_mm_xor_si128(p1, p2), p3));
@@ -116,15 +148,12 @@ uint64_t CLMULPoly64CL2(const void* rs, const uint64_t * string,
 	if (string < endstring) {
 		__m128i p1 = _mm_clmulepi64_si128(acc, key1, 0x00);
 		acc = precompReduction64_si128(
-				_mm_xor_si128(p1, _mm_set_epi64x(0, *string)));
+				_mm_xor_si128(p1, _mm_loadl_epi64((__m128i  const *) string)));
 	}
 	return _mm_cvtsi128_si64(acc);
 }
 
-
-
 #endif /* CLMULPOLY64BITS_H_ */
-
 
 // Rest is crap to be deleted eventually
 
@@ -185,8 +214,6 @@ uint64_t CLMULPoly64CL2(const void* rs, const uint64_t * string,
 //	}
 //	return _mm_cvtsi128_si64(acc);
 //}
-
-
 
 //
 //// simple 64-bit polynomial hashing, uses only one key

@@ -82,7 +82,7 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * 
 	}
 	if (string < endstring) {
 		const __m128i temp1 = _mm_load_si128(randomsource);
-		const __m128i temp2 = _mm_set_epi64x(0, *string);
+		const __m128i temp2 = _mm_loadl_epi64((__m128i const*)string);
 		const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x00);
 		acc = _mm_xor_si128(clprod1, acc);
 	}
