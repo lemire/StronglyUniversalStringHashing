@@ -11,7 +11,7 @@
 #include "clmul.h"
 
 ///////////
-// The main contribution of this header file is hashCLMUL2Level
+// The main contribution of this header file is CLHASH
 /////////
 
 // hashing the bits in value using the keys key1 and key2 (only the first 64 bits of key2 are used).
@@ -93,7 +93,7 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * 
 // at low level, we use a half-multiplication multilinear that we aggregate using
 // a CLMUL polynomial hash
 // this uses 128 + 2 keys.(130*8 random bytes or about 1KB)
-uint64_t hashCLMUL2Level(const void* rs, const uint64_t * string,
+uint64_t CLHASH(const void* rs, const uint64_t * string,
 		const size_t length) {
 	if (length == 0)
 		return 0; // hmmmm...

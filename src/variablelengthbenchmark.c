@@ -80,14 +80,13 @@ static __inline__ ticks fancystopRDTSCP(void) {
 
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashVHASH64,
-                &hashCLMUL2Level,
-		    &hashCity,&CLMULPoly64CL2};
+                &CLHASH,
+		    &hashCity};
 
 const char* functionnames64[HowManyFunctions64] = {
 	"64-bit VHASH        ",
-	"64-bit CLMUL 2L     ",
+	"64-bit CLHASH       ",
 	"Google's City       ",
-	"CLMULPoly64CL2      "
 
 };
 
