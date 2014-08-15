@@ -104,7 +104,7 @@ int main(int argc, char ** arg) {
 	int N = 1024;
 	int SHORTTRIALS = 100000;
 	int HowManyRepeats = 3;
-	int elapsed;
+	int elapsed1, elapsed2;
 	int i,j,k;
 	int sumToFoolCompiler1, sumToFoolCompiler2;
 
@@ -140,12 +140,13 @@ int main(int argc, char ** arg) {
 				sumToFoolCompiler1 += precompReduction64(data[i]);
 		aft = stopRDTSCP();
 		gettimeofday(&finish, 0);
-		elapsed = (1000000 * (finish.tv_sec - start.tv_sec)
+		elapsed1 = (1000000 * (finish.tv_sec - start.tv_sec)
 				+ (finish.tv_usec - start.tv_usec));
+
 		printf(
 				"[fast technique] CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",
 				(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * N),
-				(4.0 * SHORTTRIALS * N) / (1000. * elapsed));
+				(4.0 * SHORTTRIALS * N) / (1000. * elapsed1));
 		force_computation (sumToFoolCompiler1);
 		gettimeofday(&start, 0);
 		bef = startRDTSC();
@@ -154,12 +155,13 @@ int main(int argc, char ** arg) {
 				sumToFoolCompiler2 += barrettWithoutPrecomputation64(data[i]);
 		aft = stopRDTSCP();
 		gettimeofday(&finish, 0);
-		elapsed = (1000000 * (finish.tv_sec - start.tv_sec)
+		elapsed2 = (1000000 * (finish.tv_sec - start.tv_sec)
 				+ (finish.tv_usec - start.tv_usec));
 		printf(
-				"[noprecomp   ] CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",
+				"[noprecomp     ] CPU cycle/byte = %f \t billions of bytes per second =  %f    \n",
 				(aft - bef) * 1.0 / (4.0 * SHORTTRIALS * N),
-				(4.0 * SHORTTRIALS * N) / (1000. * elapsed));
+				(4.0 * SHORTTRIALS * N) / (1000. * elapsed2));
+		printf("speed ratio = %f \n",1.*elapsed2/elapsed1);
 		force_computation (sumToFoolCompiler2);
 	}
 	printf("\n");
