@@ -92,7 +92,7 @@ __m128i barrettWithoutPrecomputation32_si128( __m128i A) {
 	// it is important, for the algo. we have chosen that 7 is smaller
 	// equal than 16=32/2
 	const int n = 32;// degree of the polynomial
-	const __m128i C = _mm_set_epi64x(0,irredpoly);// C is the irreducible poly.
+	const __m128i C = _mm_cvtsi64_si128(irredpoly);// C is the irreducible poly.
 	/////////////////
 	/// This algo. requires two multiplications (_mm_clmulepi64_si128)
 	/// They are probably the bottleneck.
