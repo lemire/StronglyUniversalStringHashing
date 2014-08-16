@@ -79,15 +79,16 @@ __m128i barrettWithoutPrecomputation64_si128(__m128i A) {
 	// it is important, for the algo. we have chosen that 4 is smaller
 	// equal than 32=64/2
 
-	const int n = 64;	// degree of the polynomial
-	const __m128i C = _mm_set_epi64x(1U,
-			(1U << 4) + (1U << 3) + (1U << 1) + (1U << 0));	// C is the irreducible poly. (64,4,3,1,0)
+	//const int n = 64;	// degree of the polynomial
+	//const __m128i C = _mm_set_epi64x(1U,
+	//		(1U << 4) + (1U << 3) + (1U << 1) + (1U << 0));	// C is the irreducible poly. (64,4,3,1,0)
+	const __m128i C = _mm_cvtsi64_si128((1U << 4) + (1U << 3) + (1U << 1) + (1U << 0));
 	/////////////////
 	/// This algo. requires two multiplications (_mm_clmulepi64_si128)
 	/// They are probably the bottleneck.
 	/// Note: Barrett's original algorithm also required two multiplications.
 	////////////////
-	assert(n / 8 == 8);
+	//assert(n / 8 == 8);
 	__m128i Q2 = _mm_clmulepi64_si128(A, C, 0x01);
 	Q2 = _mm_xor_si128(Q2, A);
 	const __m128i Q4 = _mm_clmulepi64_si128(Q2, C, 0x01);
