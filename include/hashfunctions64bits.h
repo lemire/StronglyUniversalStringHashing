@@ -37,6 +37,9 @@ uint64_t hashVHASH64(const void*  rs, const uint64_t *  string, const size_t len
 	 * otherwise we have to do something messy due to alignment requirements in VHASH.
 	 */
 	size_t inputlengthinbytes = length * sizeof(uint64_t);
+	return vhash((unsigned char *)string, inputlengthinbytes, &tagl, &ctx);
+	// code below might not be necessary?
+/*
 	if((inputlengthinbytes % VMAC_NHBYTES) == 0) {
 		return vhash((unsigned char *)string, inputlengthinbytes, &tagl, &ctx);
 	} else {
@@ -49,7 +52,7 @@ uint64_t hashVHASH64(const void*  rs, const uint64_t *  string, const size_t len
 		memcpy(alignedptr, (unsigned char*)string + roundedlength, remaining);
 		memset(alignedptr + remaining, 0, VMAC_NHBYTES - remaining );
 		return vhash(alignedptr, remaining, &tagl, &ctx);
-	}
+	}*/
 }
 
 
