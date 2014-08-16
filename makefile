@@ -4,10 +4,14 @@
 
 CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native   
 
-all: clmulunit variablelengthbenchmark  benchmark 
+all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions 
 
 benchmark: src/benchmark.c include/*.h City.o vmac.o 
 	$(CC) $(CFLAGS) -o benchmark src/benchmark.c City.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -IVHASH
+
+benchmark64bitreductions: src/benchmark64bitreductions.c include/clmul.h  
+	$(CC) $(CFLAGS) -o benchmark64bitreductions src/benchmark64bitreductions.c   -Iinclude 
+
 
 variablelengthbenchmark: src/variablelengthbenchmark.c include/*.h City.o vmac.o 
 	$(CC) $(CFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.c City.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity  -IVHASH
@@ -26,4 +30,4 @@ vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
 	$(CC) $(CFLAGS) -c VHASH/vmac.c -IVHASH 
 
 clean: 
-	rm -f multilinearhashing variablelengthbenchmark clmulunit *.o
+	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit *.o
