@@ -21,9 +21,9 @@
 #define STRLEN 512
 #define NTRIALS 50
 
-
 void bucketize(uint64 hashval, int counts[], int positions[]) {
   int i, index = 0;
+
   for (i=0; i < BITS_TO_BUCKET; ++i) {
     int bit = ( hashval & (1L << positions[i])) ? 1 : 0; 
     index = (index << 1) | bit;
@@ -40,11 +40,12 @@ void check_distribution( int counts[]) {
   int i,min_count = N, max_count=0;
   for (int i=0; i < NBUCKETS; ++i) {
     if (min_count > counts[i]) min_count = counts[i];
-    if (max_count < counts[i]) max_count = counts[i];
+    if (max_count < counts[i]) { 
+      max_count = counts[i]; 
+    }
   }
-  printf("min bucket count is %d , max bucket count is %d\n",min_count, max_count);
 
-  if (min_count * 2 + 3 < max_count)
+  if (min_count * 1.3 + 2 < max_count)
     printf("fishy count distribution %d %d\n", min_count, max_count);
 }
 
@@ -57,12 +58,8 @@ int main() {
   hashFunction64 hfcns[3]={&hashCity, &hashVHASH64, &CLHASH};
   struct timeval begin,end;
 
-  keys  = calloc(N,sizeof(uint64));
-  rands_unaligned = calloc(N+16,sizeof(uint64));
-  uint64 evil = (uint64) rands_unaligned;  // avoid seeing whether calloc has options to force alignment
-  evil += 15;
-  evil &= ~(15L);
-  rands = (uint64 *)evil;
+  keys  = calloc(N,sizeof(uint64));  
+  rands = calloc(N,sizeof(uint64)); // is it aligned for 128-bit fetch? spec: Supposed to be aligned for ANY data size, so ok...
 
   for (k=0; k < NTRIALS; ++k) {
   
@@ -73,15 +70,9 @@ int main() {
 
     for (i=0; i < N; ++i) {
       //printf ("%d\n",i);
-      keys[i] = r+i*small_step;
+      keys[i] = rand64(); // r+i*small_step;
       rands[i] = rand64();
     }
-    
-    /*
-    // look at low order bits
-    for (i=0; i < BITS_TO_BUCKET; ++i)
-    bucket_bit_positions[i] = i;
-    */
     
     // choose some (distinct)  random bit positions to inspect
     for (i=0; i < BITS_TO_BUCKET; ++i) {
@@ -99,23 +90,19 @@ int main() {
     for (int algo=0; algo < 3; ++algo) {
       hashFunction64 fn = hfcns[algo];
       
-      printf("** algo %d**\n",algo);
+      printf("** algo %d** ",algo);
       
       // init buckets
       for (i=0; i < NBUCKETS; ++i)
         bucket[i]=0;
-      
-      
-    
-    // lots of overlap between tested strings
-      gettimeofday(&begin,NULL);
-
-      for (int i=0; i < N-STRLEN; ++i)  {
-        uint64 hval = fn(rands,  keys+i , STRLEN*8);
-        bucketize(hval, bucket, bucket_bit_positions);
+        // lots of overlap between tested strings
+        gettimeofday(&begin,NULL);
+        
+        for (int i=0; i < N-STRLEN; ++i)  {
+          uint64 hval = fn(rands,  keys+i , STRLEN);  // STRLEN is in words, as it should be
+          bucketize(hval, bucket, bucket_bit_positions);
       }
       gettimeofday(&end,NULL);
-      
       printf("elapsed time is %g ms\n", ( (end.tv_sec - begin.tv_sec)*1e6+(end.tv_usec - begin.tv_usec))/1e3);
       check_distribution(bucket);
     } 
