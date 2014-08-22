@@ -9,6 +9,7 @@
 #define CLMULHIERARCHICAL64BITS_H_
 
 #include "clmul.h"
+//#include "iacaMarks.h"
 
 ///////////
 // The main contribution of this header file is CLHASH
@@ -35,6 +36,7 @@ static __m128i __clmulhalfscalarproductwithoutreduction(const __m128i * randomso
 	__m128i acc = _mm_setzero_si128();
 	// we expect length = 128
 	for (; string + 3 < endstring; randomsource += 2, string += 4) {
+          //IACA_START
 		const __m128i temp1 = _mm_load_si128( randomsource);
 		const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
 		const __m128i add1 = _mm_xor_si128(temp1, temp2);
@@ -46,6 +48,7 @@ static __m128i __clmulhalfscalarproductwithoutreduction(const __m128i * randomso
 		const __m128i clprod12 = _mm_clmulepi64_si128(add12, add12, 0x10);
 		acc = _mm_xor_si128(clprod12, acc);
 	}
+        //IACA_END
 	return acc;
 }
 
