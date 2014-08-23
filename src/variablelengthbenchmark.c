@@ -137,9 +137,10 @@ int main(int c, char ** arg) {
                         if (! (which_algos & (0x1 << i))) continue;  // skip unselected algos
 			thisfunc64 =  funcArr64[i];
 			functionname = functionnames64[i];
+			sumToFoolCompiler += thisfunc64(randbuffer,
+									intstring,length );// we do not count the first one
 			gettimeofday(&start, 0);
 			bef = startRDTSC();
-			//assert(length / 2 * 2 == length);
 			for (j = 0; j < SHORTTRIALS; ++j) {
 				sumToFoolCompiler += thisfunc64(randbuffer,
 						intstring,length );

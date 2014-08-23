@@ -215,6 +215,8 @@ int main(int argc, char ** arg) {
 				functionname = functionnames64[i];
 				printf("%s ", functionname);
 				fflush(stdout);
+				sumToFoolCompiler += thisfunc64(&randbuffer[0],
+						(uint64_t *) &intstring[0], N / 2);// we do not count the first run
 				gettimeofday(&start, 0);
 				bef = startRDTSC();
 				assert(N / 2 * 2 == N);
@@ -240,6 +242,8 @@ int main(int argc, char ** arg) {
 				functionname = functionnames[i];
 				printf("%s ", functionname);
 				fflush(stdout);
+				sumToFoolCompiler += thisfunc(&randbuffer[0], &intstring[0],
+											N);// we do not count the first pass
 				gettimeofday(&start, 0);
 				bef = startRDTSC();
 				for (j = 0; j < SHORTTRIALS; ++j)

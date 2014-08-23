@@ -128,11 +128,11 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 			acc = _mm_xor_si128(acc,h1);
 		}
 		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
-		return length ^ simple128to64hash(acc,finalkey );
+		return (length * sizeof(uint64_t)) ^ simple128to64hash(acc,finalkey );
 	} else { // short strings
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreduction(rs64, string, length);
 		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
-		return length ^ simple128to64hash(acc, finalkey);
+		return (length * sizeof(uint64_t)) ^ simple128to64hash(acc, finalkey);
 	}
 }
 
