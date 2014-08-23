@@ -27,6 +27,7 @@
 // possible hash functions, by using SIMD instructions, or by
 // compromising on hash quality.
 
+//#include "iacaMarks.h"
 #include "City.h"
 
 //#include <algorithm>
@@ -228,6 +229,7 @@ uint64 CityHash64(const char *s, size_t len) {
   // Decrease len to the nearest multiple of 64, and operate on 64-byte chunks.
   len = (len - 1) & ~(size_t)(63);
   do {
+    //IACA_START
     x = Rotate(x + y + v.first + Fetch64(s + 8), 37) * k1;
     y = Rotate(y + v.second + Fetch64(s + 48), 42) * k1;
     x ^= w.second;
@@ -239,6 +241,7 @@ uint64 CityHash64(const char *s, size_t len) {
     s += 64;
     len -= 64;
   } while (len != 0);
+  //IACA_END
   return HashLen16(HashLen16(v.first, w.first) + ShiftMix(y) * k1 + z,
                    HashLen16(v.second, w.second) + x);
 }

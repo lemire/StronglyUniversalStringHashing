@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <x86intrin.h>
 
-//#define IACA
+#define IACA
 #ifdef IACA
 #include </opt/intel/iaca/include/iacaMarks.h>
 #else

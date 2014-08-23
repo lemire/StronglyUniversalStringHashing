@@ -8,6 +8,7 @@
 
 #include "clmul.h"
 
+
 /// These a multilinear functions. Fast but maybe not practical. Just used for comparison purposes.
 
 // a 64-bit multilinear  function

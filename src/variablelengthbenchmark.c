@@ -94,6 +94,14 @@ int main(int c, char ** arg) {
 	(void) (c);
 	(void) (arg);
 	const int N = 524288; // should be divisible by two!
+        int which_algos=0xffffffff;
+        assert(HowManyFunctions64 <= 32);
+        if (c>1) which_algos = atoi(arg[1]);  // bitmask
+        int lengthStart=1, lengthEnd= N; // inclusive
+        if (c>2) lengthStart = atoi(arg[2]);
+        if (c>3) lengthEnd = atoi(arg[3]);
+        assert( (lengthEnd & 1) == 0);
+
 	int i, k, j;
 	int length;
 	int elapsed;
@@ -116,15 +124,17 @@ int main(int c, char ** arg) {
 	printf("#First number is input length in  8-byte words.\n");
 	printf("#          ");
 	for (i = 0; i < HowManyFunctions64; ++i) {
+          if (which_algos & (0x1 << i))
 		printf("%s ", functionnames64[i]);
 	}
 	printf("\n");
 	fflush(stdout);
-	for(length = 1; length<=N; length+=1) {
+	for(length = lengthStart; length<=lengthEnd; length+=1) {
 		SHORTTRIALS = 40000000/length;
 		printf("%8d \t\t", length );
 		hashFunction64 thisfunc64;
 		for (i = 0; i < HowManyFunctions64; ++i) {
+                        if (! (which_algos & (0x1 << i))) continue;  // skip unselected algos
 			thisfunc64 =  funcArr64[i];
 			functionname = functionnames64[i];
 			gettimeofday(&start, 0);
