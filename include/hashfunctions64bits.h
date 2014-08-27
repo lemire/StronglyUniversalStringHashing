@@ -36,7 +36,7 @@ uint64_t hashVHASH64(const void*  rs, const uint64_t *  string, const size_t len
 	 *
 	 *
 	 */
-	static void *initialized_rs = 0;
+	static const void *initialized_rs = 0;
 	static uint64 first_value = 0;
 
 	//  initialize, hoping a change of randoms will change the first value or the buffer location
