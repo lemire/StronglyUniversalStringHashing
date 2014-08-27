@@ -6,6 +6,9 @@ CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native
 
 all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity
 
+nhvsclnh.o: src/nhvsclnh.c
+	$(CC) $(CFLAGS)  -c  src/nhvsclnh.c
+
 uniformsanity: src/uniform_sanity.c include/*.h City.o vmac.o
 	$(CC) $(CFLAGS)  -o uniformsanity src/uniform_sanity.c City.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -IVHASH 
 
