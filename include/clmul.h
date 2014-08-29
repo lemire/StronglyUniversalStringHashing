@@ -67,7 +67,7 @@ __m128i mul128by128to128_lazymod127( __m128i A, __m128i B) {
 	__m128i reduced = _mm_xor_si128(s1,s2);
 	// combining results
 	__m128i final = _mm_xor_si128(Alow,reduced);
-	return reduced;
+	return final;
 }
 
 
@@ -91,7 +91,7 @@ __m128i barrettWithoutPrecomputation32_si128( __m128i A) {
 	const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<6)+(1UL<<7)+(1UL<<32);
 	// it is important, for the algo. we have chosen that 7 is smaller
 	// equal than 16=32/2
-	const int n = 32;// degree of the polynomial
+	//const int n = 32;// degree of the polynomial
 	const __m128i C = _mm_cvtsi64_si128(irredpoly);// C is the irreducible poly.
 	/////////////////
 	/// This algo. requires two multiplications (_mm_clmulepi64_si128)
