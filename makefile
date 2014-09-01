@@ -4,7 +4,7 @@
 
 CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native   
 
-all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity
+all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity cl3264.o vhash4smhasher.o
 
 nhvsclnh.o: src/nhvsclnh.c
 	$(CC) $(CFLAGS)  -c  src/nhvsclnh.c
@@ -30,7 +30,14 @@ City.o: City/City.c City/City.h
 rijndael-alg-fst.o: VHASH/rijndael-alg-fst.c  VHASH/rijndael-alg-fst.h 
 	$(CC) $(CFLAGS) -c VHASH/rijndael-alg-fst.c -IVHASH 
 
+cl3264.o:	src/cl3264.c include/*.h
+	$(CC) $(CFLAGS) -c src/cl3264.c -Iinclude
+
+vhash4smhasher.o:	src/vhash4smhasher.c include/*.h
+	$(CC) $(CFLAGS) -c src/vhash4smhasher.c -Iinclude -IVHASH
+
 vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
 	$(CC) $(CFLAGS) -c VHASH/vmac.c -IVHASH 
+
 clean: 
 	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity *.o
