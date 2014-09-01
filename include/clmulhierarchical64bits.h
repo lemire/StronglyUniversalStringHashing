@@ -152,7 +152,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 	// we should check that polyvalue is non-zero, though this is best done outside the function and highly unlikely
 	size_t length = lengthbyte / sizeof(uint64_t);
 	const uint64_t * string = (const uint64_t *)  stringbyte;
-	if (m < length) { // long strings
+	if (m <= length) { // long strings
 		__m128i  acc =  __clmulhalfscalarproductwithoutreduction(rs64, string,m);
 		size_t t = m;
 		for (; t +  m <= length; t +=  m) {
