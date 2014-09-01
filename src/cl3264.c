@@ -16,7 +16,8 @@ void init_cl3264( uint32_t seed) {
 
 // 64 bit version, for comparison vs cityhash with smhasher
 uint64_t cl64( const void *key, int len) {
-  void *keypadded;
+	return CLHASHbyte(randoms,key,len);
+/*  void *keypadded;
   int newlen = len;
   if ( (len & 15) == 0)
     keypadded = (void *)key;
@@ -33,7 +34,7 @@ uint64_t cl64( const void *key, int len) {
   uint64_t ans = CLHASH( randoms, keypadded,newlen/8);  // newlen in 64-bits
   if (keypadded != key)  // we had malloc'ed
     free(keypadded);
-  return ans;
+  return ans;*/
 }
 
 

@@ -136,5 +136,67 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 	}
 }
 
+// like CLHASH, but can hash byte strings
+uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
+		const size_t lengthbyte) {
+	if (lengthbyte == 0)
+		return 0; // hmmmm...
+	assert(sizeof(size_t)<=sizeof(uint64_t));// otherwise, we need to worry
+	assert(((uintptr_t) rs & 15) == 0);// we expect cache line alignment for the keys
+	const int m = 128;// we process the data in chunks of 16 cache lines
+	assert((m  & 3) == 0); //m should be divisible by 4
+	const int m128neededperblock = m / 2;// that is how many 128-bit words of random bits we use per block
+	const __m128i * rs64 = (__m128i *) rs;
+	__m128i polyvalue =  _mm_load_si128(rs64 + m128neededperblock); // to preserve alignment on cache lines for main loop, we pick random bits at the end
+	polyvalue = _mm_and_si128(polyvalue,_mm_setr_epi32(0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0x3fffffff));// setting two highest bits to zero
+	// we should check that polyvalue is non-zero, though this is best done outside the function and highly unlikely
+	size_t length = lengthbyte / sizeof(uint64_t);
+	const uint64_t * string = (const uint64_t *)  stringbyte;
+	if (m < length) { // long strings
+		__m128i  acc =  __clmulhalfscalarproductwithoutreduction(rs64, string,m);
+		size_t t = m;
+		for (; t +  m <= length; t +=  m) {
+			// we compute something like
+			// acc+= polyvalue * acc + h1
+			acc =  mul128by128to128_lazymod127(polyvalue,acc);
+			__m128i h1 =  __clmulhalfscalarproductwithoutreduction(rs64, string+t,m);
+			acc = _mm_xor_si128(acc,h1);
+		}
+		int remain = length - t;
+		if(remain > 0) {
+			// we compute something like
+			// acc+= polyvalue * acc + h1
+			acc =  mul128by128to128_lazymod127(polyvalue,acc);
+			__m128i h1 =  __clmulhalfscalarproductwithtailwithoutreduction(rs64, string+t,remain);
+			acc = _mm_xor_si128(acc,h1);
+		}
+		if(lengthbyte % sizeof(uint64_t) != 0) {
+			int significantbytes = lengthbyte % sizeof(uint64_t);
+
+			uint64_t lastword = (* (string + length) ) <<
+					((sizeof(uint64_t) - significantbytes) * 8);
+			const __m128i temp1 = _mm_load_si128(rs64 + (length % m));
+			const __m128i temp2 = _mm_loadl_epi64((__m128i const*)&lastword);
+			const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x00);
+			acc = _mm_xor_si128(clprod1, acc);
+		}
+		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
+		return (lengthbyte * sizeof(uint64_t)) ^ simple128to64hash(acc,finalkey );
+	} else { // short strings
+		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreduction(rs64, string, length);
+		if (lengthbyte % sizeof(uint64_t) != 0) {
+			int significantbytes = lengthbyte % sizeof(uint64_t);
+
+			uint64_t lastword = (*(string + length))
+					<< ((sizeof(uint64_t) - significantbytes) * 8);
+			const __m128i temp1 = _mm_load_si128(rs64 + (length % m));
+			const __m128i temp2 = _mm_loadl_epi64((__m128i  const *) &lastword);
+			const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x00);
+			acc = _mm_xor_si128(clprod1, acc);
+		}
+		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
+		return (lengthbyte * sizeof(uint64_t)) ^ simple128to64hash(acc, finalkey);
+	}
+}
 
 #endif /* CLMULHIERARCHICAL64BITS_H_ */
