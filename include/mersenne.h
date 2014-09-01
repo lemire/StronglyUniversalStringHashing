@@ -2,11 +2,11 @@
 #ifndef MERSENNE_H_
 #define MERSENNE_H_
 
-static const int N = 624;
-static const int M = 397;
-typedef struct  {
+#define N 624
+#define M 397
 
-	unsigned int MT[N + 1];
+typedef struct  {
+    unsigned int MT[N + 1];
     unsigned int *map[N];
     int nValues;
 } ZRandom;
