@@ -4,7 +4,7 @@
 
 CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native   
 
-all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity cl3264.o vhash4smhasher.o
+all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher
 
 nhvsclnh.o: src/nhvsclnh.c
 	$(CC) $(CFLAGS)  -c  src/nhvsclnh.c
@@ -39,5 +39,8 @@ vhash4smhasher.o:	src/vhash4smhasher.c include/*.h
 vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
 	$(CC) $(CFLAGS) -c VHASH/vmac.c -IVHASH 
 
+smhasher: smhasherpackage/*.h smhasherpackage/*.cpp smhasherpackage/*.c cl3264.o         vhash4smhasher.o  vmac.o rijndael-alg-fst.o
+	$(CXX) $(CXXFLAGS)  -o smhasher smhasherpackage/*cpp smhasherpackage/*.c cl3264.o  vhash4smhasher.o vmac.o rijndael-alg-fst.o -Ismhasherpackage
+
 clean: 
-	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity *.o
+	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity smhasher *.o
