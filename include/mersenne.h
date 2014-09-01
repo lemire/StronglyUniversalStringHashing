@@ -11,7 +11,7 @@ typedef struct  {
     int nValues;
 } ZRandom;
 
-void initZRandom(ZRandom * ZR, unsigned iSeed)  {
+inline static void initZRandom(ZRandom * ZR, unsigned iSeed)  {
 	ZR->nValues = 0;
     // Seed the array used in random number generation.
 	ZR->MT[0] = iSeed;
@@ -26,7 +26,7 @@ void initZRandom(ZRandom * ZR, unsigned iSeed)  {
 
 
 
-unsigned int getValue(ZRandom * ZR) {
+inline static unsigned int getValue(ZRandom * ZR) {
     if (0 == ZR->nValues) {
     	ZR->MT[N] = ZR->MT[0];
         for (int i = 0; i < N; ++i) {
