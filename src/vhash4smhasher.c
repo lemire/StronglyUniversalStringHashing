@@ -1,14 +1,18 @@
 #include <stdlib.h>
-#include "vmac.h"
 #include <string.h>
+
+#include "mersenne.h"
+#include "vmac.h"
+
 
 uint64_t vrandoms[140];
 vmac_ctx_t ctx;
 
-void init_vhash( uint32_t seed) { 
-  srand(seed);
+void init_vhash( uint32_t seed) {
+  ZRandom zr;
+  initZRandom(&zr,seed);
   for (int i=0; i < 140; ++i)
-    vrandoms[i] = rand() | ( ((uint64_t) rand()) << 32);
+    vrandoms[i] = getValue(&zr) | ( ((uint64_t) getValue(&zr)) << 32);
   vmac_set_key((unsigned char *)vrandoms, &ctx);
 }
 

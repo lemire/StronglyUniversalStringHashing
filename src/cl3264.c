@@ -1,14 +1,17 @@
-#include "clmulhierarchical64bits.h"
 #include <string.h>
+
+#include "clmulhierarchical64bits.h"
+#include "mersenne.h"
 
 // input is arbitrary length (may have to pad)
 
 uint64_t randoms[150];
 
 void init_cl3264( uint32_t seed) { 
-  srand(seed);
+  ZRandom zr;
+  initZRandom(&zr,seed);
   for (int i=0; i < 150; ++i)
-    randoms[i] = rand() | ( ((uint64_t) rand()) << 32);
+    randoms[i] = getValue(&zr) | ( ((uint64_t) getValue(&zr)) << 32);
 }
 
 // 64 bit version, for comparison vs cityhash with smhasher

@@ -34,7 +34,7 @@ cl3264.o:	src/cl3264.c include/*.h
 	$(CC) $(CFLAGS) -c src/cl3264.c -Iinclude
 
 vhash4smhasher.o:	src/vhash4smhasher.c include/*.h
-	$(CC) $(CFLAGS) -c src/vhash4smhasher.c -Iinclude -IVHASH
+	$(CC) $(CFLAGS) -c src/vhash4smhasher.c -Iinclude -IVHASH 
 
 vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
 	$(CC) $(CFLAGS) -c VHASH/vmac.c -IVHASH 
