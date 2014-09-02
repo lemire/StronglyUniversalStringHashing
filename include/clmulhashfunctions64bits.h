@@ -9,7 +9,7 @@
 #include "clmul.h"
 
 
-/// These a multilinear functions. Fast but maybe not practical. Just used for comparison purposes.
+/// These are multilinear functions. Fast but maybe not practical. Just used for comparison purposes.
 
 // a 64-bit multilinear  function
 // strongly universal
@@ -21,7 +21,6 @@ uint64_t hashGaloisFieldfast64_precomp_unroll(const void* rs, const uint64_t * s
 	for(; string+3 < endstring; randomsource+=4,string+=4 ) {
 		const __m128i temp1 = _mm_lddqu_si128((__m128i * )randomsource);
 		const __m128i temp2 = _mm_load_si128((__m128i *) string);
-		const __m128i add1 = _mm_xor_si128 (temp1,temp2);
 		const __m128i clprod1 = _mm_clmulepi64_si128( temp1, temp2, 0x00);
 		const __m128i clprod2 = _mm_clmulepi64_si128( temp1, temp2, 0x11);
 		acc = _mm_xor_si128 (clprod1,acc);

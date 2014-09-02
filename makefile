@@ -2,7 +2,8 @@
 #
 .SUFFIXES: .cpp .o .c .h
 
-CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native   
+CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native -Wall
+CXXFLAGS = -O2 -mavx  -march=native
 
 all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher
 
@@ -43,4 +44,4 @@ smhasher: smhasherpackage/*.h smhasherpackage/*.cpp smhasherpackage/*.c cl3264.o
 	$(CXX) $(CXXFLAGS)  -o smhasher smhasherpackage/*cpp smhasherpackage/*.c cl3264.o  vhash4smhasher.o vmac.o rijndael-alg-fst.o -Ismhasherpackage
 
 clean: 
-	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity smhasher *.o
+	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity smhasher variablelenthbenchmark  *.o

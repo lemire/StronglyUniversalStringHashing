@@ -51,7 +51,7 @@ void check_distribution( int counts[]) {
 
 
 int main() {
-  int i,j,k;
+  int i,k;
   int bucket_bit_positions[BITS_TO_BUCKET];
   int bucket[NBUCKETS];
   uint64 *keys, *rands, *rands_unaligned;

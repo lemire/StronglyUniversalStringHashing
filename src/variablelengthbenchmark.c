@@ -102,12 +102,9 @@ int main(int c, char ** arg) {
         if (c>3) lengthEnd = atoi(arg[3]);
         assert( (lengthEnd & 1) == 0);
 
-	int i, k, j;
+	int i, j;
 	int length;
-	int elapsed;
 	int SHORTTRIALS;
-	hashFunction thisfunc;
-	const char * functionname;
 	ticks bef, aft;
 	struct timeval start, finish;
 	uint64_t randbuffer[128] __attribute__ ((aligned (16)));
@@ -136,7 +133,6 @@ int main(int c, char ** arg) {
 		for (i = 0; i < HowManyFunctions64; ++i) {
                         if (! (which_algos & (0x1 << i))) continue;  // skip unselected algos
 			thisfunc64 =  funcArr64[i];
-			functionname = functionnames64[i];
 			sumToFoolCompiler += thisfunc64(randbuffer,
 									intstring,length );// we do not count the first one
 			gettimeofday(&start, 0);
@@ -147,8 +143,6 @@ int main(int c, char ** arg) {
                         }
 			aft = stopRDTSCP();
 			gettimeofday(&finish, 0);
-			elapsed = (1000000 * (finish.tv_sec - start.tv_sec)
-					+ (finish.tv_usec - start.tv_usec));
 			printf(
 					" %f ",
 					(aft - bef) * 1.0 / (8.0 * SHORTTRIALS * length));
