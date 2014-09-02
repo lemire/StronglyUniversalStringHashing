@@ -91,11 +91,16 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * 
 }
 
 
-
+//////////////////////
 // just two levels like VHASH
 // at low level, we use a half-multiplication multilinear that we aggregate using
 // a CLMUL polynomial hash
 // this uses 128 + 2 keys.(130*8 random bytes or about 1KB)
+//
+// rs : the random data source (should contain at least 130*8 random bytes)
+// string : the input data source
+// length : number of 64-bit words in the string
+//////////////////////
 uint64_t CLHASH(const void* rs, const uint64_t * string,
 		const size_t length) {
 	if (length == 0)
@@ -136,7 +141,13 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 	}
 }
 
+//////////////////////
 // like CLHASH, but can hash byte strings
+//
+// rs : the random data source (should contain at least 130*8 random bytes)
+// stringbyte : the input data source
+// length : number of bytes in the string
+//////////////////////
 uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 		const size_t lengthbyte) {
 	if (lengthbyte == 0)

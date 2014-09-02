@@ -25,11 +25,7 @@ void CLHASH32 ( const void * key, int len, uint32_t seed, void * out ) {
   if (saved_seed != seed) {
     init_cl3264(seed);
     saved_seed = seed;
-  // cout << "+";   worth seeing, but not now.
   } 
-  //  else
-  //  cout << "same seed" << endl;
-
   *(uint32_t*)out = cl32(key,len);
 }
 

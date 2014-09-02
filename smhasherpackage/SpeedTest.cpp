@@ -185,12 +185,13 @@ double SpeedTest ( pfHash hash, uint32_t seed, const int trials, const int block
   std::vector<double> times;
   times.reserve(trials);
 
+
   for(int itrial = 0; itrial < trials; itrial++)
   {
     r.rand_p(block,blocksize);
     
-    double t = (double)timehash(hash,block,blocksize,itrial);
-    
+    //double t = (double)timehash(hash,block,blocksize,itrial);
+    double t = (double)timehash(hash,block,blocksize,seed);// DL: changing the seed with every call makes vhash and clhash very slow
     if(t > 0) times.push_back(t);
   }
 
