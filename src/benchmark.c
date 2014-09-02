@@ -49,7 +49,7 @@ ticks stopRDTSCP(void) {
 // September 2010
 // http://edc.intel.com/Link.aspx?id=3954
 
-static __inline__ ticks fancystartRDTSC(void) {
+/*static __inline__ ticks fancystartRDTSC(void) {
 	unsigned cycles_low, cycles_high;
 	asm volatile ("CPUID\n\t"
 			"RDTSC\n\t"
@@ -69,7 +69,7 @@ static __inline__ ticks fancystopRDTSCP(void) {
 			"CPUID\n\t": "=r" (cycles_high), "=r" (cycles_low):: "%rax",
 			"%rbx", "%rcx", "%rdx");
 	return ((ticks) cycles_high << 32) | cycles_low;
-}
+}*/
 
 #include "hashfunctions32bits.h"
 #include "hashfunctions64bits.h"

@@ -236,7 +236,7 @@ __m128i barrettWithoutPrecomputation16_si128( __m128i A) {
 	const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<3)+(1UL<<5)+(1UL<<16);
 	// it is important, for the algo. we have chosen that 5 is smaller
 	// equal than 8=16/2
-	const int n = 16;// degree of the polynomial
+	//const int n = 16;// degree of the polynomial
 	const __m128i C = _mm_set_epi64x(0,irredpoly);// C is the irreducible poly.
 	const __m128i Q1 = _mm_srli_si128 (A, 2);
 	const __m128i Q2 = _mm_clmulepi64_si128( Q1, C, 0x00);// A div x^n

@@ -2,7 +2,7 @@
 #
 .SUFFIXES: .cpp .o .c .h
 
-CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native -Wall
+CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native -Wall -Wextra
 CXXFLAGS = -O2 -mavx  -march=native
 
 all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher

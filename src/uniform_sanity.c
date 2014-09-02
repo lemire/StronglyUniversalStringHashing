@@ -37,7 +37,7 @@ uint64 rand64() {
 }
 
 void check_distribution( int counts[]) {
-  int i,min_count = N, max_count=0;
+  int min_count = N, max_count = 0;
   for (int i=0; i < NBUCKETS; ++i) {
     if (min_count > counts[i]) min_count = counts[i];
     if (max_count < counts[i]) { 
@@ -54,7 +54,7 @@ int main() {
   int i,k;
   int bucket_bit_positions[BITS_TO_BUCKET];
   int bucket[NBUCKETS];
-  uint64 *keys, *rands, *rands_unaligned;
+  uint64 *keys, *rands;
   hashFunction64 hfcns[3]={&hashCity, &hashVHASH64, &CLHASH};
   struct timeval begin,end;
 
@@ -63,8 +63,6 @@ int main() {
 
   for (k=0; k < NTRIALS; ++k) {
   
-    // make some random-based consecutive keys and random data
-    uint64 r= rand64();
     uint64 small_step = 1 + (rand() % 100);
     if (k==0) small_step = 1;
 
