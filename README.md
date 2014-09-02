@@ -30,3 +30,16 @@ tests:
 
     make clmulunit
     ./clmulunit
+
+
+Licensing
+==========
+
+In a subdirectory, we have included a modified version of smhasher which is covered under
+the MIT license.
+
+In another subdirectory, we have included an implementation of VHASH. It has been put in the
+public domain by its authors.
+
+In yet another directory, we have included a C port of CityHash, published under a MIT license
+by Google.
