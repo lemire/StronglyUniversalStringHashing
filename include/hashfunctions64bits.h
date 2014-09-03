@@ -23,7 +23,7 @@ uint64_t hashCity(const void*  rs, const uint64_t *  string, const size_t length
 uint64_t hashVHASH64(const void*  rs, const uint64_t *  string, const size_t length) {
 	static vmac_ctx_t ctx; // we need a ctx struct
 	/*
-	 * At least once, we need the folliwng call:
+	 * At least once, we need the following call:
 	 *
 	 * vmac_set_key(rs, &ctx)
 	 *
@@ -60,7 +60,7 @@ uint64_t hashVHASH64(const void*  rs, const uint64_t *  string, const size_t len
 uint64_t saferhashVHASH64(const void*  rs, const uint64_t *  string, const size_t length) {
 	static vmac_ctx_t ctx; // we need a ctx struct
 	/*
-	 * At least once, we need the folliwng call:
+	 * At least once, we need the following call:
 	 *
 	 * vmac_set_key(rs, &ctx)
 	 *
