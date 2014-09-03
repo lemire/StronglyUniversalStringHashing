@@ -20,6 +20,7 @@ uint64_t hashCity(const void*  rs, const uint64_t *  string, const size_t length
 #include "vmac.h"
 #include <string.h>
 // to simulate the speed of VHASH. Not thread safe.
+// This is not correct if the input is not divisible by 16 bytes.
 uint64_t hashVHASH64(const void*  rs, const uint64_t *  string, const size_t length) {
 	static vmac_ctx_t ctx; // we need a ctx struct
 	/*
@@ -55,8 +56,8 @@ uint64_t hashVHASH64(const void*  rs, const uint64_t *  string, const size_t len
 	return vhash((unsigned char *)string, inputlengthinbytes, &tagl, &ctx);
 }
 
-// to simulate the speed of VHASH. Not thread safe. Slightly safer than hashVHASH64
-// in the sense that it will try to avoid overruns.
+// to simulate the speed of VHASH. Not thread safe.
+// This is  correct even the input is not divisible by 16 bytes, but slower than hashVHASH64.
 uint64_t saferhashVHASH64(const void*  rs, const uint64_t *  string, const size_t length) {
 	static vmac_ctx_t ctx; // we need a ctx struct
 	/*
