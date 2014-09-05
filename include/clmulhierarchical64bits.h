@@ -89,6 +89,18 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * 
 	}
 	return acc;
 }
+////////
+// an invertible function used to mix the bits
+// borrowed directly from murmurhash
+////////
+inline uint64_t fmix64 ( uint64_t k ) {
+  k ^= k >> 33;
+  k *= 0xff51afd7ed558ccdULL;
+  k ^= k >> 33;
+  k *= 0xc4ceb9fe1a85ec53ULL;
+  k ^= k >> 33;
+  return k;
+}
 
 
 //////////////////////
@@ -136,8 +148,7 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 		return (length * sizeof(uint64_t)) ^ simple128to64hash(acc,finalkey );
 	} else { // short strings
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreduction(rs64, string, length);
-		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
-		return (length * sizeof(uint64_t)) ^ simple128to64hash(acc, finalkey);
+		return fmix64((length * sizeof(uint64_t)) ^ precompReduction64(acc)  ^  rs[m + 2]);
 	}
 }
 
@@ -197,7 +208,6 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreduction(rs64, string, length);
 		if (lengthbyte % sizeof(uint64_t) != 0) {
 			int significantbytes = lengthbyte % sizeof(uint64_t);
-
 			uint64_t lastword = (*(string + length))
 					<< ((sizeof(uint64_t) - significantbytes) * 8);
 			const __m128i temp1 = _mm_load_si128(rs64 + length);
@@ -205,8 +215,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 			const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x00);
 			acc = _mm_xor_si128(clprod1, acc);
 		}
-		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
-		return lengthbyte  ^ simple128to64hash(acc, finalkey);
+		return fmix64(lengthbyte  ^ precompReduction64(acc) ^  rs[m + 2]);
 	}
 }
 
