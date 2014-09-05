@@ -148,7 +148,7 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 		return (length * sizeof(uint64_t)) ^ simple128to64hash(acc,finalkey );
 	} else { // short strings
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreduction(rs64, string, length);
-		return fmix64((length * sizeof(uint64_t)) ^ precompReduction64(acc)  ^  rs[m + 2]);
+		return fmix64((length * sizeof(uint64_t)) ^ precompReduction64(acc)  ^ ((const uint64_t *) rs)[m + 2]);
 	}
 }
 
@@ -215,7 +215,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 			const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x00);
 			acc = _mm_xor_si128(clprod1, acc);
 		}
-		return fmix64(lengthbyte  ^ precompReduction64(acc) ^  rs[m + 2]);
+		return fmix64(lengthbyte  ^ precompReduction64(acc) ^  ((const uint64_t *) rs)[m + 2]);
 	}
 }
 
