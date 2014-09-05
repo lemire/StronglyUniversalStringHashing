@@ -52,8 +52,8 @@ HashInfo g_hashes[] =
   { md5_32,               32, 0xC10C356B, "md5_32a",     "MD5, first 32 bits of result" },
   { sha1_32a,             32, 0xF9376EA7, "sha1_32a",    "SHA1, first 32 bits of result" },
 
-  { CLHASH32,             32, 0x0F72EB89, "CLHASH32",    "Lemire's carryless, 32bit" },
-  { CLHASH64,             64, 0x074882F5, "CLHASH64",    "Lemire's carryless, 64bit" },
+  { CLHASH32,             32, 0xBAEEB4DF, "CLHASH32",    "CLHASH, 32bit" },
+  { CLHASH64,             64, 0x5537525E, "CLHASH64",    "CLHASH, 64bit" },
   { VHASH64,              64, 0xF04AE1EC, "VHASH64",     "VHASH, 64bit" },
   { FNV,                  32, 0xE3CBBE91, "FNV",         "Fowler-Noll-Vo hash, 32-bit" },
   { Bernstein,            32, 0xBDB4B640, "bernstein",   "Bernstein, 32-bit" },

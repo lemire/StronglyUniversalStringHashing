@@ -63,8 +63,8 @@ int main() {
 
   for (k=0; k < NTRIALS; ++k) {
   
-    uint64 small_step = 1 + (rand() % 100);
-    if (k==0) small_step = 1;
+    //uint64 small_step = 1 + (rand() % 100);
+    //if (k==0) small_step = 1;
 
     for (i=0; i < N; ++i) {
       //printf ("%d\n",i);
