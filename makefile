@@ -10,17 +10,17 @@ all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions unifo
 nhvsclnh.o: src/nhvsclnh.c
 	$(CC) $(CFLAGS)  -c  src/nhvsclnh.c
 
-uniformsanity: src/uniform_sanity.c include/*.h City.o vmac.o
-	$(CC) $(CFLAGS)  -o uniformsanity src/uniform_sanity.c City.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -IVHASH 
+uniformsanity: src/uniform_sanity.c include/*.h City.o vmac.o siphash24.o
+	$(CC) $(CFLAGS)  -o uniformsanity src/uniform_sanity.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
-benchmark: src/benchmark.c include/*.h City.o vmac.o 
-	$(CC) $(CFLAGS) -o benchmark src/benchmark.c City.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -IVHASH 
+benchmark: src/benchmark.c include/*.h City.o siphash24.o vmac.o 
+	$(CC) $(CFLAGS) -o benchmark src/benchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
 benchmark64bitreductions: src/benchmark64bitreductions.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark64bitreductions src/benchmark64bitreductions.c   -Iinclude 
 
-variablelengthbenchmark: src/variablelengthbenchmark.c include/*.h City.o vmac.o 
-	$(CC) $(CFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.c City.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity  -IVHASH 
+variablelengthbenchmark: src/variablelengthbenchmark.c include/*.h City.o siphash24.o vmac.o 
+	$(CC) $(CFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
 clmulunit: src/clmulunit.c include/*.h
 	$(CC) $(CFLAGS) -o clmulunit src/clmulunit.c -Iinclude 
@@ -28,6 +28,10 @@ clmulunit: src/clmulunit.c include/*.h
 City.o: City/City.c City/City.h
 	$(CC) $(CFLAGS) -c City/City.c -ICity 
  
+siphash24.o: SipHash/siphash24.c SipHash/siphash24.h
+	$(CC) $(CFLAGS) -c SipHash/siphash24.c -ISipHash 
+
+
 rijndael-alg-fst.o: VHASH/rijndael-alg-fst.c  VHASH/rijndael-alg-fst.h 
 	$(CC) $(CFLAGS) -c VHASH/rijndael-alg-fst.c -IVHASH 
 
