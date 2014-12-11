@@ -4,10 +4,7 @@
 
 
 #include <stdlib.h>
-//#include <stdint.h>
 #include <assert.h>
-//#include <emmintrin.h>
-//#include <xmmintrin.h>
 #include <iostream>
 using namespace std;
 

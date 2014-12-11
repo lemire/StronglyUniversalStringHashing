@@ -3,6 +3,7 @@
 #include <inttypes.h>
 #include "clmul.h"
 #include "clmulpoly64bits.h"
+#include "clmulhierarchical64bits.h"
 
 #ifdef __PCLMUL__
 
@@ -443,88 +444,11 @@ void hornerrule() {
 	}
 
 }
-/*
-void polytest() {
-	printf("Testing poly...\n");
-	uint64_t key = 0xF0F0F0F0F0F0F0F0UL;// randomly chosen
-	uint64_t buffer[4];
-	uint64_t h1, h2, h3;
-	for(int k = 0; k<64; k+=5) {
-		uint64_t value1 = (1UL<<k);
-		buffer[0] = value1;
-		h1 = precomphashGaloisFieldPoly64(&key,buffer,1);
-		h2 = fasthashGaloisFieldPoly64_2(&key,buffer,1);
-		h3 = fasthashGaloisFieldPoly64_4(&key,buffer,1);
-		if((h1!=h2)||(h2!=h3)) {
-			printf("bug1 %" PRIu64 " %" PRIu64 " %" PRIu64 "  \n",h1,h2,h3);
-			abort();
-		}
-		for(int kk = 0; kk<64; kk+=5) {
-			uint64_t value2 = (1UL<<kk);
-			buffer[1] = value2;
-			h1 = precomphashGaloisFieldPoly64(&key,buffer,2);
-			h2 = fasthashGaloisFieldPoly64_2(&key,buffer,2);
-			h3 = fasthashGaloisFieldPoly64_4(&key,buffer,2);
-			if((h1!=h2)||(h2!=h3)) {
-				printf("bug2  %" PRIu64 " %" PRIu64 " %" PRIu64 "   \n",h1,h2,h3);
-				abort();
-			}
-			for(int kkk = 0; kkk<64; kkk+=5) {
-				uint64_t value3 = (1UL<<kkk);
-				buffer[2] = value3;
-				h1 = precomphashGaloisFieldPoly64(&key,buffer,3);
-				h2 = fasthashGaloisFieldPoly64_2(&key,buffer,3);
-				h3 = fasthashGaloisFieldPoly64_4(&key,buffer,3);
-				if((h1!=h2)||(h2!=h3)) {
-					printf("value1= %" PRIu64  " value2= %" PRIu64  " value 3= %" PRIu64  " \n",value1,value2,value3);
-					printf("bug3  %" PRIu64 " %" PRIu64 " %" PRIu64 " \n",h1,h2,h3);
-					abort();
-				}
-				for(int kkkk = 0; kkkk<64; kkkk+=5) {
-					uint64_t value4 = (1UL<<kkkk);
-					buffer[3] = value4;
-					h1 = precomphashGaloisFieldPoly64(&key,buffer,4);
-					h2 = fasthashGaloisFieldPoly64_2(&key,buffer,4);
-					h3 = fasthashGaloisFieldPoly64_4(&key,buffer,4);
-					if((h1!=h2)||(h2!=h3)) {
-						printf("bug4 %" PRIu64 " %" PRIu64 " %" PRIu64 " \n",h1,h2,h3);
-						abort();
-					}
-				}
 
-			}
-
-		}
-	}
-
-}*/
-
-/*
-void polytest2() {
-	printf("Testing poly2...\n");
-
-	uint64_t buffer[5];
-	uint64_t key = 2;
-	uint64_t h1, h2, h3;
-	for(int k = 0; k<5; ++k){
-		memset(buffer,0,5*sizeof(uint64_t));
-		buffer[k] = 1;
-		h1 = precomphashGaloisFieldPoly64(&key,buffer,5);
-		h2 = fasthashGaloisFieldPoly64_2(&key,buffer,5);
-		h3 = fasthashGaloisFieldPoly64_4(&key,buffer,5);
-		if((h1!=h2)||(h2!=h3)) {
-			printf("bug k=%i %" PRIu64 " %" PRIu64 " %" PRIu64 " \n",k,h1,h2,h3);
-			abort();
-		}
-	}
-
-}*/
 void clmulunittests() {
 	printf("Testing CLMUL code...\n");
 	//displayfirst();
 	hornerrule();
-	//polytest();
-	//polytest2();
 	precompclmulunittest0_64();
 	clmulunittest0_64();
 	clmulunittest0_32();
@@ -536,7 +460,42 @@ void clmulunittests() {
 	printf("CLMUL code looks ok.\n");
 }
 
+void clhashtest() {
+
+    const int N = 1024;
+	char * array  = (char*)malloc(N);
+	char *  rs = (char*)malloc(N);
+	for(int k = 0; k<N; ++k) {
+	  array[k] = 0;
+	  rs[k] = k;
+	}
+
+	for(int k = 0; k <= N - 1; ++k ) {
+	    uint64_t reg = CLHASHbyte(rs, array, k);
+	    char * farray = (char*)malloc(N);
+		for(int kk = 0; kk<N; ++kk) {
+		  farray[kk] = 0;
+		}
+	    farray[k] = 1;
+		printf("[clhashtest] my first word string %llu \n",*((uint64_t *) farray));
+
+	    uint64_t fixed = CLHASHbyteFixed(rs, farray, k+1);
+		printf("[clhashtest] k=%d  fixed =  %llu \n ",k,fixed );
+		printf("[clhashtest] k=%d  %llu  %llu \n ",k,reg,fixed );
+		assert(reg == fixed);
+		for(int kk = k+1; kk<=N-1;++kk) {
+			farray[kk] = kk;
+			assert(fixed == CLHASHbyteFixed(rs, farray, k+1));
+		}
+		free(farray);
+	}
+	free(array);
+	free(rs);
+
+}
+
 int main() {
+	clhashtest();
 	clmulunittests();
 	return 0;
 }
