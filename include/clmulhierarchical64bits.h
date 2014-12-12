@@ -49,6 +49,7 @@ static __m128i __clmulhalfscalarproductwithoutreduction(const __m128i * randomso
 		acc = _mm_xor_si128(clprod12, acc);
 	}
         //IACA_END
+	assert(string == endstring);
 	return acc;
 }
 
@@ -56,6 +57,7 @@ static __m128i __clmulhalfscalarproductwithoutreduction(const __m128i * randomso
 // the value length does not have to be divisible by 4
 static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * randomsource,
 		const uint64_t * string, const size_t length) {
+	enum{verbose = 0};
 	assert(((uintptr_t) randomsource & 15) == 0);// we expect cache line alignment for the keys
 	const uint64_t * const endstring = string + length;
 	__m128i acc = _mm_setzero_si128();
@@ -72,8 +74,11 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * 
 		acc = _mm_xor_si128(clprod12, acc);
 	}
 	if (string + 1 < endstring) {
+		assert(length != 128);
 		const __m128i temp1 = _mm_load_si128(randomsource);
 		const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
+		if(verbose) printf("[tailwithoutreduction] temp2 %llu %llu \n ", _mm_extract_epi64(temp2,0), _mm_extract_epi64(temp2,1));
+		if(verbose) printf("[tailwithoutreduction] temp1 %llu %llu \n ", _mm_extract_epi64(temp1,0), _mm_extract_epi64(temp1,1));
 		const __m128i add1 = _mm_xor_si128(temp1, temp2);
 		const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x10);
 		acc = _mm_xor_si128(clprod1, acc);
@@ -81,17 +86,25 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * 
 		string += 2;
 	}
 	if (string < endstring) {
+		assert(length != 128);
 		const __m128i temp1 = _mm_load_si128(randomsource);
 		const __m128i temp2 = _mm_loadl_epi64((__m128i const*)string);
-		const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x00);
+		const __m128i add1 = _mm_xor_si128(temp1, temp2);
+		if(verbose) printf("[tailwithoutreduction] lastw temp2 %llu %llu \n ", _mm_extract_epi64(temp2,0), _mm_extract_epi64(temp2,1));
+		if(verbose) printf("[tailwithoutreduction] lastw temp1 %llu %llu \n ", _mm_extract_epi64(temp1,0), _mm_extract_epi64(temp1,1));
+		const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x10);
 		acc = _mm_xor_si128(clprod1, acc);
+		++string;
 	}
+	if(verbose) printf("[tailwithoutreduction] acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
+	assert(string == endstring);
 	return acc;
 }
 // the value length does not have to be divisible by 4
 static __m128i __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(const __m128i * randomsource,
 		const uint64_t * string, const size_t length,uint64_t extraword) {
-	printf("[tailwithoutreductionWithExtraWord] word = %llu length = %llu firststring = %llu \n",extraword,length, *string);
+	enum{verbose = 0};
+	if(verbose) printf("[tailwithoutreductionWithExtraWord] word = %llu length = %llu firststring = %llu \n",extraword,length, *string);
 	assert(((uintptr_t) randomsource & 15) == 0);// we expect cache line alignment for the keys
 	const uint64_t * const endstring = string + length;
 	__m128i acc = _mm_setzero_si128();
@@ -110,12 +123,10 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(con
 	if (string + 1 < endstring) {
 		const __m128i temp1 = _mm_load_si128(randomsource);
 		const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
-		printf("[tailwithoutreductionWithExtraWord] bef acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
-
-		printf("[tailwithoutreductionWithExtraWord] 2word temp2 %llu %llu \n ", _mm_extract_epi64(temp2,0), _mm_extract_epi64(temp2,1));
-		printf("[tailwithoutreductionWithExtraWord] 2word temp1 %llu %llu \n ", _mm_extract_epi64(temp1,0), _mm_extract_epi64(temp1,1));
-		printf("[tailwithoutreductionWithExtraWord] aft acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
-
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] bef acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] 2word temp2 %llu %llu \n ", _mm_extract_epi64(temp2,0), _mm_extract_epi64(temp2,1));
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] 2word temp1 %llu %llu \n ", _mm_extract_epi64(temp1,0), _mm_extract_epi64(temp1,1));
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] aft acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
 		const __m128i add1 = _mm_xor_si128(temp1, temp2);
 		const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x10);
 		acc = _mm_xor_si128(clprod1, acc);
@@ -126,24 +137,24 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(con
 	if (string < endstring) {
 		const __m128i temp1 = _mm_load_si128(randomsource);
 		const __m128i temp2 = _mm_set_epi64x(extraword,*string);
-		printf("[tailwithoutreductionWithExtraWord] bef acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
-
-		printf("[tailwithoutreductionWithExtraWord] temp2 %llu %llu \n ", _mm_extract_epi64(temp2,0), _mm_extract_epi64(temp2,1));
-		printf("[tailwithoutreductionWithExtraWord] temp1 %llu %llu \n ", _mm_extract_epi64(temp1,0), _mm_extract_epi64(temp1,1));
-		const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x00);
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] bef acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] temp2 %llu %llu \n ", _mm_extract_epi64(temp2,0), _mm_extract_epi64(temp2,1));
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] temp1 %llu %llu \n ", _mm_extract_epi64(temp1,0), _mm_extract_epi64(temp1,1));
+		const __m128i add1 = _mm_xor_si128(temp1, temp2);
+		const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x10);
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] clprod1 %llu %llu \n ", _mm_extract_epi64(clprod1,0), _mm_extract_epi64(clprod1,1));
 		acc = _mm_xor_si128(clprod1, acc);
-		printf("[tailwithoutreductionWithExtraWord] aft acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
-
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] aft acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
 	} else {
 		const __m128i temp1 = _mm_load_si128(randomsource);
 		const __m128i temp2 = _mm_loadl_epi64((__m128i const*)&extraword);
-		printf("[tailwithoutreductionWithExtraWord] hoo temp2 %llu %llu \n ", _mm_extract_epi64(temp2,0), _mm_extract_epi64(temp2,1));
-		printf("[tailwithoutreductionWithExtraWord] hoo temp1 %llu %llu \n  ", _mm_extract_epi64(temp1,0), _mm_extract_epi64(temp1,1));
-		const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x00);
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] hoo temp2 %llu %llu \n ", _mm_extract_epi64(temp2,0), _mm_extract_epi64(temp2,1));
+		if(verbose) printf("[tailwithoutreductionWithExtraWord] hoo temp1 %llu %llu \n  ", _mm_extract_epi64(temp1,0), _mm_extract_epi64(temp1,1));
+		const __m128i add1 = _mm_xor_si128(temp1, temp2);
+		const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x01);
 		acc = _mm_xor_si128(clprod1, acc);
 	}
-	printf("[tailwithoutreductionWithExtraWord] acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
-
+	if(verbose) printf("[tailwithoutreductionWithExtraWord] acc %llu %llu \n ", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
 	return acc;
 }
 
@@ -180,12 +191,13 @@ static __m128i __clmulhalfscalarproductwithtailwithonewithoutreduction(const __m
 	if (string < endstring) {
 		const __m128i temp1 = _mm_load_si128(randomsource);
 		const __m128i temp2 = _mm_set_epi64x(1,*string);
-		const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x00);
+		const __m128i add1 = _mm_xor_si128(temp1, temp2);
+		const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x10);
 		acc = _mm_xor_si128(clprod1, acc);
 	} else {
 		const __m128i temp1 = _mm_load_si128(randomsource);
 		const __m128i temp2 = _mm_set_epi64x(0,1);
-		const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x00);
+		const __m128i clprod1 = _mm_clmulepi64_si128(temp1, temp2, 0x10);
 		acc = _mm_xor_si128(clprod1, acc);
 	}
 	return acc;
@@ -284,7 +296,8 @@ uint64_t createUnpaddedLastWord(size_t lengthbyte, uint64_t lastw) {
 //////////////////////
 uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 		const size_t lengthbyte) {
-	printf("[CLHASHbyte] lengthbyte = %llu \n",lengthbyte);
+	enum{verbose = 0};
+	if(verbose) printf("[CLHASHbyte] lengthbyte = %llu \n",lengthbyte);
 	assert(sizeof(size_t)<=sizeof(uint64_t));// otherwise, we need to worry
 	assert(((uintptr_t) rs & 15) == 0);// we expect cache line alignment for the keys
 	const unsigned int  m = 128;// we process the data in chunks of 16 cache lines
@@ -295,7 +308,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 	polyvalue = _mm_and_si128(polyvalue,_mm_setr_epi32(0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0x3fffffff));// setting two highest bits to zero
 	// we should check that polyvalue is non-zero, though this is best done outside the function and highly unlikely
 	size_t length = lengthbyte / sizeof(uint64_t);
-	printf("[CLHASHbyte] length = %llu \n",length);
+	if(verbose) printf("[CLHASHbyte] length = %llu \n",length);
 	const uint64_t * string = (const uint64_t *)  stringbyte;
 	if (m <= length) { // long strings
 		__m128i  acc =  __clmulhalfscalarproductwithoutreduction(rs64, string,m);
@@ -308,23 +321,30 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 			acc = _mm_xor_si128(acc,h1);
 		}
 		int remain = length - t;
+		if(verbose) printf("[CLHASHbyte] remain = %d \n",remain);
 		{
 			// we compute something like
 			// acc+= polyvalue * acc + h1
 			acc =  mul128by128to128_lazymod127(polyvalue,acc);
 			uint64_t lastword = createLastWord(lengthbyte, * (string + length));
 			__m128i h1 =  __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string+t,remain,lastword);
+			if(verbose) printf("[CLHASHbyte] h1 %llu %llu \n ", _mm_extract_epi64(h1,0), _mm_extract_epi64(h1,1));
+
 			acc = _mm_xor_si128(acc,h1);
 		}
 		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
 		return  simple128to64hash(acc,finalkey );
 	} else { // short strings
 		uint64_t lastword = createLastWord(lengthbyte, * (string + length));
-		printf("[CLHASHbyte] last word %llu string %llu \n",lastword,*(string + length));
+		if(verbose) printf("[CLHASHbyte] last word %llu string %llu \n",lastword,*(string + length));
 		if(length>0)
-			printf("[CLHASHbyte] first word string %llu \n",*(string ));
+			if(verbose) printf("[CLHASHbyte] first word string %llu \n",*(string ));
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string, length, lastword);
-		return  precompReduction64(acc) ;//fmix64 could be used
+		if(verbose) printf("[CLHASHbyte] === computed acc %llu %llu \n", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
+		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
+		return simple128to64hash(acc, finalkey);
+
+		//		return  precompReduction64(acc) ;//fmix64 could be used
 	}
 }
 
@@ -337,8 +357,8 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 //////////////////////
 uint64_t CLHASHbyteFixed(const void* rs, const char * stringbyte,
 		const size_t lengthbyte) {
-
-	printf("[CLHASHbyteFixed] lengthbyte = %llu \n",lengthbyte);
+	enum{verbose = 0};
+	if(verbose) printf("[CLHASHbyteFixed] lengthbyte = %llu \n",lengthbyte);
 	assert(sizeof(size_t) <= sizeof(uint64_t)); // otherwise, we need to worry
 	assert(((uintptr_t) rs & 15) == 0); // we expect cache line alignment for the keys
 	const unsigned int m = 128; // we process the data in chunks of 16 cache lines
@@ -350,11 +370,13 @@ uint64_t CLHASHbyteFixed(const void* rs, const char * stringbyte,
 			_mm_setr_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x3fffffff)); // setting two highest bits to zero
 	// we should check that polyvalue is non-zero, though this is best done outside the function and highly unlikely
 	size_t length = lengthbyte / sizeof(uint64_t);
-	printf("[CLHASHbyteFixed] length = %llu \n",length);
+	if(verbose) printf("[CLHASHbyteFixed] length = %llu \n",length);
 
 	const uint64_t * string = (const uint64_t *) stringbyte;
 	if (m <= length) { // long strings
+
 		__m128i acc = __clmulhalfscalarproductwithoutreduction(rs64, string, m);
+		if(verbose) printf("[CLHASHbyteFixed] === computed acc %llu %llu \n", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
 		size_t t = m;
 		for (; t + m <= length; t += m) {
 			// we compute something like
@@ -365,30 +387,53 @@ uint64_t CLHASHbyteFixed(const void* rs, const char * stringbyte,
 			acc = _mm_xor_si128(acc, h1);
 		}
 		int remain = length - t;
-		{
+		if(verbose) printf("[CLHASHbyteFixed] remain = %d \n",remain);
+
+		if(remain != 0){
 			// we compute something like
 			// acc+= polyvalue * acc + h1
 			acc = mul128by128to128_lazymod127(polyvalue, acc);
-			uint64_t lastword = createUnpaddedLastWord(lengthbyte,
-					*(string + length));
-			__m128i h1 =
-					__clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
-							rs64, string + t, remain, lastword);
-			acc = _mm_xor_si128(acc, h1);
+			if (lengthbyte % sizeof(uint64_t) == 0) {
+				__m128i h1 = __clmulhalfscalarproductwithtailwithoutreduction(
+						rs64, string + t, remain);
+				if(verbose) printf("[CLHASHbyteFixed] h1 %llu %llu \n ", _mm_extract_epi64(h1,0), _mm_extract_epi64(h1,1));
+
+				acc = _mm_xor_si128(acc, h1);
+
+			} else {
+
+				uint64_t lastword = createUnpaddedLastWord(lengthbyte,
+						*(string + length));
+				__m128i h1 =
+						__clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
+								rs64, string + t, remain, lastword);
+				if(verbose) printf("[CLHASHbyteFixed]* h1 %llu %llu \n ", _mm_extract_epi64(h1,0), _mm_extract_epi64(h1,1));
+
+				acc = _mm_xor_si128(acc, h1);
+			}
 		}
 		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
 		return simple128to64hash(acc, finalkey);
 	} else { // short strings
+		if(lengthbyte % sizeof(uint64_t) == 0) {
+			__m128i acc = __clmulhalfscalarproductwithtailwithoutreduction(
+									rs64, string, length);
+			if(verbose) printf("[CLHASHbyteFixed] acc %llu %llu \n", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
+
+			__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
+			return simple128to64hash(acc, finalkey);
+			//return precompReduction64(acc);
+		}
 		uint64_t lastword = createUnpaddedLastWord(lengthbyte,
 				*(string + length));
-		printf("[CLHASHbyteFixed] last word %llu string %llu \n",lastword,*(string + length));
+		if(verbose) printf("[CLHASHbyteFixed] last word %llu string %llu \n",lastword,*(string + length));
 		if(length>0)
-			printf("[CLHASHbyteFixed] first word string %llu \n",*(string ));
-
-			__m128i acc =
-				__clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
+			if(verbose) printf("[CLHASHbyteFixed] first word string %llu \n",*(string ));
+		__m128i acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
 						rs64, string, length, lastword);
-		return precompReduction64(acc); //fmix64 could be used
+		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
+		return simple128to64hash(acc, finalkey);
+		//return precompReduction64(acc); //fmix64 could be used
 	}
 }
 

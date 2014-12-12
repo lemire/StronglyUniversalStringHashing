@@ -120,7 +120,9 @@ bool SanityTest ( pfHash hash, const int hashbits )
 
           if(memcmp(hash1,hash2,hashbytes) == 0)
           {
-            result = false;
+        	  printf("flip a bit should change the result %d ",bit);
+
+        	  result = false;
           }
 
           // Flip it back, hash again -> we should get the original result.
@@ -130,6 +132,8 @@ bool SanityTest ( pfHash hash, const int hashbits )
 
           if(memcmp(hash1,hash2,hashbytes) != 0)
           {
+        	  printf("not original result len = %d %llu bit %d ",len, *(unsigned long long *)key2,bit );
+        	  abort();
             result = false;
           }
         }

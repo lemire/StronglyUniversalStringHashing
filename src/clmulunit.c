@@ -467,7 +467,38 @@ void clhashtest() {
 	char *  rs = (char*)malloc(N);
 	for(int k = 0; k<N; ++k) {
 	  array[k] = 0;
-	  rs[k] = k;
+	  rs[k] = k+1;
+	}
+	for(int k = -1; k < 1024; ++k ) {
+		char * farray = (char*)malloc(N);
+	    for(int kk = 0; kk<1024; ++kk) {
+				  farray[kk] = 0;
+		}
+		printf("[clhashtest] k = %d \n",k);
+
+	    if(k>=0) farray[k] = 1;
+	    __m128i acc = __clmulhalfscalarproductwithoutreduction(rs, farray, 128);
+		__m128i acc2 = __clmulhalfscalarproductwithtailwithoutreduction(
+								rs, farray, 128);
+		assert( _mm_extract_epi64(acc,0) == _mm_extract_epi64(acc2,0));
+		assert( _mm_extract_epi64(acc,1) == _mm_extract_epi64(acc2,1));
+	}
+	for(int bit = 0; bit < 64; ++bit ) {
+		printf("[clhashtest] bit = %d \n",bit);
+		for(int length = (bit+8)/8; length <= sizeof(uint64_t); ++length) {
+			printf("[clhashtest] length = %d \n",length);
+			uint64_t x = 0;
+			uint64_t orig = CLHASHbyteFixed(rs, (const char *)&x, length);
+			printf("[clhashtest] orig %llu \n",orig);
+			x ^= ((uint64_t)1) << bit;
+			uint64_t flip = CLHASHbyteFixed(rs, (const char *)&x, length);
+			printf("[clhashtest] flip %llu \n",flip);
+			assert(flip != orig);
+			x ^= ((uint64_t)1) << bit;
+			uint64_t back = CLHASHbyteFixed(rs, (const char *)&x, length);
+			printf("[clhashtest] back %llu \n",back);
+			assert(back == orig);
+		}
 	}
 
 	for(int k = 0; k <= N - 1; ++k ) {
