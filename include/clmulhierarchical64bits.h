@@ -239,7 +239,7 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 	__m128i polyvalue =  _mm_load_si128(rs64 + m128neededperblock); // to preserve alignment on cache lines for main loop, we pick random bits at the end
 	polyvalue = _mm_and_si128(polyvalue,_mm_setr_epi32(0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0x3fffffff));// setting two highest bits to zero
 	// we should check that polyvalue is non-zero, though this is best done outside the function and highly unlikely
-	if (m < length) { // long strings
+	if (m <= length) { // long strings
 		__m128i  acc =  __clmulhalfscalarproductwithoutreduction(rs64, string,m);
 		size_t t = m;
 		for (; t +  m <= length; t +=  m) {
@@ -254,14 +254,17 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 			// we compute something like
 			// acc+= polyvalue * acc + h1
 			acc =  mul128by128to128_lazymod127(polyvalue,acc);
-			__m128i h1 =  __clmulhalfscalarproductwithtailwithonewithoutreduction(rs64, string+t,remain);
+			uint64_t lastword = 1;
+			__m128i h1 =  __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string+t,remain,lastword);
 			acc = _mm_xor_si128(acc,h1);
 		}
 		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
-		return (length * sizeof(uint64_t)) ^ simple128to64hash(acc,finalkey );
+		return  simple128to64hash(acc,finalkey );
 	} else { // short strings
-		__m128i  acc = __clmulhalfscalarproductwithtailwithonewithoutreduction(rs64, string, length);
-		return fmix64((length * sizeof(uint64_t)) ^ precompReduction64(acc) );
+		uint64_t lastword = 1;
+		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string, length, lastword);
+		return precompReduction64(acc) ;
+		//fmix64(
 	}
 }
 

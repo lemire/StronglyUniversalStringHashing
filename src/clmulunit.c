@@ -475,7 +475,6 @@ void clhashtest() {
 	  uint64_t val2 = 18427963401415413539;
 	  uint64_t b2 = clhash(&val2, 8);
 	  uint64_t b3 = clhash(&val1, 8);
-	  printf("[clhashtest]  %llu %llu %llu \n",b1,b2,b3);
 	  assert(b1 == b3);
 	  assert(b1 != b2);
 	}
@@ -484,7 +483,6 @@ void clhashtest() {
 	    for(int kk = 0; kk<1024; ++kk) {
 				  farray[kk] = 0;
 		}
-		printf("[clhashtest] k = %d \n",k);
 
 	    if(k>=0) farray[k] = 1;
 	    __m128i acc = __clmulhalfscalarproductwithoutreduction(rs, farray, 128);
@@ -494,19 +492,14 @@ void clhashtest() {
 		assert( _mm_extract_epi64(acc,1) == _mm_extract_epi64(acc2,1));
 	}
 	for(int bit = 0; bit < 64; ++bit ) {
-		printf("[clhashtest] bit = %d \n",bit);
 		for(int length = (bit+8)/8; length <= sizeof(uint64_t); ++length) {
-			printf("[clhashtest] length = %d \n",length);
 			uint64_t x = 0;
 			uint64_t orig = CLHASHbyteFixed(rs, (const char *)&x, length);
-			printf("[clhashtest] orig %llu \n",orig);
 			x ^= ((uint64_t)1) << bit;
 			uint64_t flip = CLHASHbyteFixed(rs, (const char *)&x, length);
-			printf("[clhashtest] flip %llu \n",flip);
 			assert(flip != orig);
 			x ^= ((uint64_t)1) << bit;
 			uint64_t back = CLHASHbyteFixed(rs, (const char *)&x, length);
-			printf("[clhashtest] back %llu \n",back);
 			assert(back == orig);
 		}
 	}
@@ -518,11 +511,7 @@ void clhashtest() {
 		  farray[kk] = 0;
 		}
 	    farray[k] = 1;
-		printf("[clhashtest] my first word string %llu \n",*((uint64_t *) farray));
-
 	    uint64_t fixed = CLHASHbyteFixed(rs, farray, k+1);
-		printf("[clhashtest] k=%d  fixed =  %llu \n ",k,fixed );
-		printf("[clhashtest] k=%d  %llu  %llu \n ",k,reg,fixed );
 		assert(reg == fixed);
 		for(int kk = k+1; kk<=N-1;++kk) {
 			farray[kk] = kk;
@@ -530,6 +519,19 @@ void clhashtest() {
 		}
 		free(farray);
 	}
+	for(int k = 0; k <= 2048; ++k ) {
+	    uint64_t reg = CLHASHbyte(rs, array, k);
+	    uint64_t * farray = (char*)malloc(k * sizeof(uint64_t));
+		for(int kk = 0; kk<k; ++kk) {
+		  farray[kk] = 1024+k;
+		}
+		printf("k = %d\n",k);
+	    uint64_t hashbyte = CLHASHbyte(rs, (const char *)farray, k*sizeof(uint64_t));
+	    uint64_t hashword = CLHASH(rs, farray, k);
+	    assert(hashbyte == hashword);
+		free(farray);
+	}
+
 	free(array);
 	free(rs);
 
