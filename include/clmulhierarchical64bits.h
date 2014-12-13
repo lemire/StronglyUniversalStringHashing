@@ -24,6 +24,7 @@ static uint64_t simple128to64hash( const __m128i value, const __m128i key) {
 	return precompReduction64(clprod1);
 }
 
+enum{CLHASH_DEBUG=0};
 
 // For use with CLHASH
 // we expect length to have value 128 or, at least, to be divisible by 4.
@@ -31,7 +32,7 @@ static __m128i __clmulhalfscalarproductwithoutreduction(const __m128i * randomso
 		const size_t length) {
 	assert(((uintptr_t) randomsource & 15) == 0);// we expect cache line alignment for the keys
 	// we expect length = 128, so we need  16 cache lines of keys and 16 cache lines of strings.
-	assert((length & 3) == 0); // if not, we need special handling (omitted)
+	if(CLHASH_DEBUG) assert((length & 3) == 0); // if not, we need special handling (omitted)
 	const uint64_t * const endstring = string + length;
 	__m128i acc = _mm_setzero_si128();
 	// we expect length = 128
@@ -47,7 +48,7 @@ static __m128i __clmulhalfscalarproductwithoutreduction(const __m128i * randomso
 		const __m128i clprod12 = _mm_clmulepi64_si128(add12, add12, 0x10);
 		acc = _mm_xor_si128(clprod12, acc);
 	}
-	assert(string == endstring);
+	if(CLHASH_DEBUG) assert(string == endstring);
 	return acc;
 }
 
@@ -71,7 +72,7 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * 
 		acc = _mm_xor_si128(clprod12, acc);
 	}
 	if (string + 1 < endstring) {
-		assert(length != 128);
+		if(CLHASH_DEBUG) assert(length != 128);
 		const __m128i temp1 = _mm_load_si128(randomsource);
 		const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
 		const __m128i add1 = _mm_xor_si128(temp1, temp2);
@@ -81,15 +82,15 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * 
 		string += 2;
 	}
 	if (string < endstring) {
-		assert(length != 128);
+		if(CLHASH_DEBUG) assert(length != 128);
 		const __m128i temp1 = _mm_load_si128(randomsource);
 		const __m128i temp2 = _mm_loadl_epi64((__m128i const*)string);
 		const __m128i add1 = _mm_xor_si128(temp1, temp2);
 		const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x10);
 		acc = _mm_xor_si128(clprod1, acc);
-		++string;
+		if(CLHASH_DEBUG) ++string;
 	}
-	assert(string == endstring);
+	if(CLHASH_DEBUG) assert(string == endstring);
 	return acc;
 }
 // the value length does not have to be divisible by 4
@@ -168,7 +169,7 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 	assert(sizeof(size_t)<=sizeof(uint64_t));// otherwise, we need to worry
 	assert(((uintptr_t) rs & 15) == 0);// we expect cache line alignment for the keys
 	const unsigned int m = 128;// we process the data in chunks of 16 cache lines
-	assert((m  & 3) == 0); //m should be divisible by 4
+	if(CLHASH_DEBUG) assert((m  & 3) == 0); //m should be divisible by 4
 	const int m128neededperblock = m / 2;// that is how many 128-bit words of random bits we use per block
 	const __m128i * rs64 = (__m128i *) rs;
 	__m128i polyvalue =  _mm_load_si128(rs64 + m128neededperblock); // to preserve alignment on cache lines for main loop, we pick random bits at the end
@@ -238,7 +239,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 	assert(sizeof(size_t)<=sizeof(uint64_t));// otherwise, we need to worry
 	assert(((uintptr_t) rs & 15) == 0);// we expect cache line alignment for the keys
 	const unsigned int  m = 128;// we process the data in chunks of 16 cache lines
-	assert((m  & 3) == 0); //m should be divisible by 4
+	if(CLHASH_DEBUG) assert((m  & 3) == 0); //m should be divisible by 4
 	const int m128neededperblock = m / 2;// that is how many 128-bit words of random bits we use per block
 	const __m128i * rs64 = (__m128i *) rs;
 	__m128i polyvalue =  _mm_load_si128(rs64 + m128neededperblock); // to preserve alignment on cache lines for main loop, we pick random bits at the end
@@ -286,7 +287,7 @@ uint64_t CLHASHbyteFixed(const void* rs, const char * stringbyte,
 	assert(sizeof(size_t) <= sizeof(uint64_t)); // otherwise, we need to worry
 	assert(((uintptr_t) rs & 15) == 0); // we expect cache line alignment for the keys
 	const unsigned int m = 128; // we process the data in chunks of 16 cache lines
-	assert((m & 3) == 0); //m should be divisible by 4
+	if(CLHASH_DEBUG) assert((m & 3) == 0); //m should be divisible by 4
 	const int m128neededperblock = m / 2; // that is how many 128-bit words of random bits we use per block
 	const __m128i * rs64 = (__m128i *) rs;
 	__m128i polyvalue = _mm_load_si128(rs64 + m128neededperblock); // to preserve alignment on cache lines for main loop, we pick random bits at the end
