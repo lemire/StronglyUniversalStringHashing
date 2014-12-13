@@ -18,7 +18,7 @@
 // hashing the bits in value using the keys key1 and key2 (only the first 64 bits of key2 are used).
 // This is basically (a xor k1) * (b xor k2) mod p
 //
-static uint64_t simple128to64hash( __m128i value, __m128i key) {
+static uint64_t simple128to64hash( const __m128i value, const __m128i key) {
     const __m128i add =  _mm_xor_si128 (value,key);
     const __m128i clprod1  = _mm_clmulepi64_si128( add, add, 0x10);
 	return precompReduction64(clprod1);
@@ -36,8 +36,7 @@ static __m128i __clmulhalfscalarproductwithoutreduction(const __m128i * randomso
 	__m128i acc = _mm_setzero_si128();
 	// we expect length = 128
 	for (; string + 3 < endstring; randomsource += 2, string += 4) {
-          //IACA_START
-		const __m128i temp1 = _mm_load_si128( randomsource);
+        const __m128i temp1 = _mm_load_si128( randomsource);
 		const __m128i temp2 = _mm_lddqu_si128((__m128i *) string);
 		const __m128i add1 = _mm_xor_si128(temp1, temp2);
 		const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x10);
@@ -48,7 +47,6 @@ static __m128i __clmulhalfscalarproductwithoutreduction(const __m128i * randomso
 		const __m128i clprod12 = _mm_clmulepi64_si128(add12, add12, 0x10);
 		acc = _mm_xor_si128(clprod12, acc);
 	}
-        //IACA_END
 	assert(string == endstring);
 	return acc;
 }
@@ -96,7 +94,7 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreduction(const __m128i * 
 }
 // the value length does not have to be divisible by 4
 static __m128i __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(const __m128i * randomsource,
-		const uint64_t * string, const size_t length,uint64_t extraword) {
+		const uint64_t * string, const size_t length, const uint64_t extraword) {
 	assert(((uintptr_t) randomsource & 15) == 0);// we expect cache line alignment for the keys
 	const uint64_t * const endstring = string + length;
 	__m128i acc = _mm_setzero_si128();
@@ -183,35 +181,34 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 			// we compute something like
 			// acc+= polyvalue * acc + h1
 			acc =  mul128by128to128_lazymod127(polyvalue,acc);
-			__m128i h1 =  __clmulhalfscalarproductwithoutreduction(rs64, string+t,m);
+			const __m128i h1 =  __clmulhalfscalarproductwithoutreduction(rs64, string+t,m);
 			acc = _mm_xor_si128(acc,h1);
 		}
-		int remain = length - t;
-		{
-			// we compute something like
-			// acc+= polyvalue * acc + h1
-			acc =  mul128by128to128_lazymod127(polyvalue,acc);
-			uint64_t lastword = 1;
-			__m128i h1 =  __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string+t,remain,lastword);
-			acc = _mm_xor_si128(acc,h1);
-		}
+		const int remain = length - t;
+		// we compute something like
+		// acc+= polyvalue * acc + h1
+		acc = mul128by128to128_lazymod127(polyvalue, acc);
+		const uint64_t lastword = 1;
+		const __m128i h1 =
+				__clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
+						rs64, string + t, remain, lastword);
+		acc = _mm_xor_si128(acc, h1);
 		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
 		return  simple128to64hash(acc,finalkey );
 	} else { // short strings
-		uint64_t lastword = 1;
-		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string, length, lastword);
+		const uint64_t lastword = 1;
+		const __m128i  acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string, length, lastword);
 		return fmix64(precompReduction64(acc)) ;
-		//fmix64(
 	}
 }
 
 
 // there always remain an incomplete word that has 0,1,2, 3, 4, 5, 6, 7 used bytes.
 // we append 1 to it
-uint64_t createLastWord(size_t lengthbyte, uint64_t lastw) {
-	int significantbytes = lengthbyte % sizeof(uint64_t);
+uint64_t createLastWord(const size_t lengthbyte, const uint64_t lastw) {
+	const int significantbytes = lengthbyte % sizeof(uint64_t);
 	if(significantbytes==0) return 1;
-	uint64_t mask = (~((uint64_t)0)) >> ((sizeof(uint64_t)- significantbytes)*8);
+	const uint64_t mask = (~((uint64_t)0)) >> ((sizeof(uint64_t)- significantbytes)*8);
 	uint64_t lastword = lastw  & mask;// could be cleverer
 	lastword |= ((uint64_t)1) <<( significantbytes  * 8);
 	return lastword;
@@ -219,11 +216,11 @@ uint64_t createLastWord(size_t lengthbyte, uint64_t lastw) {
 
 // there always remain an incomplete word that has 0,1,2, 3, 4, 5, 6, 7 used bytes.
 // we append 1 to it
-uint64_t createUnpaddedLastWord(size_t lengthbyte, uint64_t lastw) {
-	int significantbytes = lengthbyte % sizeof(uint64_t);
+uint64_t createUnpaddedLastWord(const size_t lengthbyte, const uint64_t lastw) {
+	const int significantbytes = lengthbyte % sizeof(uint64_t);
 	if(significantbytes==0) return 0;
-	uint64_t mask = (~((uint64_t)0)) >> ((sizeof(uint64_t)- significantbytes)*8);
-	uint64_t lastword = lastw  & mask;// could be cleverer
+	const uint64_t mask = (~((uint64_t)0)) >> ((sizeof(uint64_t)- significantbytes)*8);
+	const uint64_t lastword = lastw  & mask;// could be cleverer
 	return lastword;
 }
 
@@ -256,23 +253,23 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 			// we compute something like
 			// acc+= polyvalue * acc + h1
 			acc =  mul128by128to128_lazymod127(polyvalue,acc);
-			__m128i h1 =  __clmulhalfscalarproductwithoutreduction(rs64, string+t,m);
+			const __m128i h1 =  __clmulhalfscalarproductwithoutreduction(rs64, string+t,m);
 			acc = _mm_xor_si128(acc,h1);
 		}
-		int remain = length - t;
-		{
-			// we compute something like
-			// acc+= polyvalue * acc + h1
-			acc =  mul128by128to128_lazymod127(polyvalue,acc);
-			uint64_t lastword = createLastWord(lengthbyte, * (string + length));
-			__m128i h1 =  __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string+t,remain,lastword);
-			acc = _mm_xor_si128(acc,h1);
-		}
-		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
+		const int remain = length - t;
+		// we compute something like
+		// acc+= polyvalue * acc + h1
+		acc = mul128by128to128_lazymod127(polyvalue, acc);
+		const uint64_t lastword = createLastWord(lengthbyte, *(string + length));
+		const __m128i h1 =
+				__clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
+						rs64, string + t, remain, lastword);
+		acc = _mm_xor_si128(acc, h1);
+		const __m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
 		return  simple128to64hash(acc,finalkey );
 	} else { // short strings
-		uint64_t lastword = createLastWord(lengthbyte, * (string + length));
-		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string, length, lastword);
+		const uint64_t lastword = createLastWord(lengthbyte, * (string + length));
+		const __m128i  acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string, length, lastword);
 		return  fmix64(precompReduction64(acc)) ;
 	}
 }
@@ -309,37 +306,35 @@ uint64_t CLHASHbyteFixed(const void* rs, const char * stringbyte,
 					string + t, m);
 			acc = _mm_xor_si128(acc, h1);
 		}
-		int remain = length - t;
+		const int remain = length - t;
 		if(remain != 0){
 			// we compute something like
 			// acc+= polyvalue * acc + h1
 			acc = mul128by128to128_lazymod127(polyvalue, acc);
 			if (lengthbyte % sizeof(uint64_t) == 0) {
-				__m128i h1 = __clmulhalfscalarproductwithtailwithoutreduction(
+				const __m128i h1 = __clmulhalfscalarproductwithtailwithoutreduction(
 						rs64, string + t, remain);
 				acc = _mm_xor_si128(acc, h1);
-
 			} else {
-
-				uint64_t lastword = createUnpaddedLastWord(lengthbyte,
+				const uint64_t lastword = createUnpaddedLastWord(lengthbyte,
 						*(string + length));
-				__m128i h1 =
+				const __m128i h1 =
 						__clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
 								rs64, string + t, remain, lastword);
 				acc = _mm_xor_si128(acc, h1);
 			}
 		}
-		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
+		const __m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
 		return simple128to64hash(acc, finalkey);
 	} else { // short strings
 		if(lengthbyte % sizeof(uint64_t) == 0) {
-			__m128i acc = __clmulhalfscalarproductwithtailwithoutreduction(
+			const __m128i acc = __clmulhalfscalarproductwithtailwithoutreduction(
 									rs64, string, length);
 			return  fmix64(precompReduction64(acc)) ;
 		}
-		uint64_t lastword = createUnpaddedLastWord(lengthbyte,
+		const uint64_t lastword = createUnpaddedLastWord(lengthbyte,
 				*(string + length));
-		__m128i acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
+		const __m128i acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
 						rs64, string, length, lastword);
 		return  fmix64(precompReduction64(acc)) ;
 	}
