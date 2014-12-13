@@ -194,7 +194,7 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 				__clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
 						rs64, string + t, remain, lastword);
 		acc = _mm_xor_si128(acc, h1);
-		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
+		const __m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
 		return  simple128to64hash(acc,finalkey );
 	} else { // short strings
 		const uint64_t lastword = 1;
