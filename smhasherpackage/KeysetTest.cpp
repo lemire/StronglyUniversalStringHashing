@@ -70,7 +70,6 @@ bool VerificationTest ( pfHash hash, const int hashbits, uint32_t expected, bool
 // Hashing the same key twice should always produce the same result.
 
 // The memory alignment of the key should not affect the hash result.
-
 bool SanityTest ( pfHash hash, const int hashbits )
 {
   printf("Running sanity check 1");
@@ -120,20 +119,15 @@ bool SanityTest ( pfHash hash, const int hashbits )
 
           if(memcmp(hash1,hash2,hashbytes) == 0)
           {
-        	  printf("flip a bit should change the result %d ",bit);
-
         	  result = false;
           }
 
-          // Flip it back, hash again -> we should get the original result.
 
           flipbit(key2,len,bit);
           hash(key2,len,0,hash2);
 
           if(memcmp(hash1,hash2,hashbytes) != 0)
           {
-        	  printf("not original result len = %d %llu bit %d ",len, *(unsigned long long *)key2,bit );
-        	  abort();
             result = false;
           }
         }

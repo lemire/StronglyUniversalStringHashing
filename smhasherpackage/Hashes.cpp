@@ -29,7 +29,7 @@ void CLHASH32 ( const void * key, int len, uint32_t seed, void * out ) {
 void CLHASH64 ( const void * key, int len, uint32_t seed, void * out )
 {
   if (saved_seed != seed) {
-    init_cl3264(seed);
+	  init_cl3264(seed);
     saved_seed = seed;
   }
   *(uint64_t*)out = cl64(key,len);

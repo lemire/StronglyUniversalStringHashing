@@ -222,7 +222,7 @@ inline uint64_t fmix64 ( uint64_t k ) {
 // just two levels like VHASH
 // at low level, we use a half-multiplication multilinear that we aggregate using
 // a CLMUL polynomial hash
-// this uses 128 + 2 keys.(130*8 random bytes or about 1KB)
+// this uses 128 + 2 keys.(RANDOM_BYTES_NEEDED_FOR_CLHASH random bytes or about 1KB)
 //
 // rs : the random data source (should contain at least 130*8 random bytes)
 // string : the input data source
@@ -270,6 +270,7 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 // we append 1 to it
 uint64_t createLastWord(size_t lengthbyte, uint64_t lastw) {
 	int significantbytes = lengthbyte % sizeof(uint64_t);
+	if(significantbytes==0) return 1;
 	uint64_t mask = (~((uint64_t)0)) >> ((sizeof(uint64_t)- significantbytes)*8);
 	uint64_t lastword = lastw  & mask;// could be cleverer
 	lastword |= ((uint64_t)1) <<( significantbytes  * 8);
@@ -280,17 +281,18 @@ uint64_t createLastWord(size_t lengthbyte, uint64_t lastw) {
 // we append 1 to it
 uint64_t createUnpaddedLastWord(size_t lengthbyte, uint64_t lastw) {
 	int significantbytes = lengthbyte % sizeof(uint64_t);
+	if(significantbytes==0) return 0;
 	uint64_t mask = (~((uint64_t)0)) >> ((sizeof(uint64_t)- significantbytes)*8);
 	uint64_t lastword = lastw  & mask;// could be cleverer
 	return lastword;
 }
 
-
+enum{RANDOM_BYTES_NEEDED_FOR_CLHASH=132*8};
 
 //////////////////////
 // like CLHASH, but can hash byte strings
 //
-// rs : the random data source (should contain at least 130*8 random bytes)
+// rs : the random data source (should contain at least RANDOM_BYTES_NEEDED_FOR_CLHASH random bytes)
 // stringbyte : the input data source
 // length : number of bytes in the string
 //////////////////////
@@ -341,8 +343,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 			if(verbose) printf("[CLHASHbyte] first word string %llu \n",*(string ));
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string, length, lastword);
 		if(verbose) printf("[CLHASHbyte] === computed acc %llu %llu \n", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
-		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
-		return simple128to64hash(acc, finalkey);
+		return  precompReduction64(acc) ;
 
 		//		return  precompReduction64(acc) ;//fmix64 could be used
 	}
@@ -351,7 +352,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 //////////////////////
 // like CLHASHbyte but does not pad with an extra 1
 //
-// rs : the random data source (should contain at least 130*8 random bytes)
+// rs : the random data source (should contain at least RANDOM_BYTES_NEEDED_FOR_CLHASH random bytes)
 // stringbyte : the input data source
 // length : number of bytes in the string
 //////////////////////
@@ -373,7 +374,7 @@ uint64_t CLHASHbyteFixed(const void* rs, const char * stringbyte,
 	if(verbose) printf("[CLHASHbyteFixed] length = %llu \n",length);
 
 	const uint64_t * string = (const uint64_t *) stringbyte;
-	if (m <= length) { // long strings
+	if (m < length) { // long strings
 
 		__m128i acc = __clmulhalfscalarproductwithoutreduction(rs64, string, m);
 		if(verbose) printf("[CLHASHbyteFixed] === computed acc %llu %llu \n", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
@@ -420,8 +421,7 @@ uint64_t CLHASHbyteFixed(const void* rs, const char * stringbyte,
 									rs64, string, length);
 			if(verbose) printf("[CLHASHbyteFixed] acc %llu %llu \n", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
 
-			__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
-			return simple128to64hash(acc, finalkey);
+			return  precompReduction64(acc) ;
 			//return precompReduction64(acc);
 		}
 		uint64_t lastword = createUnpaddedLastWord(lengthbyte,
@@ -431,12 +431,29 @@ uint64_t CLHASHbyteFixed(const void* rs, const char * stringbyte,
 			if(verbose) printf("[CLHASHbyteFixed] first word string %llu \n",*(string ));
 		__m128i acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
 						rs64, string, length, lastword);
-		__m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
-		return simple128to64hash(acc, finalkey);
+		return  precompReduction64(acc) ;
 		//return precompReduction64(acc); //fmix64 could be used
 	}
 }
 
+/////////
+// what follows are convenience functions
+// call init_clhash once with a 32-bit key
+// then call clhash to hash strings.
+/////////
+#include "mersenne.h"
 
+static uint64_t randomkey[RANDOM_BYTES_NEEDED_FOR_CLHASH];
+
+void init_clhash( uint32_t seed) {
+  ZRandom zr;
+  initZRandom(&zr,seed);
+  for (int i=0; i < RANDOM_BYTES_NEEDED_FOR_CLHASH; ++i)
+	  randomkey[i] = getValue(&zr) | ( ((uint64_t) getValue(&zr)) << 32);
+}
+
+uint64_t clhash( const void *key, int len) {
+	return CLHASHbyte(randomkey,(const char *)key,len);
+}
 
 #endif /* CLMULHIERARCHICAL64BITS_H_ */

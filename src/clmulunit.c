@@ -461,13 +461,23 @@ void clmulunittests() {
 }
 
 void clhashtest() {
-
     const int N = 1024;
 	char * array  = (char*)malloc(N);
 	char *  rs = (char*)malloc(N);
 	for(int k = 0; k<N; ++k) {
 	  array[k] = 0;
 	  rs[k] = k+1;
+	}
+	{
+	  init_clhash(0);
+	  uint64_t val1 = 18427963401415413538;
+	  uint64_t b1 = clhash(&val1, 8);
+	  uint64_t val2 = 18427963401415413539;
+	  uint64_t b2 = clhash(&val2, 8);
+	  uint64_t b3 = clhash(&val1, 8);
+	  printf("[clhashtest]  %llu %llu %llu \n",b1,b2,b3);
+	  assert(b1 == b3);
+	  assert(b1 != b2);
 	}
 	for(int k = -1; k < 1024; ++k ) {
 		char * farray = (char*)malloc(N);
