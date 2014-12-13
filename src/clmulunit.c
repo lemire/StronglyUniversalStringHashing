@@ -471,9 +471,9 @@ void clhashtest() {
 	printf("[clhashtest] initial sanity checking \n");
 	{
 	  init_clhash(0);
-	  uint64_t val1 = 18427963401415413538;
+	  uint64_t val1 = 18427963401415413538ULL;
 	  uint64_t b1 = clhash(&val1, 8);
-	  uint64_t val2 = 18427963401415413539;
+	  uint64_t val2 = 18427963401415413539ULL;
 	  uint64_t b2 = clhash(&val2, 8);
 	  uint64_t b3 = clhash(&val1, 8);
 	  assert(b1 == b3);
@@ -487,15 +487,15 @@ void clhashtest() {
 		}
 
 	    if(k>=0) farray[k] = 1;
-	    __m128i acc = __clmulhalfscalarproductwithoutreduction(rs, farray, 128);
+	    __m128i acc = __clmulhalfscalarproductwithoutreduction((const __m128i *)rs, (const uint64_t *) farray, 128);
 		__m128i acc2 = __clmulhalfscalarproductwithtailwithoutreduction(
-								rs, farray, 128);
+				(const __m128i *)rs, (const uint64_t *) farray, 128);
 		assert( _mm_extract_epi64(acc,0) == _mm_extract_epi64(acc2,0));
 		assert( _mm_extract_epi64(acc,1) == _mm_extract_epi64(acc2,1));
 	}
 	printf("[clhashtest] checking that flipping a bit changes hash value\n");
 	for(int bit = 0; bit < 64; ++bit ) {
-		for(int length = (bit+8)/8; length <= sizeof(uint64_t); ++length) {
+		for(int length = (bit+8)/8; length <= (int)sizeof(uint64_t); ++length) {
 			uint64_t x = 0;
 			uint64_t orig = CLHASHbyteFixed(rs, (const char *)&x, length);
 			x ^= ((uint64_t)1) << bit;
@@ -525,8 +525,7 @@ void clhashtest() {
 	}
 	printf("[clhashtest] checking that CLHASHbyte agrees with CLHASH\n");
 	for(int k = 0; k <= 2048; ++k ) {
-	    uint64_t reg = CLHASHbyte(rs, array, k);
-	    uint64_t * farray = (char*)malloc(k * sizeof(uint64_t));
+	    uint64_t * farray = (uint64_t*)malloc(k * sizeof(uint64_t));
 		for(int kk = 0; kk<k; ++kk) {
 		  farray[kk] = 1024+k;
 		}
