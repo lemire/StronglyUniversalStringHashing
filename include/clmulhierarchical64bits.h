@@ -263,7 +263,7 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 	} else { // short strings
 		uint64_t lastword = 1;
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string, length, lastword);
-		return precompReduction64(acc) ;
+		return fmix64(precompReduction64(acc)) ;
 		//fmix64(
 	}
 }
@@ -346,7 +346,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 			if(verbose) printf("[CLHASHbyte] first word string %llu \n",*(string ));
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(rs64, string, length, lastword);
 		if(verbose) printf("[CLHASHbyte] === computed acc %llu %llu \n", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
-		return  precompReduction64(acc) ;
+		return  fmix64(precompReduction64(acc)) ;
 
 		//		return  precompReduction64(acc) ;//fmix64 could be used
 	}
@@ -424,7 +424,7 @@ uint64_t CLHASHbyteFixed(const void* rs, const char * stringbyte,
 									rs64, string, length);
 			if(verbose) printf("[CLHASHbyteFixed] acc %llu %llu \n", _mm_extract_epi64(acc,0), _mm_extract_epi64(acc,1));
 
-			return  precompReduction64(acc) ;
+			return  fmix64(precompReduction64(acc)) ;
 			//return precompReduction64(acc);
 		}
 		uint64_t lastword = createUnpaddedLastWord(lengthbyte,
@@ -434,7 +434,7 @@ uint64_t CLHASHbyteFixed(const void* rs, const char * stringbyte,
 			if(verbose) printf("[CLHASHbyteFixed] first word string %llu \n",*(string ));
 		__m128i acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
 						rs64, string, length, lastword);
-		return  precompReduction64(acc) ;
+		return  fmix64(precompReduction64(acc)) ;
 		//return precompReduction64(acc); //fmix64 could be used
 	}
 }

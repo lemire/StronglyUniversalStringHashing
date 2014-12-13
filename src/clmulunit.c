@@ -468,6 +468,7 @@ void clhashtest() {
 	  array[k] = 0;
 	  rs[k] = k+1;
 	}
+	printf("[clhashtest] initial sanity checking \n");
 	{
 	  init_clhash(0);
 	  uint64_t val1 = 18427963401415413538;
@@ -478,6 +479,7 @@ void clhashtest() {
 	  assert(b1 == b3);
 	  assert(b1 != b2);
 	}
+	printf("[clhashtest] checking that __clmulhalfscalarproductwithoutreduction agrees with __clmulhalfscalarproductwithtailwithoutreduction\n");
 	for(int k = -1; k < 1024; ++k ) {
 		char * farray = (char*)malloc(N);
 	    for(int kk = 0; kk<1024; ++kk) {
@@ -491,6 +493,7 @@ void clhashtest() {
 		assert( _mm_extract_epi64(acc,0) == _mm_extract_epi64(acc2,0));
 		assert( _mm_extract_epi64(acc,1) == _mm_extract_epi64(acc2,1));
 	}
+	printf("[clhashtest] checking that flipping a bit changes hash value\n");
 	for(int bit = 0; bit < 64; ++bit ) {
 		for(int length = (bit+8)/8; length <= sizeof(uint64_t); ++length) {
 			uint64_t x = 0;
@@ -504,6 +507,7 @@ void clhashtest() {
 		}
 	}
 
+	printf("[clhashtest] checking that CLHASHbyte agrees with CLHASHbyteFixed with manual padding\n");
 	for(int k = 0; k <= N - 1; ++k ) {
 	    uint64_t reg = CLHASHbyte(rs, array, k);
 	    char * farray = (char*)malloc(N);
@@ -519,13 +523,13 @@ void clhashtest() {
 		}
 		free(farray);
 	}
+	printf("[clhashtest] checking that CLHASHbyte agrees with CLHASH\n");
 	for(int k = 0; k <= 2048; ++k ) {
 	    uint64_t reg = CLHASHbyte(rs, array, k);
 	    uint64_t * farray = (char*)malloc(k * sizeof(uint64_t));
 		for(int kk = 0; kk<k; ++kk) {
 		  farray[kk] = 1024+k;
 		}
-		printf("k = %d\n",k);
 	    uint64_t hashbyte = CLHASHbyte(rs, (const char *)farray, k*sizeof(uint64_t));
 	    uint64_t hashword = CLHASH(rs, farray, k);
 	    assert(hashbyte == hashword);
