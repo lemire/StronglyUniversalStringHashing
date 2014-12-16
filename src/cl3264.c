@@ -6,12 +6,12 @@
 // input is arbitrary length (may have to pad)
 
 
-static uint64_t randoms[RANDOM_BYTES_NEEDED_FOR_CLHASH];
+static uint64_t randoms[RANDOM_64BITWORDS_NEEDED_FOR_CLHASH];
 
 void init_cl3264( uint32_t seed) { 
   ZRandom zr;
   initZRandom(&zr,seed);
-  for (int i=0; i < RANDOM_BYTES_NEEDED_FOR_CLHASH; ++i)
+  for (int i=0; i < RANDOM_64BITWORDS_NEEDED_FOR_CLHASH; ++i)
     randoms[i] = getValue(&zr) | ( ((uint64_t) getValue(&zr)) << 32);
 }
 

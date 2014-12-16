@@ -850,6 +850,8 @@ uint64_t xvhash(unsigned char m[],
     #endif
     const uint64_t *kptr = (uint64_t *)ctx->nhkey;
     int i, remaining;
+    (void) tagl;
+
 
     remaining = mbytes % VMAC_NHBYTES;
     i = mbytes-remaining;
@@ -904,6 +906,7 @@ uint64_t vhash(unsigned char m[],
     const uint64_t *kptr = (uint64_t *)ctx->nhkey;
     int i, remaining;
     uint64_t ch, cl;
+    (void) tagl;
     uint64_t pkh = ctx->polykey[0];
     uint64_t pkl = ctx->polykey[1];
     #if (VMAC_TAG_LEN == 128)
@@ -1012,6 +1015,7 @@ uint64_t vmac(unsigned char m[],
     uint64_t *in_n, *out_p;
     uint64_t p, h;
     int i;
+    (void) tagl;
     
     #if VMAC_CACHE_NONCES
     in_n = ctx->cached_nonce;

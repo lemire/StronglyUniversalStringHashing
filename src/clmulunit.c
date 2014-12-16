@@ -3,7 +3,7 @@
 #include <inttypes.h>
 #include "clmul.h"
 #include "clmulpoly64bits.h"
-#include "clmulhierarchical64bits.h"
+#include "clhash.h"
 
 #ifdef __PCLMUL__
 
@@ -476,6 +476,7 @@ void clhashtest() {
 	  uint64_t val2 = 18427963401415413539ULL;
 	  uint64_t b2 = clhash(&val2, 8);
 	  uint64_t b3 = clhash(&val1, 8);
+	  printf("[clhashtest] %llu %llu %llu \n", b1, b2, b3);
 	  assert(b1 == b3);
 	  assert(b1 != b2);
 	}
@@ -493,36 +494,32 @@ void clhashtest() {
 		assert( _mm_extract_epi64(acc,0) == _mm_extract_epi64(acc2,0));
 		assert( _mm_extract_epi64(acc,1) == _mm_extract_epi64(acc2,1));
 	}
-	printf("[clhashtest] checking that flipping a bit changes hash value\n");
+	printf("[clhashtest] checking that flipping a bit changes hash value with CLHASH \n");
+	for(int bit = 0; bit < 64; ++bit ) {
+			uint64_t x = 0;
+			uint64_t orig = CLHASH(rs, &x, 1);
+			x ^= ((uint64_t)1) << bit;
+			uint64_t flip = CLHASH(rs, &x, 1);
+			assert(flip != orig);
+			x ^= ((uint64_t)1) << bit;
+			uint64_t back = CLHASH(rs, &x, 1);
+			assert(back == orig);
+
+	}
+	printf("[clhashtest] checking that flipping a bit changes hash value with CLHASHbyte \n");
 	for(int bit = 0; bit < 64; ++bit ) {
 		for(int length = (bit+8)/8; length <= (int)sizeof(uint64_t); ++length) {
 			uint64_t x = 0;
-			uint64_t orig = CLHASHbyteFixed(rs, (const char *)&x, length);
+			uint64_t orig = CLHASHbyte(rs, (const char *)&x, length);
 			x ^= ((uint64_t)1) << bit;
-			uint64_t flip = CLHASHbyteFixed(rs, (const char *)&x, length);
+			uint64_t flip = CLHASHbyte(rs, (const char *)&x, length);
 			assert(flip != orig);
 			x ^= ((uint64_t)1) << bit;
-			uint64_t back = CLHASHbyteFixed(rs, (const char *)&x, length);
+			uint64_t back = CLHASHbyte(rs, (const char *)&x, length);
 			assert(back == orig);
 		}
 	}
 
-	printf("[clhashtest] checking that CLHASHbyte agrees with CLHASHbyteFixed with manual padding\n");
-	for(int k = 0; k <= N - 1; ++k ) {
-	    uint64_t reg = CLHASHbyte(rs, array, k);
-	    char * farray = (char*)malloc(N);
-		for(int kk = 0; kk<N; ++kk) {
-		  farray[kk] = 0;
-		}
-	    farray[k] = 1;
-	    uint64_t fixed = CLHASHbyteFixed(rs, farray, k+1);
-		assert(reg == fixed);
-		for(int kk = k+1; kk<=N-1;++kk) {
-			farray[kk] = kk;
-			assert(fixed == CLHASHbyteFixed(rs, farray, k+1));
-		}
-		free(farray);
-	}
 	printf("[clhashtest] checking that CLHASHbyte agrees with CLHASH\n");
 	for(int k = 0; k <= 2048; ++k ) {
 	    uint64_t * farray = (uint64_t*)malloc(k * sizeof(uint64_t));
