@@ -476,7 +476,6 @@ void clhashtest() {
 	  uint64_t val2 = 18427963401415413539ULL;
 	  uint64_t b2 = clhash(&val2, 8);
 	  uint64_t b3 = clhash(&val1, 8);
-	  printf("[clhashtest] %llu %llu %llu \n", b1, b2, b3);
 	  assert(b1 == b3);
 	  assert(b1 != b2);
 	}
