@@ -23,7 +23,7 @@ Usage
 
     make
     ./benchmark
-
+    ./variablelengthbenchmark
 
 If you plan to use clmul instructions, please run the corresponding
 tests:
