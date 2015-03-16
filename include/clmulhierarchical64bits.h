@@ -287,7 +287,7 @@ uint64_t CLHASH16(const void* rs, const uint64_t * string,
 		for (; t +  m <= length; t +=  m) {
 			// we compute something like
 			// acc+= polyvalue * acc + h1
-			acc =  mul128by128to128_lazymod127(polyvalue,acc);
+			//acc =  mul128by128to128_lazymod127(polyvalue,acc);
 			const __m128i h1 =  __clmulhalfscalarproductwithoutreduction16(rs64, string+t);
 			acc = _mm_xor_si128(acc,h1);
 		}
