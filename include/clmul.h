@@ -31,13 +31,11 @@ __m128i mul128by128to128_lazymod127( __m128i A, __m128i B) {
 	__m128i Amix2 = _mm_clmulepi64_si128(A,B,0x10);
 	__m128i Alow = _mm_clmulepi64_si128(A,B,0x00);
 	__m128i Ahigh = _mm_clmulepi64_si128(A,B,0x11);
+	__m128i Amix = _mm_xor_si128(Amix1,Amix2);
 	Amix1 = _mm_slli_si128(Amix,8);
 	Amix2 = _mm_srli_si128(Amix,8);
-	__m128i Amix = _mm_xor_si128(Amix1,Amix2);
-	Amix1 = _mm_srli_si128(Amix,8);
-	Amix2 = _mm_slli_si128(Amix,8);
-	Ahigh = _mm_xor_si128(Ahigh,Amix1);
-	Alow = _mm_xor_si128(Alow,Amix2);
+	Alow = _mm_xor_si128(Alow,Amix1);
+	Ahigh = _mm_xor_si128(Ahigh,Amix2);
 	// now the lazy reduction
 	///////////////////////////////////////////////////
 	// We want to take Ahigh and compute       (  Ahigh <<1 ) XOR (  Ahigh <<2 )
