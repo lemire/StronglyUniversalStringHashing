@@ -166,7 +166,7 @@ int main(int argc, char ** arg) {
 				+ (finish.tv_usec - start.tv_usec));
 
 		printf(
-				"[basic Gueron technique] CPU cycle/mult = %f \t billions of mult per second =  %f    \n",
+				"[basic Gueron GHASH technique] CPU cycle/mult = %f \t billions of mult per second =  %f    \n",
 				(aft - bef) * 1.0 / (4.0 * SHORTTRIALS ),
 				(4.0 * SHORTTRIALS ) / (1000. * elapsed1));
 		//
