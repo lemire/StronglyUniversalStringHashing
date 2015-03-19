@@ -161,7 +161,7 @@ inline uint64_t fmix64 ( uint64_t k ) {
 }
 
 
-enum{RANDOM_64BITWORDS_NEEDED_FOR_CLHASH=133};
+enum{RANDOM_64BITWORDS_NEEDED_FOR_CLHASH=133,RANDOM_BYTES_NEEDED_FOR_CLHASH=133*8};
 
 //////////////////////
 // just two levels like VHASH

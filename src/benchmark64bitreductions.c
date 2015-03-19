@@ -32,32 +32,6 @@ ticks startRDTSC(void) {
 ticks stopRDTSCP(void) {
 	return rdtsc();
 }
-// start and stop are as recommended by
-// Gabriele Paoloni, How to Benchmark Code Execution Times on Intel® IA-32 and IA-64 Instruction Set Architectures
-// September 2010
-// http://edc.intel.com/Link.aspx?id=3954
-
-/*static __inline__ ticks fancystartRDTSC(void) {
-	unsigned cycles_low, cycles_high;
-	asm volatile ("CPUID\n\t"
-			"RDTSC\n\t"
-			"mov %%edx, %0\n\t"
-			"mov %%eax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::
-			"%rax", "%rbx", "%rcx", "%rdx");
-	return ((ticks) cycles_high << 32) | cycles_low;
-}
-
-static __inline__ ticks fancystopRDTSCP(void) {
-	unsigned cycles_low, cycles_high;
-/// This should work fine on most machines, if the RDTSCP thing
-/// fails for you, use the  rdtsc() call instead.
-	asm volatile("RDTSCP\n\t"
-			"mov %%edx, %0\n\t"
-			"mov %%eax, %1\n\t"
-			"CPUID\n\t": "=r" (cycles_high), "=r" (cycles_low):: "%rax",
-			"%rbx", "%rcx", "%rdx");
-	return ((ticks) cycles_high << 32) | cycles_low;
-}*/
 
 #include "clmul.h"
 
@@ -65,7 +39,6 @@ void force_computation(uint32_t forcedValue) {
 	// make sure forcedValue has to be computed, but avoid output (unless unlucky)
 	if (forcedValue % 277387 == 17)
 		printf("wow, what a coincidence! (in benchmark.c)");
-	//printf("# ignore this #%d\n", force_computation);
 }
 
 void printusage(char * command) {

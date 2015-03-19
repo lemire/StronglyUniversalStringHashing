@@ -5,7 +5,7 @@
 CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native -Wall -Wextra
 CXXFLAGS = -O2 -mavx  -march=native
 
-all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher
+all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher benchmark128bitmultiplication
 
 nhvsclnh.o: src/nhvsclnh.c
 	$(CC) $(CFLAGS)  -c  src/nhvsclnh.c
@@ -15,6 +15,12 @@ uniformsanity: src/uniform_sanity.c include/*.h City.o vmac.o siphash24.o
 
 benchmark: src/benchmark.c include/*.h City.o siphash24.o vmac.o 
 	$(CC) $(CFLAGS) -o benchmark src/benchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
+
+benchmark128bitmultiplication: src/benchmark128bitmultiplication.c include/clmul.h  
+	$(CC) $(CFLAGS) -o benchmark128bitmultiplication src/benchmark128bitmultiplication.c   -Iinclude 
+
+
+
 
 benchmark64bitreductions: src/benchmark64bitreductions.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark64bitreductions src/benchmark64bitreductions.c   -Iinclude 
