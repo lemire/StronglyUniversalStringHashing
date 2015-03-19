@@ -101,15 +101,13 @@ int equal(__m128i a, __m128i b) {
 }
 
 int main(int argc, char ** arg) {
-	int N = 1024;
-	int SHORTTRIALS = 100000;
-	int HowManyRepeats = 3;
+	int SHORTTRIALS = 1000000;
+	int HowManyRepeats = 5;
 	int elapsed1;
-	int i,j,k;
+	int j,k;
 
 	ticks bef, aft;
 	struct timeval start, finish;
-	uint32_t intstring[N] __attribute__ ((aligned (16))); // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
 	int c;
 	while ((c = getopt(argc, arg, "h")) != -1)
 		switch (c) {
@@ -121,10 +119,6 @@ int main(int argc, char ** arg) {
 		}
 	__m128i A;
 	__m128i B;
-	for (i = 0; i < N; ++i) {
-		intstring[i] = rand();
-	}
-
 	for (k = 0; k < HowManyRepeats; ++k) {
 		A = _mm_set1_epi32(~k);
 		B = _mm_set1_epi32(~(k+1));
