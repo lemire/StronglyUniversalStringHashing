@@ -47,8 +47,10 @@ void mul128by128to256( __m128i A, __m128i B, __m128i * Alow,  __m128i * Ahigh) {
 	Amix1 = _mm_clmulepi64_si128(A,B,0x01);
 	Amix2 = _mm_clmulepi64_si128(A,B,0x10);
 	Amix = _mm_xor_si128(Amix1,Amix2);
-	*Alow = _mm_xor_si128(Alowtmp,_mm_slli_si128(Amix,8));
-	*Ahigh = _mm_xor_si128(Ahightmp,_mm_srli_si128(Amix,8));
+	Amix1 = _mm_slli_si128(Amix,8);
+	Amix2 = _mm_srli_si128(Amix,8);
+	*Alow = _mm_xor_si128(Alowtmp,Amix1);
+	*Ahigh = _mm_xor_si128(Ahightmp,Amix2);
 }
 
 void mul128by128to256_gueron_fig5( __m128i a, __m128i b, __m128i * Alow,  __m128i * Ahigh) {
