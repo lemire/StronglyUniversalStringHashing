@@ -134,7 +134,7 @@ int main(int argc, char ** arg) {
 		A = _mm_set1_epi32(~k);
 		B = _mm_set1_epi32(~(k+1));
 
-		printf("test #%d  ", k + 1);
+		printf("test #%d  \n", k + 1);
 		//
 		gettimeofday(&start, 0);
 		bef = startRDTSC();
