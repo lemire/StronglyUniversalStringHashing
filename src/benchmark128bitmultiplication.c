@@ -42,10 +42,10 @@ ticks stopRDTSCP(void) {
 
 void mul128by128to256( __m128i A, __m128i B, __m128i * Alow,  __m128i * Ahigh) {
 	__m128i Alowtmp, Ahightmp, Amix1, Amix2, Amix;
-	Alowtmp = _mm_clmulepi64_si128(A,B,0x00);
-	Ahightmp = _mm_clmulepi64_si128(A,B,0x11);
 	Amix1 = _mm_clmulepi64_si128(A,B,0x01);
 	Amix2 = _mm_clmulepi64_si128(A,B,0x10);
+	Alowtmp = _mm_clmulepi64_si128(A,B,0x00);
+	Ahightmp = _mm_clmulepi64_si128(A,B,0x11);
 	Amix = _mm_xor_si128(Amix1,Amix2);
 	Amix1 = _mm_slli_si128(Amix,8);
 	Amix2 = _mm_srli_si128(Amix,8);
