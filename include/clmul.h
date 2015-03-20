@@ -24,7 +24,7 @@
 
 
 // multiplication with lazy reduction
-// assumes that the two highest bits of one of the inputs are zero
+// assumes that the two highest bits of the 256-bit multiplication are zeros
 // returns a lazy reduction
 __m128i mul128by128to128_lazymod127( __m128i A, __m128i B) {
 	__m128i Amix1 = _mm_clmulepi64_si128(A,B,0x01);

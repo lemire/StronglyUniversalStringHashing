@@ -173,6 +173,71 @@ __m128i gfmul_fig8(__m128i H1, __m128i H2, __m128i H3, __m128i H4, __m128i X1, _
     return tmp6;
 }
 
+
+// multiplication with lazy reduction
+// A1 * B1 + A2 * B2
+// assumes that the two highest bits of the 256-bit multiplication are zeros
+// returns a lazy reduction
+__m128i mul128by128to128_lazymod127_2by2( __m128i A1,__m128i A2,
+		__m128i B1,__m128i B2) {
+	__m128i Amix11 = _mm_clmulepi64_si128(A1,B1,0x01);
+	__m128i Amix21 = _mm_clmulepi64_si128(A1,B1,0x10);
+	__m128i Amix12 = _mm_clmulepi64_si128(A2,B2,0x01);
+	__m128i Amix22 = _mm_clmulepi64_si128(A2,B2,0x10);
+	__m128i Alow1 = _mm_clmulepi64_si128(A1,B1,0x00);
+	__m128i Ahigh1 = _mm_clmulepi64_si128(A1,B1,0x11);
+	__m128i Alow2 = _mm_clmulepi64_si128(A2,B2,0x00);
+	__m128i Ahigh2 = _mm_clmulepi64_si128(A2,B2,0x11);
+
+	__m128i Amix1 = _mm_xor_si128(Amix11,Amix21);
+	__m128i Amix2 = _mm_xor_si128(Amix12,Amix22);
+	__m128i Amix = _mm_xor_si128(Amix1,Amix2);
+	Amix1 = _mm_slli_si128(Amix,8);
+	Amix2 = _mm_srli_si128(Amix,8);
+	__m128i Alow = _mm_xor_si128(Alow1,Alow2);
+	__m128i Ahigh = _mm_xor_si128(Ahigh1,Ahigh2);
+	Alow = _mm_xor_si128(Alow,Amix1);
+	Ahigh = _mm_xor_si128(Ahigh,Amix2);
+	// now the lazy reduction
+	///////////////////////////////////////////////////
+	// We want to take Ahigh and compute       (  Ahigh <<1 ) XOR (  Ahigh <<2 )
+	// Except that there is no way to shift an entire XMM register by 1 or 2 bits  using a single instruction.
+	// So how do you compute Ahigh <<1 using as few instructions as possible?
+	//
+	// First you do _mm_slli_epi64(Ahigh,1). This is *almost* correct... except that
+	// the 64th bit is not shifted in 65th position.
+	// Well, ok, but we can compute Ahigh >> 8, this given by _mm_srli_si128(Ahigh,1)
+	// _mm_srli_si128(Ahigh,1) has the same bits as Ahigh (except that we lose the lowest 8)
+	// but at different positions.
+	// So let us shift left the result again...
+	//  _mm_slli_epi64(_mm_srli_si128(Ahigh,1),1)
+	// If you keep track, this is "almost" equivalent to A >> 7, except that the 72th bit
+	// from A is lost.
+	// From something that is almost A >>7, we can get back something that is almost A << 1
+	// by shifting left by 8 bits...
+	// _mm_slli_si128(_mm_slli_epi64(_mm_srli_si128(Ahigh,1),1),1)
+	// So this is a shift left by 1, except that the 72th bit is lost along with the lowest 8 bits.
+	// We have that  _mm_slli_epi64(Ahigh,1) is a shift let by 1 except that the 64th bit
+	// is lost. We can combine the two to get the desired result (just OR them).
+	// The algorithm below is just an optimized version of this where we do both shifts (by 1 and 2)
+	// at the same time and XOR the result.
+	//
+	__m128i shifteddownAhigh = _mm_srli_si128(Ahigh,1);
+	__m128i s1 = _mm_slli_epi64(Ahigh,1);
+	__m128i s2 = _mm_slli_epi64(Ahigh,2);
+	__m128i sd1 = _mm_slli_si128(_mm_slli_epi64(shifteddownAhigh,1),1);
+	__m128i sd2 = _mm_slli_si128(_mm_slli_epi64(shifteddownAhigh,2),1);
+	s1 = _mm_or_si128(s1,sd1);
+	s2 = _mm_or_si128(s2,sd2);
+	__m128i reduced = _mm_xor_si128(s1,s2);
+	// combining results
+	__m128i final = _mm_xor_si128(Alow,reduced);
+	return final;
+}
+
+
+
+
 void printusage(char * command) {
 	printf(" Usage: %s ", command);
 }
@@ -219,6 +284,8 @@ int main(int argc, char ** arg) {
 
 	for (k = 0; k < HowManyRepeats; ++k) {
 		A = _mm_set1_epi32(~k);
+		// next we see the two highest bits to zero to get a 126-bit key
+		A = _mm_and_si128(A,_mm_setr_epi32(0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0x3fffffff));// setting two highest bits to zero
 		B = _mm_set1_epi32(~(k+1));
 
 		printf("test #%d  \n", k + 1);
@@ -236,7 +303,7 @@ int main(int argc, char ** arg) {
 				+ (finish.tv_usec - start.tv_usec));
 
 		printf(
-				"[basic 127-bit technique] CPU cycle/mult = %f \t billions of mult per second =  %f    \n",
+				"[basic 126-bit technique] CPU cycle/mult = %f \t billions of mult per second =  %f    \n",
 				(aft - bef) * 1.0 / (4.0 * SHORTTRIALS ),
 				(4.0 * SHORTTRIALS ) / (1000. * elapsed1));
 		//
@@ -278,6 +345,25 @@ int main(int argc, char ** arg) {
 				(4.0 * SHORTTRIALS ) / (1000. * elapsed1));
 
 		//
+		__m128i A2lazy = mul128by128to128_lazymod127(A, A);
+		gettimeofday(&start, 0);
+		bef = startRDTSC();
+		__m128i X4 = _mm_setzero_si128();;
+		for (j = 0; j < SHORTTRIALS/2; ++j) {
+			X4 = _mm_xor_si128(X4,B);
+			X4 = mul128by128to128_lazymod127_2by2(A, A2lazy, B, X4);
+		}
+		aft = stopRDTSCP();
+		gettimeofday(&finish, 0);
+		elapsed1 = (1000000 * (finish.tv_sec - start.tv_sec)
+					+ (finish.tv_usec - start.tv_usec));
+
+		printf(
+					"[aggregated(2) 126-bit technique] CPU cycle/mult = %f \t billions of mult per second =  %f    \n",
+					(aft - bef) * 1.0 / (4.0 * SHORTTRIALS ),
+					(4.0 * SHORTTRIALS ) / (1000. * elapsed1));
+
+		//
 		printf("X1=");
 		printme32(X1);
 		printf("X2=");
@@ -285,6 +371,9 @@ int main(int argc, char ** arg) {
 		printf("X3=");
 		printme32(X3);
 		assert(equal(X2,X3));
+		printf("X4=");
+		printme32(X4);
+		assert(equal(X1,X4));// they could differ in theory...
 		printf("\n");
 		printf("\n");
 	}
