@@ -19,11 +19,8 @@ benchmark: src/benchmark.c include/*.h City.o siphash24.o vmac.o
 benchmark128bitmultiplication: src/benchmark128bitmultiplication.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark128bitmultiplication src/benchmark128bitmultiplication.c   -Iinclude 
 
-
 benchmark128bitpolyhashing: src/benchmark128bitpolyhashing.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark128bitpolyhashing src/benchmark128bitpolyhashing.c   -Iinclude 
-
-
 
 benchmark64bitreductions: src/benchmark64bitreductions.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark64bitreductions src/benchmark64bitreductions.c   -Iinclude 
