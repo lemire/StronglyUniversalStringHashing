@@ -75,6 +75,87 @@ __m128i mul128by128to128_lazymod127( __m128i A, __m128i B) {
 	return lazymod127(Alow, Ahigh);
 }
 
+// multiplication with lazy reduction
+// A1 * B1 + A2 * B2
+// assumes that the two highest bits of the 256-bit multiplication are zeros
+// returns a lazy reduction
+__m128i mul128by128to128_lazymod127_2by2( __m128i A1,__m128i A2,
+		__m128i B1,__m128i B2) {
+	__m128i Amix11 = _mm_clmulepi64_si128(A1,B1,0x01);
+	__m128i Amix21 = _mm_clmulepi64_si128(A1,B1,0x10);
+	__m128i Amix12 = _mm_clmulepi64_si128(A2,B2,0x01);
+	__m128i Amix22 = _mm_clmulepi64_si128(A2,B2,0x10);
+	__m128i Alow1 = _mm_clmulepi64_si128(A1,B1,0x00);
+	__m128i Ahigh1 = _mm_clmulepi64_si128(A1,B1,0x11);
+	__m128i Alow2 = _mm_clmulepi64_si128(A2,B2,0x00);
+	__m128i Ahigh2 = _mm_clmulepi64_si128(A2,B2,0x11);
+
+	__m128i Amix1 = _mm_xor_si128(Amix11,Amix21);
+	__m128i Amix2 = _mm_xor_si128(Amix12,Amix22);
+	__m128i Amix = _mm_xor_si128(Amix1,Amix2);
+	Amix1 = _mm_slli_si128(Amix,8);
+	Amix2 = _mm_srli_si128(Amix,8);
+	__m128i Alow = _mm_xor_si128(Alow1,Alow2);
+	__m128i Ahigh = _mm_xor_si128(Ahigh1,Ahigh2);
+	Alow = _mm_xor_si128(Alow,Amix1);
+	Ahigh = _mm_xor_si128(Ahigh,Amix2);
+	return lazymod127(Alow, Ahigh);
+}
+
+
+// multiplication with lazy reduction
+// A1 * B1 + A2 * B2 +  A3 * B3 + A4 * B4
+// assumes that the two highest bits of the 256-bit multiplication are zeros
+// returns a lazy reduction
+__m128i mul128by128to128_lazymod127_4by4( __m128i A1,__m128i A2,__m128i A3,__m128i A4,
+		__m128i B1,__m128i B2,__m128i B3,__m128i B4) {
+	__m128i Amix11 = _mm_clmulepi64_si128(A1,B1,0x01);
+	__m128i Amix21 = _mm_clmulepi64_si128(A1,B1,0x10);
+	__m128i Amix12 = _mm_clmulepi64_si128(A2,B2,0x01);
+	__m128i Amix22 = _mm_clmulepi64_si128(A2,B2,0x10);
+	__m128i Amix13 = _mm_clmulepi64_si128(A3,B3,0x01);
+	__m128i Amix23 = _mm_clmulepi64_si128(A3,B3,0x10);
+	__m128i Amix14 = _mm_clmulepi64_si128(A4,B4,0x01);
+	__m128i Amix24 = _mm_clmulepi64_si128(A4,B4,0x10);
+
+	__m128i Alow1 = _mm_clmulepi64_si128(A1,B1,0x00);
+	__m128i Ahigh1 = _mm_clmulepi64_si128(A1,B1,0x11);
+	__m128i Alow2 = _mm_clmulepi64_si128(A2,B2,0x00);
+	__m128i Ahigh2 = _mm_clmulepi64_si128(A2,B2,0x11);
+	__m128i Alow3 = _mm_clmulepi64_si128(A3,B3,0x00);
+	__m128i Ahigh3 = _mm_clmulepi64_si128(A3,B3,0x11);
+	__m128i Alow4 = _mm_clmulepi64_si128(A4,B4,0x00);
+	__m128i Ahigh4 = _mm_clmulepi64_si128(A4,B4,0x11);
+
+
+
+	__m128i Amix1 = _mm_xor_si128(Amix11,Amix21);
+	__m128i Amix2 = _mm_xor_si128(Amix12,Amix22);
+	__m128i Amix3 = _mm_xor_si128(Amix13,Amix23);
+	__m128i Amix4 = _mm_xor_si128(Amix14,Amix24);
+
+	Amix12 = _mm_xor_si128(Amix1,Amix2);
+	Amix23 = _mm_xor_si128(Amix3,Amix4);
+	__m128i Amix = _mm_xor_si128(Amix12,Amix23);
+
+	Amix1 = _mm_slli_si128(Amix,8);
+
+	Amix2 = _mm_srli_si128(Amix,8);
+
+	__m128i Alow12 = _mm_xor_si128(Alow1,Alow2);
+	__m128i Alow34 = _mm_xor_si128(Alow3,Alow4);
+	__m128i Alow = _mm_xor_si128(Alow12,Alow34);
+
+	__m128i Ahigh12 = _mm_xor_si128(Ahigh1,Ahigh2);
+	__m128i Ahigh34 = _mm_xor_si128(Ahigh3,Ahigh4);
+	__m128i Ahigh = _mm_xor_si128(Ahigh12,Ahigh34);
+
+	Alow = _mm_xor_si128(Alow,Amix1);
+	Ahigh = _mm_xor_si128(Ahigh,Amix2);
+	return lazymod127(Alow, Ahigh);
+}
+
+
 
 
 /////////////////////////////////////////////////////////////////
