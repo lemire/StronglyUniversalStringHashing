@@ -4,6 +4,7 @@
 #include "clmul.h"
 #include "clmulpoly64bits.h"
 #include "clhash.h"
+#include "clmulhierarchical64bits.h"
 
 #ifdef __PCLMUL__
 
@@ -63,8 +64,15 @@ __m128i fullcarrylessmultiply(__m128i a, __m128i b) {
 	return _mm_xor_si128( _mm_xor_si128(part1,part2),part3);
 
 }
+
+__m128i unibit(int off) {
+	__m128i bitf = off>=64 ? _mm_set_epi64x(1ULL<<(off-64),0) : _mm_set_epi64x(0,1ULL<<off);
+	return bitf;
+}
+
 // useful for debugging. Divides a by b in carryless model
-// surely, there is a better way to do this...
+// surely, there is a better way to do this..., the x part of PairOfVec is the
+// result of the division and the y part is the remainder
 PairOfVec slowcarrylessdivision(__m128i a, __m128i b) {
 	__m128i copya = a;
 	int degreea = degree(a);
@@ -74,7 +82,7 @@ PairOfVec slowcarrylessdivision(__m128i a, __m128i b) {
 	while(degreea > 0) {
 		int off = degreea - degreeb;
 		if(off<0) break;
-		__m128i bitf = off>=64 ? _mm_set_epi64x(1ULL<<(off-64),0) : _mm_set_epi64x(0,1ULL<<off);
+		__m128i bitf = unibit(off);
 		int degreebitf = degree(bitf);
 		if( degreebitf + degreeb != degreea) {
 			printme64(bitf);
@@ -536,7 +544,72 @@ void clhashtest() {
 
 }
 
+
+void lazymod128test() {
+	printf("[lazymod] test\n");
+	// we know what lazymod has to be for 1-bit inputs, so let us run through it.
+	for(int b = 0; b <128; ++b) {
+		// in such cases, lazymod should do nothing
+		__m128i low = unibit(b);
+		__m128i high = _mm_setzero_si128();
+		__m128i r = lazymod127(low, high) ;
+		assert(equal(r,low));
+	}
+	for(int b = 0; b <126; ++b) {
+		__m128i high = unibit(b);
+		__m128i low = _mm_setzero_si128();
+		__m128i r = lazymod127(low, high) ;
+		__m128i expected = _mm_xor_si128(unibit(b+1), unibit(b+2));
+		assert(equal(r,expected));
+	}
+	for(int b1 = 1; b1 <126; ++b1) {
+		for(int b2 = 0; b2 <b1; ++b2) {
+		  __m128i high = _mm_xor_si128(unibit(b1),unibit(b2));
+		  __m128i low = _mm_setzero_si128();
+		  __m128i r = lazymod127(low, high) ;
+		  __m128i expected1 = _mm_xor_si128(unibit(b1+1), unibit(b1+2));
+		  __m128i expected2 = _mm_xor_si128(unibit(b2+1), unibit(b2+2));
+		  __m128i expected = _mm_xor_si128(expected1, expected2);
+		  assert(equal(r,expected));
+		}
+	}
+	printf("[lazymod] ok\n");
+
+}
+
+void clhashsanity() {
+	printf("Checking if clhash remains unchanged  \n ");
+
+	uint64_t * keys  = (uint64_t*)malloc(RANDOM_64BITWORDS_NEEDED_FOR_CLHASH*sizeof(uint64_t));
+	for(int k = 0; k < RANDOM_64BITWORDS_NEEDED_FOR_CLHASH; ++k) {
+	   keys[k] = ~ (3*k) ;
+	}
+	int N = 1000000;
+	uint64_t * data  = (uint64_t*)malloc(N*sizeof(uint64_t));
+	for(int k = 0; k < N; ++k) {
+	   data[k] = k ;
+	}
+	uint64_t r1 = CLHASH(keys, data,3);
+	printf("length 3 word %llu  \n ", r1);
+	assert(r1 == 1514759017041891781ULL);
+	uint64_t r2 = CLHASHbyte(keys, (const char*)data,3*8);
+	printf("length 3 word %llu  \n ", r2);
+	assert(r2 == 1514759017041891781ULL);
+	uint64_t r3 = CLHASH(keys, data,N);
+	printf("length N word %llu  \n ", r3);
+	assert(r3 == 10692194684003262447ULL);
+	uint64_t r4 = CLHASHbyte(keys, (const char*)data,N*8);
+	printf("length N word %llu  \n ", r4);
+	assert(r4 == 10692194684003262447ULL);
+	free(keys);
+	free(data);
+	printf("Ok \n");
+
+}
+
 int main() {
+	clhashsanity();
+	lazymod128test();
 	clhashtest();
 	clmulunittests();
 	return 0;

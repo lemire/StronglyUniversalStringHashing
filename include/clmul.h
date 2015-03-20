@@ -20,23 +20,8 @@
 #endif
 
 
-
-
-
-// multiplication with lazy reduction
-// assumes that the two highest bits of the 256-bit multiplication are zeros
-// returns a lazy reduction
-__m128i mul128by128to128_lazymod127( __m128i A, __m128i B) {
-	__m128i Amix1 = _mm_clmulepi64_si128(A,B,0x01);
-	__m128i Amix2 = _mm_clmulepi64_si128(A,B,0x10);
-	__m128i Alow = _mm_clmulepi64_si128(A,B,0x00);
-	__m128i Ahigh = _mm_clmulepi64_si128(A,B,0x11);
-	__m128i Amix = _mm_xor_si128(Amix1,Amix2);
-	Amix1 = _mm_slli_si128(Amix,8);
-	Amix2 = _mm_srli_si128(Amix,8);
-	Alow = _mm_xor_si128(Alow,Amix1);
-	Ahigh = _mm_xor_si128(Ahigh,Amix2);
-	// now the lazy reduction
+// compute the modulo with 2^127 + 2 + 1
+__m128i lazymod127(__m128i Alow, __m128i Ahigh) {
 	///////////////////////////////////////////////////
 	// We want to take Ahigh and compute       (  Ahigh <<1 ) XOR (  Ahigh <<2 )
 	// Except that there is no way to shift an entire XMM register by 1 or 2 bits  using a single instruction.
@@ -71,6 +56,23 @@ __m128i mul128by128to128_lazymod127( __m128i A, __m128i B) {
 	// combining results
 	__m128i final = _mm_xor_si128(Alow,reduced);
 	return final;
+}
+
+
+// multiplication with lazy reduction
+// assumes that the two highest bits of the 256-bit multiplication are zeros
+// returns a lazy reduction
+__m128i mul128by128to128_lazymod127( __m128i A, __m128i B) {
+	__m128i Amix1 = _mm_clmulepi64_si128(A,B,0x01);
+	__m128i Amix2 = _mm_clmulepi64_si128(A,B,0x10);
+	__m128i Alow = _mm_clmulepi64_si128(A,B,0x00);
+	__m128i Ahigh = _mm_clmulepi64_si128(A,B,0x11);
+	__m128i Amix = _mm_xor_si128(Amix1,Amix2);
+	Amix1 = _mm_slli_si128(Amix,8);
+	Amix2 = _mm_srli_si128(Amix,8);
+	Alow = _mm_xor_si128(Alow,Amix1);
+	Ahigh = _mm_xor_si128(Ahigh,Amix2);
+	return lazymod127(Alow, Ahigh);
 }
 
 

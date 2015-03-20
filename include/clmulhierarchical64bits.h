@@ -169,7 +169,7 @@ enum{RANDOM_64BITWORDS_NEEDED_FOR_CLHASH=133,RANDOM_BYTES_NEEDED_FOR_CLHASH=133*
 // a CLMUL polynomial hash
 // this (RANDOM_BYTES_NEEDED_FOR_CLHASH random bytes or about 1KB)
 //
-// rs : the random data source (should contain at least 130*8 random bytes)
+// rs : the random data source (should contain at least RANDOM_BYTES_NEEDED_FOR_CLHASH random bytes)
 // string : the input data source
 // length : number of 64-bit words in the string
 //////////////////////
