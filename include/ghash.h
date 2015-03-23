@@ -155,7 +155,7 @@ __m128i GHASH_m128(__m128i key, const uint64_t * string64,
 			__m128i B3 = _mm_loadu_si128(string + i + 2);
 			__m128i B4 = _mm_loadu_si128(string + i + 3);
 			answer = _mm_xor_si128(answer,B1);
-			answer = gfmul_fig8(key, key2, key3, key4,  B4, B3, B2, _mm_xor_si128(answer,B1));
+			answer = gfmul_fig8(key, key2, key3, key4,  B4, B3, B2, answer);
 		}
 	}
 	for(; i < lengthm128; i++) {
