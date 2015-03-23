@@ -176,7 +176,7 @@ __m128i GHASH_m128(__m128i key, const uint64_t * string64,
 uint64_t GHASH64bit(const void* rs, const uint64_t * string,
 		const size_t length) {
 	__m128i key = _mm_loadu_si128((__m128i*) rs );
-	__m128i answer = GHASH_m128(key, (const __m128i *) string, length / 2 * 2);
+	__m128i answer = GHASH_m128(key, (const __m128i *) string, length);
 	return _mm_cvtsi128_si64(answer);
 }
 #endif /* GHASH_H_ */
