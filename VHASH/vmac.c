@@ -966,7 +966,6 @@ uint64_t vhash(unsigned char m[],
     }
 
     while (i--) {
-    //IACA_START
         #if (VMAC_TAG_LEN == 64)
         nh_vmac_nhbytes(mptr,kptr,VMAC_NHBYTES/8,rh,rl);
         #else
@@ -978,7 +977,6 @@ uint64_t vhash(unsigned char m[],
         poly_step(ch,cl,pkh,pkl,rh,rl);
         mptr += (VMAC_NHBYTES/sizeof(uint64_t));
     }
-    //IACA_END
     if (remaining) {
         #if (VMAC_TAG_LEN == 64)
         nh_16(mptr,kptr,2*((remaining+15)/16),rh,rl);

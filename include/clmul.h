@@ -11,14 +11,6 @@
 #include <assert.h>
 #include <x86intrin.h>
 
-#define IACA
-#ifdef IACA
-#include </opt/intel/iaca/include/iacaMarks.h>
-#else
-#define IACA_START
-#define IACA_END
-#endif
-
 
 // compute the modulo with 2^127 + 2 + 1
 __m128i lazymod127(__m128i Alow, __m128i Ahigh) {

@@ -11,7 +11,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <x86intrin.h>
+#ifdef IACA
 #include </opt/intel/iaca/include/iacaMarks.h>
+#else
+#define IACA_START
+#define IACA_END
+#endif
 
 
 void testNH(uint64_t * rh, uint64_t * rl, uint64_t * m, uint64_t * k ) {
