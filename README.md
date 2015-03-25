@@ -9,10 +9,6 @@ This code assumes that you understand random hashing and what it entails.
  http://arxiv.org/abs/1202.4961
 
 
-For a C++ equivalent, see:
-
-https://github.com/lemire/fasthashing
-
 
 Thanks to Nathan Kurz for noticing that GCC 4.7 requires no-tree-vectorize to produce correct results.
 
@@ -43,3 +39,13 @@ public domain by its authors.
 
 In yet another directory, we have included a C port of CityHash, published under a MIT license
 by Google.
+
+
+Related projects
+=================
+
+For a C++ project with similar goals, see:
+
+https://github.com/lemire/fasthashing
+
+
