@@ -4,4 +4,4 @@ compiler:
   - gcc
   - clang
 
-script: make && .uniformsanity && ./clmulunit
+script: make && ./uniformsanity && ./clmulunit
