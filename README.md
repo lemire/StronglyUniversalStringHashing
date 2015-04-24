@@ -1,7 +1,8 @@
 StronglyUniversalStringHashing
 ==============================
+[![Build Status](https://travis-ci.org/lemire/StronglyUniversalStringHashing.png)](https://travis-ci.org/lemire/StronglyUniversalStringHashing)
 
-Benchmark showing the we can randomly hash strings very quickly with good universality 
+Benchmark showing that we can randomly hash strings very quickly with good universality 
 
 This code assumes that you understand random hashing and what it entails.
 
