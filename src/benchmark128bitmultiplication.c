@@ -90,9 +90,6 @@ void printusage(char * command) {
 	printf(" Usage: %s ", command);
 }
 
-void printme32(__m128i v1) {
-	printf(" %u %u %u %u  ", _mm_extract_epi32(v1,0), _mm_extract_epi32(v1,1), _mm_extract_epi32(v1,2), _mm_extract_epi32(v1,3));
-}
 
 // inefficient but we do not care
 int equal(__m128i a, __m128i b) {

@@ -8,9 +8,17 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <assert.h>
 #include <x86intrin.h>
 
+void printme32(__m128i v1) {
+	printf(" %u %u %u %u  ", _mm_extract_epi32(v1,0), _mm_extract_epi32(v1,1), _mm_extract_epi32(v1,2), _mm_extract_epi32(v1,3));
+}
+
+void printme64(__m128i v1) {
+	printf(" %llu %llu  ", _mm_extract_epi64(v1,0), _mm_extract_epi64(v1,1));
+}
 
 // compute the modulo with 2^127 + 2 + 1
 __m128i lazymod127(__m128i Alow, __m128i Ahigh) {

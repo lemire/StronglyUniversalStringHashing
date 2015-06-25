@@ -19,13 +19,7 @@ int equal(__m128i a, __m128i b) {
 
 }
 
-void printme32(__m128i v1) {
-	printf(" %u %u %u %u  ", _mm_extract_epi32(v1,0), _mm_extract_epi32(v1,1), _mm_extract_epi32(v1,2), _mm_extract_epi32(v1,3));
-}
 
-void printme64(__m128i v1) {
-	printf(" %llu %llu  ", _mm_extract_epi64(v1,0), _mm_extract_epi64(v1,1));
-}
 
 // useful for debugging, essentially determines the most significant bit set
 // return 0 if a is made solely of zeroes
@@ -453,6 +447,66 @@ void hornerrule() {
 
 }
 
+
+void flipbit ( void * block, int length, uint32_t bit ) {
+  uint8_t * b = (uint8_t*)block;
+  int byte = bit >> 3;
+  assert(byte < length);
+  bit = bit & 0x7;
+  b[byte] ^= (1 << bit);
+}
+
+void clhashavalanchetest() {
+	const int N = 1024;
+	char * array  = (char*)malloc(N);
+	char * array1  = (char*)malloc(N);
+
+	char *  rs = (char*)malloc(RANDOM_BYTES_NEEDED_FOR_CLHASH);
+	for(int k = 0; k<N; ++k) {
+		array[k] = 0;
+		array1[k] = 0;
+	}
+	for(int k = 0; k<RANDOM_BYTES_NEEDED_FOR_CLHASH; ++k) {
+			rs[k] = k+1-k*k;
+	}
+	int K = 16;
+	printf("Testing CLHASH avalanche effect.\n");
+
+	for(int bytelength = 1; bytelength < K; ++bytelength ) {
+
+		for(int whichcase = 0; whichcase < 256; ++whichcase) {
+
+			for(int k = 0; k<bytelength; ++k) {
+				array[k] = whichcase;
+				array1[k] = whichcase + 35;
+			}
+		    uint64_t orighash = CLHASHbyte(rs, array, bytelength);
+		    uint64_t orighash1 = CLHASHbyte(rs, array1, bytelength);
+
+		    for(int z = 0; z < 8*bytelength; ++z) {
+		    	flipbit(array,bytelength,z);
+		    	uint64_t newhash = CLHASHbyte(rs, array, bytelength);
+			    flipbit(array,bytelength,z);
+			    assert(orighash != newhash);
+
+		    	flipbit(array1,bytelength,z);
+		    	uint64_t newhash1 = CLHASHbyte(rs, array1, bytelength);
+			    flipbit(array1,bytelength,z);
+			    assert(orighash1 != newhash1);
+
+			    if((unsigned int) bytelength <= sizeof(uint64_t))
+			    	assert((orighash ^ newhash) == (orighash1 ^ newhash1));
+
+		    }
+		}
+	}
+	free(array);
+	free(rs);
+
+}
+
+
+
 void clmulunittests() {
 	printf("Testing CLMUL code...\n");
 	//displayfirst();
@@ -582,25 +636,33 @@ void clhashsanity() {
 
 	uint64_t * keys  = (uint64_t*)malloc(RANDOM_64BITWORDS_NEEDED_FOR_CLHASH*sizeof(uint64_t));
 	for(int k = 0; k < RANDOM_64BITWORDS_NEEDED_FOR_CLHASH; ++k) {
-	   keys[k] = ~ (3*k) ;
+	   keys[k] = (k + 10) * 0xff51afd7ed558ccdULL ;
 	}
 	int N = 1000000;
 	uint64_t * data  = (uint64_t*)malloc(N*sizeof(uint64_t));
 	for(int k = 0; k < N; ++k) {
 	   data[k] = k ;
 	}
+	printf(" %llu %llu %llu  \n ", CLHASH(keys, data,1),CLHASH(keys, data,2),CLHASH(keys, data,3));
+
+	uint64_t r11 = CLHASH(keys, data,2);
+	uint64_t r11b = CLHASHbyte(keys, (const char *)data,2*sizeof(uint64_t));
+	printf("r11 = %llu r11b = %llu \n ", r11, r11b);
+
+	assert(r11==r11b);
 	uint64_t r1 = CLHASH(keys, data,3);
+
 	printf("length 3 word %llu  \n ", r1);
-	assert(r1 == 1514759017041891781ULL);
+	assert(r1 == 1446687103829102880ULL);
 	uint64_t r2 = CLHASHbyte(keys, (const char*)data,3*8);
 	printf("length 3 word %llu  \n ", r2);
-	assert(r2 == 1514759017041891781ULL);
+	assert(r2 == 1446687103829102880ULL);
 	uint64_t r3 = CLHASH(keys, data,N);
 	printf("length N word %llu  \n ", r3);
-	assert(r3 == 10692194684003262447ULL);
+	assert(r3 == 2476377298766458265ULL);
 	uint64_t r4 = CLHASHbyte(keys, (const char*)data,N*8);
 	printf("length N word %llu  \n ", r4);
-	assert(r4 == 10692194684003262447ULL);
+	assert(r4 == 2476377298766458265ULL);
 	free(keys);
 	free(data);
 	printf("Ok \n");
@@ -609,6 +671,7 @@ void clhashsanity() {
 
 int main() {
 	clhashsanity();
+	clhashavalanchetest();
 	lazymod128test();
 	clhashtest();
 	clmulunittests();

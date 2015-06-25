@@ -146,7 +146,7 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(con
 
 
 
-
+#ifdef BITMIX
 ////////
 // an invertible function used to mix the bits
 // borrowed directly from murmurhash
@@ -159,7 +159,7 @@ inline uint64_t fmix64 ( uint64_t k ) {
   k ^= k >> 33;
   return k;
 }
-
+#endif
 
 enum{RANDOM_64BITWORDS_NEEDED_FOR_CLHASH=133,RANDOM_BYTES_NEEDED_FOR_CLHASH=133*8};
 
@@ -203,13 +203,17 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 						rs64, string + t, remain);
 		acc = _mm_xor_si128(acc, h1);
 		const __m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
-		const uint64_t keylength = 140;//*(const uint64_t *)(rs64 + m128neededperblock + 2);
+		const uint64_t keylength = *(const uint64_t *)(rs64 + m128neededperblock + 2);
 		return simple128to64hashwithlength(acc,finalkey,keylength, (uint64_t)(length * sizeof(uint64_t)));
 	} else { // short strings
 		__m128i  acc = __clmulhalfscalarproductwithtailwithoutreduction(rs64, string, length);
-		const uint64_t keylength = 140;//((const uint64_t *)rs) [133];
+		const uint64_t keylength = *(const uint64_t *)(rs64 + m128neededperblock + 2);
 		acc = _mm_xor_si128(acc,lazyLengthHash(keylength, (uint64_t)(length * sizeof(uint64_t))));
+#ifdef BITMIX
 		return fmix64(precompReduction64(acc)) ;
+#else
+		return precompReduction64(acc) ;
+#endif
 	}
 }
 // there always remain an incomplete word that has 1,2, 3, 4, 5, 6, 7 used bytes.
@@ -241,6 +245,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 	polyvalue = _mm_and_si128(polyvalue,_mm_setr_epi32(0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0x3fffffff));// setting two highest bits to zero
 	// we should check that polyvalue is non-zero, though this is best done outside the function and highly unlikely
 	size_t length = lengthbyte / sizeof(uint64_t);
+
 	const uint64_t * string = (const uint64_t *)  stringbyte;
 	if (m < length) { // long strings
 		__m128i  acc =  __clmulhalfscalarproductwithoutreduction(rs64, string,m);
@@ -274,21 +279,29 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 		}
 
 		const __m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
-		const uint64_t keylength = 140;// *(const uint64_t *)(rs64 + m128neededperblock + 2);
+		const uint64_t keylength = *(const uint64_t *)(rs64 + m128neededperblock + 2);
 		return simple128to64hashwithlength(acc,finalkey,keylength, (uint64_t)lengthbyte);
 	} else { // short strings
 		if(lengthbyte % sizeof(uint64_t) == 0) {
 			__m128i  acc = __clmulhalfscalarproductwithtailwithoutreduction(rs64, string, length);
-			const uint64_t keylength = 140;// *(const uint64_t *)(rs64 + m128neededperblock + 2);
+			const uint64_t keylength = *(const uint64_t *)(rs64 + m128neededperblock + 2);
 			acc = _mm_xor_si128(acc,lazyLengthHash(keylength, (uint64_t)lengthbyte));
-			return  fmix64(precompReduction64(acc)) ;
+#ifdef BITMIX
+		    return fmix64(precompReduction64(acc)) ;
+#else
+		    return precompReduction64(acc) ;
+#endif
 		}
 		const uint64_t lastword = createLastWord(lengthbyte, *(string + length));
 		__m128i acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
 						rs64, string, length, lastword);
-		const uint64_t keylength = 140;// *(const uint64_t *)(rs64 + m128neededperblock + 2);
+		const uint64_t keylength =  *(const uint64_t *)(rs64 + m128neededperblock + 2);
 		acc = _mm_xor_si128(acc,lazyLengthHash(keylength, (uint64_t)lengthbyte));
-		return  fmix64(precompReduction64(acc)) ;
+#ifdef BITMIX
+		return fmix64(precompReduction64(acc)) ;
+#else
+		return precompReduction64(acc) ;
+#endif
 	}
 }
 
