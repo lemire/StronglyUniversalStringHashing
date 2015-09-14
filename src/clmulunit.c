@@ -504,12 +504,56 @@ void clhashavalanchetest() {
 	free(rs);
 
 }
+// ---------------------------------------------------------------------
+
+void clhashcollisiontest()
+{
+	const size_t NUM_TRIALS = 10;
+	const size_t CLNH_NUM_BYTES_PER_BLOCK = 1024;
+	const uint8_t KEY_OFFSET = 0x63; // Anything to prevent that K = M
+
+	uint8_t* k = (uint8_t*)malloc(RANDOM_BYTES_NEEDED_FOR_CLHASH);
+	size_t j2;
+
+    // Fill key with some deterministic information
+    for (j2 = 0; j2 < RANDOM_BYTES_NEEDED_FOR_CLHASH; ++j2) {
+        k[j2] = (j2 + KEY_OFFSET) & 0xFF;
+    }
+
+	for (size_t i = 1; i < NUM_TRIALS; ++i) {
+		for (size_t j = 1; j <= sizeof(uint64_t); ++j) {
+			// #Bytes / block + x, with 1 <= x < 8
+			const uint64_t mlen = i * CLNH_NUM_BYTES_PER_BLOCK + j;
+		    uint8_t* m = (uint8_t*)malloc(mlen);
+
+		    for (j2 = 0; j2 < mlen; ++j2) {
+		        m[j2] = j2 & 0xFF;
+		    }
+
+		    const uint64_t actual1 = CLHASHbyte(k, (const char*)m, mlen);
+
+		    // Change final byte
+		    m[mlen-1] = (m[mlen-1] + 1) & 0xFF;
+
+		    const uint64_t actual2 = CLHASHbyte(k, (const char*)m, mlen);
+		    const int are_equal = !memcmp(&actual1, &actual2, sizeof(uint64_t));
+
+		    printf("Testing %lu bytes, H1: %08x, H2: %08x, equal: %d \n", mlen, actual1, actual2, are_equal);
+    		free(m);
+		}
+	}
+
+    free(k);
+}
+
+// ---------------------------------------------------------------------
 
 
 
 void clmulunittests() {
 	printf("Testing CLMUL code...\n");
 	//displayfirst();
+	clhashcollisiontest();
 	hornerrule();
 	precompclmulunittest0_64();
 	clmulunittest0_64();
@@ -726,4 +770,3 @@ int main() {
 //	__m128i s2 = _mm_slli_si128(Ahigh,2);
 //	return _mm_xor_si128(_mm_xor_si128(s1,s2),Alow);
 //}
-
