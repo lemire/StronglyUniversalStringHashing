@@ -10,7 +10,7 @@ This code assumes that you understand random hashing and what it entails.
 
 Further reading:
 
- Daniel Lemire and Owen Kaser, Faster 64-bit universal hashing using carry-less multiplications
+ Daniel Lemire and Owen Kaser, Faster 64-bit universal hashing using carry-less multiplications, Journal of Cryptographic Engineering (to appear)
  http://arxiv.org/abs/1503.03465 
  
  Owen Kaser and Daniel Lemire, Strongly universal string hashing is fast, Computer Journal (2014) 57 (11): 1624-1638.
