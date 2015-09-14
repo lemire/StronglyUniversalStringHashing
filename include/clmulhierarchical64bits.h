@@ -145,6 +145,17 @@ static __m128i __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(con
 }
 
 
+static __m128i __clmulhalfscalarproductOnlyExtraWord(const __m128i * randomsource,
+	       const uint64_t extraword) {
+        const __m128i temp1 = _mm_load_si128(randomsource);
+        const __m128i temp2 = _mm_loadl_epi64((__m128i const*)&extraword);
+        const __m128i add1 = _mm_xor_si128(temp1, temp2);
+        const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x01);
+        return clprod1;
+}
+
+
+
 
 #ifdef BITMIX
 ////////
@@ -257,7 +268,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 			const __m128i h1 =  __clmulhalfscalarproductwithoutreduction(rs64, string+t,m);
 			acc = _mm_xor_si128(acc,h1);
 		}
-		const int remain = length - t;
+		const int remain = length - t;  // number of completely filled words
 
 		if (remain != 0) {
 			// we compute something like
@@ -276,7 +287,13 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 								rs64, string + t, remain, lastword);
 				acc = _mm_xor_si128(acc, h1);
 			}
-		}
+		} else if (lengthbyte % sizeof(uint64_t) != 0) { // OFK attempt to patch bug report from Eik List
+                  // there are no completely filled words left, but there is one partial word.
+                  acc = mul128by128to128_lazymod127(polyvalue, acc);
+                  const uint64_t lastword = createLastWord(lengthbyte, *(string + length));
+                  const __m128i h1 = __clmulhalfscalarproductOnlyExtraWord( rs64, lastword);
+                  acc = _mm_xor_si128(acc, h1);
+                }
 
 		const __m128i finalkey = _mm_load_si128(rs64 + m128neededperblock + 1);
 		const uint64_t keylength = *(const uint64_t *)(rs64 + m128neededperblock + 2);

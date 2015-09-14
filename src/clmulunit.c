@@ -171,7 +171,7 @@ void clmulunittest0_64() {
 }
 
 void precompclmulunittest0_64() {
-	printf("CLMUL test precomp 0_64...\n");
+	printf("[precompclmulunittest0_64] CLMUL test precomp 0_64...\n");
 	const __m128i C = _mm_set_epi64x(1U,(1U<<4)+(1U<<3)+(1U<<1)+(1U<<0)); // C is the irreducible poly. (64,4,3,1,0)
 	uint64_t mul1 = 4343232+(1ULL<<63)+(1ULL<<60)+(1ULL<<45);//random-like
 	uint64_t mul2 = 12344567788889+(1ULL<<62)+(1ULL<<61)+(1ULL<<55);//random-like
@@ -204,7 +204,7 @@ void precompclmulunittest0_64() {
 }
 
 void clmulunittest0_32() {
-	printf("CLMUL test 0_32...\n");
+	printf("[clmulunittest0_32] CLMUL test 0_32...\n");
 	const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<6)+(1UL<<7)+(1UL<<32);
 	const __m128i C = _mm_set_epi64x(0,irredpoly); // C is the irreducible poly.
 	uint64_t mul2 = 12344567788889+(1ULL<<62)+(1ULL<<61)+(1ULL<<55);//random-like
@@ -254,7 +254,7 @@ uint16_t barrettWithoutPrecomputation16( __m128i A) {
 }
 
 void clmulunittest0_16() {
-	printf("CLMUL test 0_16...\n");
+	printf("[clmulunittest0_16] CLMUL test 0_16...\n");
 	const uint64_t irredpoly = 1UL+(1UL<<2)+(1UL<<3)+(1UL<<5)+(1UL<<16);
 	const __m128i C = _mm_set_epi64x(0,irredpoly); // C is the irreducible poly.
 	uint32_t mul2 = 2979263833U+(1U<<31);//random-like
@@ -283,7 +283,7 @@ void clmulunittest0_16() {
 	printf("Test passed!\n");
 }
 void clmulunittest1() {
-	printf("CLMUL test 1...\n");
+	printf("[clmulunittest1] CLMUL test 1...\n");
 	// A * x = y ought to be invertible.
 	// brute force check is hard, but we can do some checking
 	// in the 16-bit case
@@ -308,10 +308,11 @@ void clmulunittest1() {
 
 		}
 	}
+	printf("Test passed!\n");
 }
 
 void clmulunittest2() {
-	printf("CLMUL test 2...\n");
+	printf("[clmulunittest2] CLMUL test 2...\n");
 	// Idea: we fish for two non-zero 32-bit integers with a zero product
 	for(int a = 1; a< 1<<16; a+=32) {
 		__m128i A = _mm_set_epi32(0,0,0,2*a);
@@ -326,10 +327,11 @@ void clmulunittest2() {
 			}
 		}
 	}
+	printf("Test passed!\n");
 }
 
 void clmulunittest3() {
-	printf("CLMUL test 3...\n");
+	printf("[clmulunittest3] CLMUL test 3...\n");
 	// Idea: we fish for two non-zero 64-bit integers with a zero product
 	for(int a = 1; a< 1<<16; a+=32) {
 		__m128i A = _mm_set_epi32(0,0,0,2*a);
@@ -352,9 +354,10 @@ void clmulunittest3() {
 			}
 		}
 	}
+	printf("Test passed!\n");
 }
 void clmulunittest3a() {
-	printf("CLMUL test 3a...\n");
+	printf("[clmulunittest3a] CLMUL test 3a...\n");
 	// Idea: we fish for two non-zero 64-bit integers with a zero product
 	for(int a = 1; a< 1<<16; a+=32) {
 		__m128i A = _mm_set_epi32(0,0,2*a,0);
@@ -377,6 +380,7 @@ void clmulunittest3a() {
 			}
 		}
 	}
+	printf("Test passed!\n");
 }
 
 // we compute key**2 value1 + key * value2 + value3
@@ -421,7 +425,7 @@ uint64_t fasthorner2(uint64_t k, uint64_t value1, uint64_t value2, uint64_t valu
 }
 
 void hornerrule() {
-	printf("Testing Horner rules...\n");
+	printf("[hornerrule] Testing Horner rules...\n");
 	uint64_t key = 0xF0F0F0F0F0F0F0F0UL;    // randomly chosen
 	for(int k = 0; k<64; k+=5) {
 		uint64_t value1 = (1UL<<k);
@@ -444,7 +448,7 @@ void hornerrule() {
 
 		}
 	}
-
+	printf("Test passed! \n");
 }
 
 
@@ -470,7 +474,7 @@ void clhashavalanchetest() {
 			rs[k] = k+1-k*k;
 	}
 	int K = 16;
-	printf("Testing CLHASH avalanche effect.\n");
+	printf("[clhashavalanchetest] Testing CLHASH avalanche effect.\n");
 
 	for(int bytelength = 1; bytelength < K; ++bytelength ) {
 
@@ -502,12 +506,13 @@ void clhashavalanchetest() {
 	}
 	free(array);
 	free(rs);
-
+	printf("Test passed! \n");
 }
 // ---------------------------------------------------------------------
-
+// contributed by Eik List
 void clhashcollisiontest()
 {
+	printf("[clhashcollisiontest] Testing whether we can induce collisions by hacking the right bytes (Eik List's test).\n");
 	const size_t NUM_TRIALS = 10;
 	const size_t CLNH_NUM_BYTES_PER_BLOCK = 1024;
 	const uint8_t KEY_OFFSET = 0x63; // Anything to prevent that K = M
@@ -521,7 +526,7 @@ void clhashcollisiontest()
     }
 
 	for (size_t i = 1; i < NUM_TRIALS; ++i) {
-		for (size_t j = 1; j < sizeof(uint64_t); ++j) {
+		for (size_t j = 1; j <= sizeof(uint64_t); ++j) {
 			// #Bytes / block + x, with 1 <= x < 8
 			  const uint64_t mlen = i * CLNH_NUM_BYTES_PER_BLOCK + j;
 		    uint8_t* m = (uint8_t*)malloc(mlen);
@@ -538,12 +543,14 @@ void clhashcollisiontest()
 		    const uint64_t actual2 = CLHASHbyte(k, (const char*)m, mlen);
 		    const int are_equal = !memcmp(&actual1, &actual2, sizeof(uint64_t));
 
-		    printf("Testing %llu bytes, H1: %016llX, H2: %016llX, equal: %d \n", mlen, actual1, actual2, are_equal);
+		    if(are_equal) printf("Testing %llu bytes, H1: %016llX, H2: %016llX, equal: %d \n", mlen, actual1, actual2, are_equal);
     		free(m);
+				assert(!are_equal); // strictly speaking this would not be a bug, but if it happens, it is very likely to be a bug!
 		}
 	}
 
     free(k);
+		printf("Test passed! \n");
 }
 
 // ---------------------------------------------------------------------
@@ -551,7 +558,7 @@ void clhashcollisiontest()
 
 
 void clmulunittests() {
-	printf("Testing CLMUL code...\n");
+	printf("[clmulunittests] Testing CLMUL code ==========\n");
 	//displayfirst();
 	clhashcollisiontest();
 	hornerrule();
@@ -563,7 +570,7 @@ void clmulunittests() {
 	clmulunittest2();
 	clmulunittest3();
 	clmulunittest3a();
-	printf("CLMUL code looks ok.\n");
+	printf("[clmulunittests] CLMUL code looks ok ===========\n");
 }
 
 void clhashtest() {
@@ -639,6 +646,7 @@ void clhashtest() {
 
 	free(array);
 	free(rs);
+	printf("Test passed! \n");
 
 }
 
@@ -671,12 +679,12 @@ void lazymod128test() {
 		  assert(equal(r,expected));
 		}
 	}
-	printf("[lazymod] ok\n");
+	printf("Test passed!\n");
 
 }
 
 void clhashsanity() {
-	printf("Checking if clhash remains unchanged  \n ");
+	printf("[clhashsanity] Checking if clhash remains unchanged  \n ");
 
 	uint64_t * keys  = (uint64_t*)malloc(RANDOM_64BITWORDS_NEEDED_FOR_CLHASH*sizeof(uint64_t));
 	for(int k = 0; k < RANDOM_64BITWORDS_NEEDED_FOR_CLHASH; ++k) {
@@ -687,29 +695,29 @@ void clhashsanity() {
 	for(int k = 0; k < N; ++k) {
 	   data[k] = k ;
 	}
-	printf(" %llu %llu %llu  \n ", CLHASH(keys, data,1),CLHASH(keys, data,2),CLHASH(keys, data,3));
+	//printf(" %llu %llu %llu  \n ", CLHASH(keys, data,1),CLHASH(keys, data,2),CLHASH(keys, data,3));
 
 	uint64_t r11 = CLHASH(keys, data,2);
 	uint64_t r11b = CLHASHbyte(keys, (const char *)data,2*sizeof(uint64_t));
-	printf("r11 = %llu r11b = %llu \n ", r11, r11b);
+	//printf("[clhashsanity] r11 = %llu r11b = %llu \n ", r11, r11b);
 
 	assert(r11==r11b);
 	uint64_t r1 = CLHASH(keys, data,3);
 
-	printf("length 3 word %llu  \n ", r1);
+	//printf("[clhashsanity] length 3 word %llu  \n ", r1);
 	assert(r1 == 1446687103829102880ULL);
 	uint64_t r2 = CLHASHbyte(keys, (const char*)data,3*8);
-	printf("length 3 word %llu  \n ", r2);
+	//printf("[clhashsanity] length 3 word %llu  \n ", r2);
 	assert(r2 == 1446687103829102880ULL);
 	uint64_t r3 = CLHASH(keys, data,N);
-	printf("length N word %llu  \n ", r3);
+	//printf("[clhashsanity] length N word %llu  \n ", r3);
 	assert(r3 == 2476377298766458265ULL);
 	uint64_t r4 = CLHASHbyte(keys, (const char*)data,N*8);
-	printf("length N word %llu  \n ", r4);
+	//printf("[clhashsanity] length N word %llu  \n ", r4);
 	assert(r4 == 2476377298766458265ULL);
 	free(keys);
 	free(data);
-	printf("Ok \n");
+	printf("Test passed! \n");
 
 }
 
