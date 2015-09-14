@@ -521,9 +521,9 @@ void clhashcollisiontest()
     }
 
 	for (size_t i = 1; i < NUM_TRIALS; ++i) {
-		for (size_t j = 1; j <= sizeof(uint64_t); ++j) {
+		for (size_t j = 1; j < sizeof(uint64_t); ++j) {
 			// #Bytes / block + x, with 1 <= x < 8
-			const uint64_t mlen = i * CLNH_NUM_BYTES_PER_BLOCK + j;
+			  const uint64_t mlen = i * CLNH_NUM_BYTES_PER_BLOCK + j;
 		    uint8_t* m = (uint8_t*)malloc(mlen);
 
 		    for (j2 = 0; j2 < mlen; ++j2) {
@@ -538,7 +538,7 @@ void clhashcollisiontest()
 		    const uint64_t actual2 = CLHASHbyte(k, (const char*)m, mlen);
 		    const int are_equal = !memcmp(&actual1, &actual2, sizeof(uint64_t));
 
-		    printf("Testing %lu bytes, H1: %08x, H2: %08x, equal: %d \n", mlen, actual1, actual2, are_equal);
+		    printf("Testing %llu bytes, H1: %016llX, H2: %016llX, equal: %d \n", mlen, actual1, actual2, are_equal);
     		free(m);
 		}
 	}
