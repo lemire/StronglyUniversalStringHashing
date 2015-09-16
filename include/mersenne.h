@@ -12,15 +12,15 @@ typedef struct  {
 } ZRandom;
 
 inline static void initZRandom(ZRandom * ZR, unsigned iSeed)  {
-	ZR->nValues = 0;
+    ZR->nValues = 0;
     // Seed the array used in random number generation.
-	ZR->MT[0] = iSeed;
+    ZR->MT[0] = iSeed;
     for (int i = 1; i < NMERSENNE; ++i) {
-    	ZR->MT[i] = 1 + (69069 * ZR->MT[i - 1]);
+        ZR->MT[i] = 1 + (69069 * ZR->MT[i - 1]);
     }
     // Compute map once to avoid % in inner loop.
     for (int i = 0; i < NMERSENNE; ++i) {
-    	ZR->map[i] = ZR->MT + ((i + MMERSENNE) % NMERSENNE);
+        ZR->map[i] = ZR->MT + ((i + MMERSENNE) % NMERSENNE);
     }
 }
 
@@ -28,10 +28,10 @@ inline static void initZRandom(ZRandom * ZR, unsigned iSeed)  {
 
 inline static unsigned int getValue(ZRandom * ZR) {
     if (0 == ZR->nValues) {
-    	ZR->MT[NMERSENNE] = ZR->MT[0];
+        ZR->MT[NMERSENNE] = ZR->MT[0];
         for (int i = 0; i < NMERSENNE; ++i) {
             unsigned y = (0x80000000 & ZR->MT[i]) | (0x7FFFFFFF
-                                  & ZR->MT[i + 1]);
+                         & ZR->MT[i + 1]);
             unsigned v = *(ZR->map[i]) ^ (y >> 1);
             if (1 & y)
                 v ^= 2567483615;

@@ -85,14 +85,14 @@ uint32_t hashMultilineardouble(const void *  rs, const uint32_t *  string, const
 //Black, J.; Halevi, S.; Krawczyk, H.; Krovetz, T. (1999). "UMAC: Fast and Secure Message Authentication". Advances in Cryptology (CRYPTO '99)., Equation 1
 // just high bits
 uint32_t hashNH(const void *  randomsource, const uint32_t *  string, const size_t length) {
-	assert ( length / 2 * 2 == length );// length is pair
+    assert ( length / 2 * 2 == length );// length is pair
     const uint32_t * const endstring = string + length;
     uint64_t sum = 0;
     const uint32_t *  randomsource32 = ( const uint32_t * )randomsource;
     for(; string!= endstring; randomsource32+=2,string+=2 ) {
         sum+=
-        (uint64_t) ( *randomsource32+ *string) *
-        (*(randomsource32 + 1) + *(string+1));
+            (uint64_t) ( *randomsource32+ *string) *
+            (*(randomsource32 + 1) + *(string+1));
     }
     return sum>>32;
 }
