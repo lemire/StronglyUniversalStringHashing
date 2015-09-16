@@ -255,10 +255,11 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 	__m128i polyvalue =  _mm_load_si128(rs64 + m128neededperblock); // to preserve alignment on cache lines for main loop, we pick random bits at the end
 	polyvalue = _mm_and_si128(polyvalue,_mm_setr_epi32(0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0x3fffffff));// setting two highest bits to zero
 	// we should check that polyvalue is non-zero, though this is best done outside the function and highly unlikely
-	size_t length = lengthbyte / sizeof(uint64_t);
+	const size_t length = lengthbyte / sizeof(uint64_t); // # of complete words
+	const size_t lengthinc = (lengthbyte + sizeof(uint64_t) - 1) / sizeof(uint64_t); // # of words, including partial ones
 
 	const uint64_t * string = (const uint64_t *)  stringbyte;
-	if (m < length) { // long strings
+	if (m < lengthinc) { // long strings // modified from length to lengthinc to address issue #3 raised by Eik List
 		__m128i  acc =  __clmulhalfscalarproductwithoutreduction(rs64, string,m);
 		size_t t = m;
 		for (; t +  m <= length; t +=  m) {
@@ -287,7 +288,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
 								rs64, string + t, remain, lastword);
 				acc = _mm_xor_si128(acc, h1);
 			}
-		} else if (lengthbyte % sizeof(uint64_t) != 0) { // OFK attempt to patch bug report from Eik List
+		} else if (lengthbyte % sizeof(uint64_t) != 0) {// added to address issue #2 raised by Eik List
                   // there are no completely filled words left, but there is one partial word.
                   acc = mul128by128to128_lazymod127(polyvalue, acc);
                   const uint64_t lastword = createLastWord(lengthbyte, *(string + length));
