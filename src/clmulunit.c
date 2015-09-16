@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include "clmul.h"
 #include "clmulpoly64bits.h"
@@ -543,7 +544,7 @@ void clhashcollisiontest()
             const uint64_t actual2 = CLHASHbyte(k, (const char*)m, mlen);
             const int are_equal = !memcmp(&actual1, &actual2, sizeof(uint64_t));
 
-            if(are_equal) printf("Testing %llu bytes, H1: %016llX, H2: %016llX, equal: %d \n", mlen, actual1, actual2, are_equal);
+            if(are_equal) printf("Testing %" PRIu64 " bytes, H1: %" PRIX64 ", H2: %" PRIX64 ", equal: %d \n", mlen, actual1, actual2, are_equal);
             free(m);
             assert(!are_equal); // strictly speaking this would not be a bug, but if it happens, it is very likely to be a bug!
         }
