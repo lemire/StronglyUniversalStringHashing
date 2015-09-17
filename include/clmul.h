@@ -20,8 +20,28 @@ void printme64(__m128i v1) {
     printf(" %llu %llu  ", _mm_extract_epi64(v1,0), _mm_extract_epi64(v1,1));
 }
 
-// compute the modulo with 2^127 + 2 + 1
+//////////////////
+// compute the "lazy" modulo with 2^127 + 2 + 1, actually we compute the
+// modulo with (2^128 + 4 + 2) = 2 * (2^127 + 2 + 1) ,
+// though  (2^128 + 4 + 2) is not
+// irreducible, we have that
+//     (x mod (2^128 + 4 + 2)) mod (2^127 + 2 + 1) == x mod (2^127 + 2 + 1)
+// That's true because, in general ( x mod k y ) mod y = x mod y.
+//
+// Precondition:  given that Ahigh|Alow represents a 254-bit value
+//                  (two highest bits of Ahigh must be zero)
+//////////////////
 __m128i lazymod127(__m128i Alow, __m128i Ahigh) {
+    ///////////////////////////////////////////////////
+    // CHECKING THE PRECONDITION:
+    // Important: we are assuming that the two highest bits of Ahigh
+    // are zero. This could be checked by adding a line such as this one:
+    // if(_mm_extract_epi64(Ahigh,1) >= (1ULL<<62)){printf("bug\n");abort();}
+    //                       (this assumes SSE4.1 support)
+    ///////////////////////////////////////////////////
+    // The answer is Alow XOR  (  Ahigh <<1 ) XOR (  Ahigh <<2 )
+    // This is correct because the two highest bits of Ahigh are
+    // assumed to be zero.
     ///////////////////////////////////////////////////
     // We want to take Ahigh and compute       (  Ahigh <<1 ) XOR (  Ahigh <<2 )
     // Except that there is no way to shift an entire XMM register by 1 or 2 bits  using a single instruction.
