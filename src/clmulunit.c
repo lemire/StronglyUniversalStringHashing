@@ -2,6 +2,7 @@
 #include <string.h>
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <stdbool.h>
 #include "clmul.h"
 #include "clmulpoly64bits.h"
 #include "clhash.h"
@@ -652,6 +653,48 @@ void clhashtest() {
 }
 
 
+
+//////////////////
+// computes the  modulo with 2^127 + 2 + 1, this is slow, but designed to be very likely to be correct.
+//////////////////
+__m128i slowmod127(__m128i Alow, __m128i Ahigh) {
+	bool asbitvector[256];
+	for(int k = 0; k < 256; ++k) {
+		asbitvector[k] = false;
+
+	}
+	uint64_t x1 = _mm_extract_epi64(Alow,0);
+	uint64_t x2 = _mm_extract_epi64(Alow,1);
+	uint64_t x3 = _mm_extract_epi64(Ahigh,0);
+	uint64_t x4 = _mm_extract_epi64(Ahigh,1);
+	for(int k = 0; k < 64; ++k) {
+		if(((x1 >> k) & 1) == 1) asbitvector[k] = true;
+		if(((x2 >> k) & 1) == 1) asbitvector[k + 64] = true;
+		if(((x3 >> k) & 1) == 1) asbitvector[k + 128] = true;
+		if(((x4 >> k) & 1) == 1) asbitvector[k + 128 + 64] = true;
+	}
+	for(int k = 255; k > 126 ; --k ) {
+		if(asbitvector[k]) {
+			asbitvector[k] = false;
+			asbitvector[k - 127] = ~ asbitvector[k];
+			asbitvector[k - 126] = ~ asbitvector[k];
+		}
+	}
+	uint64_t y1 = 0;
+	uint64_t y2 = 0;
+	for(int k = 0; k < 64 ; ++k ) {
+		if(asbitvector[k]) {
+			y1 |= ((uint64_t)1) << k;
+		}
+	}
+	for(int k = 0; k < 64 ; ++k ) {
+		if(asbitvector[k + 64 ]) {
+			y2 |= ((uint64_t)1) << k;
+		}
+	}
+	return _mm_set_epi64x(y2,y1);
+}
+
 void lazymod128test() {
     printf("[lazymod] test\n");
     // we know what lazymod has to be for 1-bit inputs, so let us run through it.
@@ -683,6 +726,32 @@ void lazymod128test() {
     printf("Test passed!\n");
 
 }
+
+void lazymod128test2() {
+    printf("[lazymod] advanced test\n");
+    // this verifies that
+    //       lazymod127(x) mod 2^127 +2+1 = x  mod 2^127 +2+1
+    ///
+    for(int b = 0; b <128; ++b) {
+        __m128i low = unibit(b);
+        __m128i high = _mm_setzero_si128();
+        __m128i r = lazymod127(low, high) ;
+        __m128i r2 = slowmod127(r,_mm_setzero_si128());
+        __m128i correct = slowmod127(low,high);
+        assert(equal(r2,correct));
+    }
+    for(int b = 0; b <126; ++b) {
+        __m128i high = unibit(b);
+        __m128i low = _mm_setzero_si128();
+        __m128i r = lazymod127(low, high) ;
+        __m128i r2 = slowmod127(r,_mm_setzero_si128());
+        __m128i correct = slowmod127(low,high);
+        assert(equal(r2,correct));
+    }
+    printf("Test passed!\n");
+
+}
+
 
 void clhashsanity() {
     printf("[clhashsanity] Checking if clhash remains unchanged  \n ");
@@ -726,6 +795,7 @@ int main() {
     clhashsanity();
     clhashavalanchetest();
     lazymod128test();
+    lazymod128test2();
     clhashtest();
     clmulunittests();
     return 0;
