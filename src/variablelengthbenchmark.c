@@ -75,16 +75,22 @@ ticks stopRDTSCP(void) {
 #include "clmulpoly64bits.h"
 #include "clmulhierarchical64bits.h"
 #include "ghash.h"
+#include "bigendianuniversal.h"
 
-#define HowManyFunctions64 5
+#define HowManyFunctions64 8
 
 hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  &hashCity, &hashSipHash,&GHASH64bit
+                                                ,&hornerHash
+                                                ,&unrolledHorner
+                                                ,&twiceHorner32
                                                };
 
 const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
-                                                    "64-bit CLHASH       ", "Google's City       ", "SipHash             ","GHASH          "
-
+                                                    "64-bit CLHASH       ", "Google's City       ", "SipHash             ","GHASH          ",
+                                                    "hornerHash          ",
+                                                    "unrolled Horner     ",
+                                                    "twice Horner32      "
                                                   };
 
 int main(int c, char ** arg) {
