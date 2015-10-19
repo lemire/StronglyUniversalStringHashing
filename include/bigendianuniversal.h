@@ -117,6 +117,13 @@ uint64_t unrolledHorner(const void * randomSource,
 // 32-bit hash values. In order to make this almost big-endian
 // universal, we have to rehash these two 32-bit values with an
 // almost-big-endian universal function, too.
+//
+// This function is further from being big-endian universal, in that
+// its epsilon is larger. The two 32-bit hash values each have
+// collision probability approximately L*2^{-31}, so the probability
+// that they both collide is about L^2 * 2^{-62}, rather than
+// L*{2^-63} in the constructions above. This method is thus better
+// suited for shorter strings.
 uint64_t twiceHorner32(const void * randomSource,
                        const uint64_t * y,
                        uint64_t length) {
