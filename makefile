@@ -2,7 +2,7 @@
 #
 .SUFFIXES: .cpp .o .c .h
 
-CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native -Wall -Wextra
+CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native -Wall -Wextra -funroll-loops
 CXXFLAGS = -O2 -mavx  -march=native
 
 all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher benchmark128bitmultiplication benchmark128bitpolyhashing
