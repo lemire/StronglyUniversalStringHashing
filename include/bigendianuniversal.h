@@ -117,27 +117,56 @@ uint64_t unrolledHorner(const void * randomSource,
 // collision probability approximately L*2^{-31}, so the probability
 // that they both collide is about L^2 * 2^{-62}, rather than
 // L*{2^-63} in the constructions above. This method is thus better
-// suited for shorter strings.
+// suited for shorter strings than longer ones.
+//
+// This function is unrolled in a manenr similar to unrolledHorner,
+// above.
 uint64_t twiceHorner32(const void * randomSource,
-                       const uint64_t * y,
-                       uint64_t length) {
-  // The 32 most significant bits in a 64-bit word:
-  static const uint64_t mask = 0xffffffff00000000ull;
-  // View the input as 32-bit ints:
-  const uint32_t * x = (const uint32_t *)y;
-  // View the random data as 64-bit ints:
-  const uint64_t * r = randomSource;
-  // Both must be odd
-  uint64_t h1 = r[0] | 0x1ull;
-  uint64_t h2 = r[1] | 0x1ull;
-
-  uint64_t accum1 = h1 * length;
-  uint64_t accum2 = h2 * length;
-  for (size_t i = 0; i < 2*length; ++i) {
-    accum1 = h1 * (x[i] + (accum1 & mask));
-    accum2 = h2 * (x[i] + (accum2 & mask));
+                        const uint64_t * x,
+                        uint64_t length) {
+  u128 h;
+  memcpy(&h, randomSource, sizeof(u128));
+  // h.lo and h.hi must be odd:
+  h.lo |= 1;
+  h.hi |= 1;
+  if (1 == length) {
+    return multHi128(h, (u128) {.hi = length, .lo = x[0]}).hi;
   }
-  return h1 * ((accum2 >> 32) + (accum1 & mask));
+  if (2 == length) {
+    u128 tmp = multHi128(h, (u128) {.hi = length, .lo = x[0]});
+    tmp.lo = x[1];
+    return multHi128(h, tmp).hi;
+  }
+  u128 accums[4] = {(u128) {.hi = length}, (u128) {.hi = x[0]},
+                    (u128) {.hi = x[1]}, (u128) {.hi = x[2]}};
+  size_t i = 3;
+  // This is the main loop.
+  for (; i + 3 < length; i += 4) {
+    for (size_t j = 0; j < 4; ++j) {
+      accums[j].lo = x[i+j] * h.lo;
+      accums[j].hi *= h.hi;
+      accums[j].hi &= 0xffffffff00000000ull;
+      accums[j].hi |= accums[j].lo >> 32;
+    }
+  }
+  // We might have 1, 2, or 3 words left over at the end that we
+  // couldn't handle in our unrolled loop which could only do 4 at
+  // once:
+  for(; i < length; i += 1) {
+    for (size_t j = 0; j < 1; ++j) {
+      accums[j].lo = x[i+j] * h.lo;
+      accums[j].hi *= h.hi;
+      accums[j].hi &= 0xffffffff00000000ull;
+      accums[j].hi |= accums[j].lo >> 32;
+    }
+  }
+  // Finally, we combine all of the hash values we have already computed.
+  for (size_t j = 1; j < 4; ++j) {
+    accums[0].lo = accums[j].hi;
+    accums[0] = multHi128(h, accums[0]);
+  }
+  return accums[0].hi;
 }
+
 
 #endif  // BIGENDIANUNIVERSAL_H
