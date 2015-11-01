@@ -93,12 +93,6 @@ uint64_t unrolledHorner(const void * randomSource,
   // We might have 1, 2, or 3 words left over at the end that we
   // couldn't handle in our unrolled loop which could only do 4 at
   // once:
-  for(; i + 1 < length; i += 2) {
-    for (size_t j = 0; j < 2; ++j) {
-      accums[j].lo = x[i+j];
-      accums[j] = multHi128(h, accums[j]);
-    }
-  }
   for(; i < length; i += 1) {
     for (size_t j = 0; j < 1; ++j) {
       accums[j].lo = x[i+j];
