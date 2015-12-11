@@ -176,5 +176,148 @@ uint64_t twiceHorner32(const void * randomSource,
   return accums[0].hi;
 }
 
+// Fast universal hashing using the CLNH family:
+
+// Using the random words in `r64`, universally hash `data` down to 64 bits
+static inline uint64_t bigHashDown(const uint64_t *r64, const __m128i *data) {
+  uint64_t d64[2] = {_mm_extract_epi64(*data, 0),
+                     _mm_extract_epi64(*data, 1)};
+  univHash(r64[0], r64[1], d64[0], &d64[1]);
+  return d64[1];
+}
+
+// Big-endian universally hash `data` with the random bits in `r64`.
+static inline uint64_t bie(const uint64_t r64, const uint64_t data) {
+  return data * (r64 | 0x1ul);
+}
+
+// Hash universally `accum` and `data` using the random bits in `r128`.
+static inline void clCombine(const __m128i r128, __m128i *accum,
+                             const __m128i data) {
+  *accum = _mm_xor_si128(*accum, r128);
+  *accum = _mm_clmulepi64_si128(*accum, *accum, 1);
+  *accum = _mm_xor_si128(*accum, data);
+}
+
+// Helper functions for hashing an array of __m128i `accum` and a
+// single __m128i `extra` down into `accum[0]` using the random bits
+// in `r128`.
+static inline void clArrayCombineExtra2(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  clCombine(r128, &accum[0], extra);
+  clCombine(r128, &accum[0], accum[1]);
+}
+
+static inline void clArrayCombineExtra3(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  clCombine(r128, &accum[0], extra);
+  clCombine(r128, &accum[1], accum[2]);
+  clCombine(r128, &accum[0], accum[1]);
+}
+
+static inline void clArrayCombineExtra4(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  for (size_t i = 0; i < 2; ++i) {
+    clCombine(r128, &accum[i], accum[i + 2]);
+  }
+  clArrayCombineExtra2(r128, accum, extra);
+}
+
+static inline void clArrayCombineExtra5(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  clCombine(r128, &accum[0], extra);
+  for (size_t i = 1; i <= 2; ++i) {
+    clCombine(r128, &accum[i], accum[i + 2]);
+  }
+  clArrayCombineExtra2(r128, accum, accum[2]);
+}
+
+static inline void clArrayCombineExtra6(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  for (size_t i = 0; i < 3; ++i) {
+    clCombine(r128, &accum[i], accum[i + 3]);
+  }
+  clArrayCombineExtra3(r128, accum, extra);
+}
+
+static inline void clArrayCombineExtra8(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  for (size_t i = 0; i < 4; ++i) {
+    clCombine(r128, &accum[i], accum[i + 4]);
+  }
+  clArrayCombineExtra4(r128, accum, extra);
+}
+
+static inline void clArrayCombineExtra9(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  clCombine(r128, &accum[0], extra);
+  for (size_t i = 1; i <= 4; ++i) {
+    clCombine(r128, &accum[i], accum[i + 4]);
+  }
+  clArrayCombineExtra4(r128, accum, accum[4]);
+}
+
+static inline void clArrayCombineExtra10(const __m128i r128, __m128i *accum,
+                                         const __m128i extra) {
+  for (size_t i = 0; i < 5; ++i) {
+    clCombine(r128, &accum[i], accum[i + 5]);
+  }
+  clArrayCombineExtra5(r128, accum, extra);
+}
+
+static inline void clArrayCombineExtra11(const __m128i r128, __m128i *accum,
+                                         const __m128i extra) {
+  clCombine(r128, &accum[0], extra);
+  for (size_t i = 1; i <= 5; ++i) {
+    clCombine(r128, &accum[i], accum[i + 5]);
+  }
+  clArrayCombineExtra5(r128, accum, accum[5]);
+}
+
+static inline void clArrayCombineExtra12(const __m128i r128, __m128i *accum,
+                                         const __m128i extra) {
+  for (size_t i = 0; i < 6; ++i) {
+    clCombine(r128, &accum[i], accum[i + 6]);
+  }
+  clArrayCombineExtra6(r128, accum, extra);
+}
+
+// Iterated hashing using the CLNH family
+#define ITERATECL(MANY)                                                     \
+  uint64_t iterateCL##MANY(const void *randomSource, const uint64_t *x,     \
+                           const size_t length) {                           \
+    const uint64_t *r64 = &(((const uint64_t *)(randomSource))[2]);         \
+    const __m128i *z = (const __m128i *)x;                                  \
+    const size_t zlen = length / 2;                                         \
+    __m128i accum[MANY];                                                    \
+    for (size_t j = 0; j < MANY; ++j) {                                     \
+      accum[j] = (j < zlen) ? _mm_lddqu_si128(&z[j]) : _mm_setzero_si128(); \
+    }                                                                       \
+    size_t i = (zlen >= MANY) ? MANY : zlen;                                \
+    const __m128i r128 = _mm_lddqu_si128((const __m128i *)randomSource);    \
+    for (; i + MANY <= zlen; i += MANY) {                                   \
+      for (size_t j = 0; j < MANY; ++j) {                                   \
+        clCombine(r128, &accum[j], _mm_lddqu_si128(&z[i + j]));             \
+      }                                                                     \
+    }                                                                       \
+    for (size_t j = 0; j < MANY; ++j) {                                     \
+      if (i + j < zlen) {                                                   \
+        clCombine(r128, &accum[j], _mm_lddqu_si128(&z[i + j]));             \
+      }                                                                     \
+    }                                                                       \
+    clArrayCombineExtra##MANY(                                              \
+        r128, accum,                                                        \
+        _mm_set_epi64x(length, (length & 1) ? x[length - 1] : 0));          \
+    const uint64_t bhd = bigHashDown(r64, &accum[0]);                       \
+    return bie(r64[2], bhd);                                                \
+  }
+
+ITERATECL(8)
+ITERATECL(9)
+ITERATECL(10)
+ITERATECL(11)
+ITERATECL(12)
+
+#undef ITERATECL
 
 #endif  // BIGENDIANUNIVERSAL_H

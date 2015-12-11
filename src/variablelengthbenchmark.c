@@ -77,13 +77,14 @@ ticks stopRDTSCP(void) {
 #include "ghash.h"
 #include "bigendianuniversal.h"
 
-#define HowManyFunctions64 8
+#define HowManyFunctions64 9
 
 hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  &hashCity, &hashSipHash,&GHASH64bit
                                                 ,&hornerHash
                                                 ,&unrolledHorner4
                                                 ,&twiceHorner32
+                                                 ,&iterateCL11
                                                };
 
 const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
@@ -91,6 +92,7 @@ const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
                                                     "hornerHash          ",
                                                     "unrolled Horner     ",
                                                     "twice Horner32      "
+                                                    ,"iterateCL 11        "
                                                   };
 
 int main(int c, char ** arg) {
