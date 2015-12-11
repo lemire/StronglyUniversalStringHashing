@@ -25,7 +25,7 @@ typedef struct U128 {
 
 // Multuply two uint64_ts and get the most significant 64 bits
 // of the result; Intel only.
-inline uint64_t hi64mul(uint64_t x, uint64_t y) {
+static inline uint64_t hi64mul(uint64_t x, uint64_t y) {
   uint64_t lo, hi;
   __asm__ ("mulq %3" : "=a,a" (lo), "=d,d" (hi) : "%0,0" (x), "r,m" (y));
   return hi;
@@ -33,12 +33,12 @@ inline uint64_t hi64mul(uint64_t x, uint64_t y) {
 
 // Multiply two u128s, but don't compute the least significant 64 bits
 // or the most significant 128 bits.
-inline u128 multHi128(u128 x, u128 y) {
+static inline u128 multHi128(u128 x, u128 y) {
   return (u128) {.hi = x.hi * y.lo + x.lo * y.hi + hi64mul(x.lo, y.lo),
                  .lo = 0};
 }
 
-// An L*2^{1-d} almost strongly universal hash functions on strings of
+// An L*2^{1-d} almost bigendian universal hash function on strings of
 // 64-bit words, producing a 64-bit output.
 uint64_t hornerHash(const void * randomSource,
                     const uint64_t * x,
@@ -60,52 +60,60 @@ uint64_t hornerHash(const void * randomSource,
   return accum.hi;
 }
 
+// Hashes two 64-bit words (newer and accum) down to one,
+// universally. h0 and h1 must be chosen uniformly at random.
+//
+// This method first rehashes `accum` using `h0` and `h1`. It is
+// essentially (accum * (h0 + (h1<<64))) >> 64, where all operations
+// are performed on 128-bit words. This is a variant on the
+// multiply-shift hashing in Dietzfelbinger's "Universal hashing and
+// k-wise independent random variables via integer arithmetic without
+// primes". It doesn't use the addition component. This makes it only
+// delta-universal, not strongly universal. However, that is enough so
+// that adding `newer` maintains the universailty, as has been noted
+// by many.
+static inline void univHash(const uint64_t h0, const uint64_t h1,
+                            const uint64_t newer, uint64_t *accum) {
+  *accum = newer + *accum * h1 + hi64mul(*accum, h0);
+}
+
 // Horner's method can only dispatch one 128-bit multiplication at a
 // time, since each loop iteration depends on the one before
 // it. unrolledHorner changes the order in which the words are hashed
-// and can hash four words simultaneously, if the processor supports
-// it.
-uint64_t unrolledHorner(const void * randomSource,
-                        const uint64_t * x,
-                        uint64_t length) {
-  u128 h;
-  memcpy(&h, randomSource, sizeof(u128));
-  // h must be odd:
-  h.lo |= 1;
-  if (1 == length) {
-    return multHi128(h, (u128) {.hi = length, .lo = x[0]}).hi;
+// and can hash multiple words simultaneously, if the processor
+// supports it.
+#define DECLARE_UNROLLED_HORNER(MANY)                                        \
+  uint64_t unrolledHorner##MANY(const void *randomSource, const uint64_t *x, \
+                                uint64_t length) {                           \
+    uint64_t accums[MANY];                                                   \
+    accums[0] = length;                                                      \
+    accums[1] = x[1];                                                        \
+    for (size_t i = 2; i < MANY; ++i) {                                      \
+      accums[i] = (i < length) ? x[i] : 0;                                   \
+    }                                                                        \
+    size_t i = (length < MANY) ? length : MANY;                              \
+    const uint64_t *r64 = (const uint64_t *)randomSource;                    \
+    for (; i + MANY <= length; i += MANY) {                                  \
+      for (size_t j = 0; j < MANY; ++j) {                                    \
+        univHash(r64[0], r64[1], x[i + j], &accums[j]);                      \
+      }                                                                      \
+    }                                                                        \
+    for (size_t j = 0; i+j < length; j += 1) {                               \
+      univHash(r64[0], r64[1], x[i+j], &accums[j]);                          \
+    }                                                                        \
+    for (size_t j = 1; j < MANY; ++j) {                                      \
+      univHash(r64[0], r64[1], accums[j], &accums[0]);                       \
+    }                                                                        \
+    return accums[0] * (r64[2] | ((uint64_t)1));                             \
   }
-  if (2 == length) {
-    u128 tmp = multHi128(h, (u128) {.hi = length, .lo = x[0]});
-    tmp.lo = x[1];
-    return multHi128(h, tmp).hi;
-  }
-  u128 accums[4] = {(u128) {.hi = length}, (u128) {.hi = x[0]},
-                    (u128) {.hi = x[1]}, (u128) {.hi = x[2]}};
-  size_t i = 3;
-  // This is the main loop:
-  for (; i + 3 < length; i += 4) {
-    for (size_t j = 0; j < 4; ++j) {
-      accums[j].lo = x[i+j];
-      accums[j] = multHi128(h, accums[j]);
-    }
-  }
-  // We might have 1, 2, or 3 words left over at the end that we
-  // couldn't handle in our unrolled loop which could only do 4 at
-  // once:
-  for(; i < length; i += 1) {
-    for (size_t j = 0; j < 1; ++j) {
-      accums[j].lo = x[i+j];
-      accums[j] = multHi128(h, accums[j]);
-    }
-  }
-  // Finally, we combine all of the hash values we have already computed.
-  for (size_t j = 1; j < 4; ++j) {
-    accums[0].lo = accums[j].hi;
-    accums[0] = multHi128(h, accums[0]);
-  }
-  return accums[0].hi;
-}
+
+DECLARE_UNROLLED_HORNER(3)
+DECLARE_UNROLLED_HORNER(4)
+DECLARE_UNROLLED_HORNER(5)
+DECLARE_UNROLLED_HORNER(6)
+DECLARE_UNROLLED_HORNER(7)
+DECLARE_UNROLLED_HORNER(8)
+DECLARE_UNROLLED_HORNER(9)
 
 // One other way to calculate a 64-bit hash value is to calculate two
 // 32-bit hash values. In order to make this almost big-endian

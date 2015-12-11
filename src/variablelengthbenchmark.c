@@ -82,7 +82,7 @@ ticks stopRDTSCP(void) {
 hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  &hashCity, &hashSipHash,&GHASH64bit
                                                 ,&hornerHash
-                                                ,&unrolledHorner
+                                                ,&unrolledHorner4
                                                 ,&twiceHorner32
                                                };
 
