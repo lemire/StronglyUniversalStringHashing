@@ -94,7 +94,7 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
                                                 &hashSipHash,
                                                 &GHASH64bit,
                                                 &hornerHash,
-                                                &unrolledHorner,
+                                                &unrolledHorner4,
                                                 &twiceHorner32
                                                };
 
