@@ -320,4 +320,98 @@ ITERATECL(12)
 
 #undef ITERATECL
 
+static inline __m128i clCombineFar(const __m128i r128, const __m128i x,
+                                   const __m128i y) {
+  __m128i result = _mm_xor_si128(x, r128);
+  result = _mm_clmulepi64_si128(result, result, 1);
+  result = _mm_xor_si128(result, y);
+  return result;
+}
+
+// Unrolled Carter & Wegman tree-hash with clCombineFar as the
+// reducing function. This is basically "Badger - A Fast and Provably
+// Secure MAC", by Boesgaard et al.
+
+#define HALVE(MANY)                                                       \
+  static inline void halve##MANY(const __m128i r128, const __m128i *from, \
+                                 __m128i *to) {                           \
+    for (size_t i = 0; i < MANY; ++i) {                                   \
+      to[i] = clCombineFar(r128, from[2 * i], from[2 * i + 1]);           \
+    }                                                                     \
+  }
+
+#define HALVE_LOAD(MANY)                                                      \
+  static inline void halveLoad##MANY(const __m128i r128, const __m128i *from, \
+                                     __m128i *to) {                           \
+    for (size_t i = 0; i < MANY; ++i) {                                       \
+      to[i] = clCombineFar(r128, _mm_lddqu_si128(&from[2 * i]),               \
+                           _mm_lddqu_si128(&from[2 * i + 1]));                \
+    }                                                                         \
+  }
+
+#define TREECL(MANY)                                                        \
+  uint64_t treeCL##MANY(const void *randomSource, const uint64_t *x,        \
+                        const size_t length) {                              \
+    const __m128i *r128 = (const __m128i *)randomSource;                    \
+    const size_t depth = 64 - __builtin_clzll(1 + length);                  \
+    __m128i rLevel[64];                                                     \
+    for (size_t i = 0; i < depth; ++i) {                                    \
+      rLevel[i] = _mm_lddqu_si128(&r128[i]);                                \
+    }                                                                       \
+    __m128i tree[64][2 * MANY];                                             \
+    size_t fill[64];                                                        \
+    for (size_t i = 0; i < depth; ++i) {                                    \
+      fill[i] = 0;                                                          \
+    }                                                                       \
+    const __m128i *z = (const __m128i *)x;                                  \
+    const size_t zlen = length / 2;                                         \
+    size_t i = 0;                                                           \
+    for (; i + 2 * MANY <= zlen; i += 2 * MANY) {                           \
+      for (size_t j = 0; 2 * MANY == fill[j]; ++j) {                        \
+        halve##MANY(rLevel[j + 1], tree[j], &tree[j + 1][fill[j + 1]]);     \
+        fill[j] = 0;                                                        \
+        fill[j + 1] += MANY;                                                \
+      }                                                                     \
+      halveLoad##MANY(rLevel[0], &z[i], &tree[0][fill[0]]);                 \
+      fill[0] += MANY;                                                      \
+    }                                                                       \
+    size_t max_fill_level = depth - 1;                                      \
+    for (; fill[max_fill_level] > 0; --max_fill_level) {                    \
+    }                                                                       \
+    for (; i < zlen; i += 2) {                                              \
+      tree[0][fill[0]] = clCombineFar(rLevel[0], _mm_lddqu_si128(&z[i]),    \
+                                      _mm_lddqu_si128(&z[i + 1]));          \
+      ++fill[0];                                                            \
+    }                                                                       \
+    const __m128i final =                                                   \
+        _mm_set_epi64x(length, (length & 1) ? x[length - 1] : 0);           \
+    tree[0][fill[0]] =                                                      \
+        (i < zlen) ? clCombineFar(rLevel[0], _mm_lddqu_si128(&z[i]), final) \
+                   : final;                                                 \
+    ++fill[0];                                                              \
+    i = 0;                                                                  \
+    for (; (i < max_fill_level) || (fill[i] > 1); ++i) {                    \
+      size_t j = 0;                                                         \
+      for (; j + 2 <= fill[i]; j += 2) {                                    \
+        tree[i + 1][fill[i + 1]] =                                          \
+            clCombineFar(rLevel[i + 1], tree[i][j], tree[i][j + 1]);        \
+        ++fill[i + 1];                                                      \
+      }                                                                     \
+      if (j < fill[i]) {                                                    \
+        tree[i + 1][fill[i + 1]] = tree[i][j];                              \
+        ++fill[i + 1];                                                      \
+      }                                                                     \
+    }                                                                       \
+    const uint64_t *r64 = (const uint64_t *)randomSource;                   \
+    r64 += 2 * MANY;                                                        \
+    const uint64_t bhd = bigHashDown(r64, &tree[i][0]);                     \
+    return bie(r64[2], bhd);                                                \
+  }
+
+#define TREECLALL(MANY) HALVE(MANY) HALVE_LOAD(MANY) TREECL(MANY)
+
+TREECLALL(8)
+TREECLALL(9)
+TREECLALL(10)
+
 #endif  // BIGENDIANUNIVERSAL_H
