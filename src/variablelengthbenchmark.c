@@ -100,17 +100,15 @@ const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
 int main(int c, char ** arg) {
     (void) (c);
     (void) (arg);
-    const int N = 2048; // should be divisible by two!
     int which_algos = 0xffffffff;
     assert(HowManyFunctions64 <= 32);
     if (c > 1)
         which_algos = atoi(arg[1]);  // bitmask
-    int lengthStart = 1, lengthEnd = N; // inclusive
+    int lengthStart = 1, lengthEnd = 2048; // inclusive
     if (c > 2)
         lengthStart = atoi(arg[2]);
     if (c > 3)
         lengthEnd = atoi(arg[3]);
-    assert((lengthEnd & 1) == 0);
 
     int i, j;
     int length;
@@ -118,11 +116,11 @@ int main(int c, char ** arg) {
     struct timeval start, finish;
     uint64_t randbuffer[150] __attribute__ ((aligned (16)));// 150 should be plenty
     uint32_t sumToFoolCompiler = 0;
-    uint64_t * intstring = malloc(N * sizeof(uint64_t)); // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
+    uint64_t * intstring = malloc(lengthEnd * sizeof(uint64_t)); // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
     for (i = 0; i < 150; ++i) {
         randbuffer[i] = rand() | ((uint64_t)(rand()) << 32);
     }
-    for (i = 0; i < N; ++i) {
+    for (i = 0; i < lengthEnd; ++i) {
         intstring[i] = rand() | ((uint64_t)(rand()) << 32);
     }
     printf("#Reporting the number of cycles per byte.\n");
