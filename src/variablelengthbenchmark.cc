@@ -79,13 +79,15 @@ extern "C" {
 #include "bigendianuniversal.h"
 }
 
-#define HowManyFunctions64 8
+#define HowManyFunctions64 10
 
 hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  &hashCity, &hashSipHash,&GHASH64bit
                                                 ,&hornerHash
-                                                ,&unrolledHorner
+                                                ,&unrolledHorner4
                                                 ,&twiceHorner32
+                                                 ,&iterateCL11
+                                                 ,&treeCL9
                                                };
 
 const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
@@ -93,6 +95,8 @@ const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
                                                     "hornerHash          ",
                                                     "unrolled Horner     ",
                                                     "twice Horner32      "
+                                                    ,"iterateCL 11        "
+                                                    ,"treeCL9"
                                                   };
 
 int main(int c, char ** arg) {
@@ -113,7 +117,6 @@ int main(int c, char ** arg) {
     int i, j;
     int length;
     int SHORTTRIALS;
-    ticks bef, aft;
     struct timeval start, finish;
     uint64_t randbuffer[150] __attribute__ ((aligned (16)));// 150 should be plenty
     uint32_t sumToFoolCompiler = 0;
@@ -134,7 +137,7 @@ int main(int c, char ** arg) {
     printf("\n");
     fflush(stdout);
     for (length = lengthStart; length <= lengthEnd; length += 1) {
-        SHORTTRIALS = 40000000 / length;
+        SHORTTRIALS = 80000000 / length;
         printf("%8d \t\t", length);
         hashFunction64 thisfunc64;
         for (i = 0; i < HowManyFunctions64; ++i) {
@@ -143,13 +146,17 @@ int main(int c, char ** arg) {
             thisfunc64 = funcArr64[i];
             sumToFoolCompiler += thisfunc64(randbuffer, intstring, length); // we do not count the first one
             gettimeofday(&start, 0);
-            bef = startRDTSC();
+            ticks lowest = ~(ticks)0;
             for (j = 0; j < SHORTTRIALS; ++j) {
+                const ticks bef = startRDTSC();
                 sumToFoolCompiler += thisfunc64(randbuffer, intstring, length);
+                const ticks aft = stopRDTSCP();
+                const ticks diff = aft-bef;
+                lowest = (lowest < diff) ? lowest : diff;
             }
-            aft = stopRDTSCP();
             gettimeofday(&finish, 0);
-            printf(" %f ", (aft - bef) * 1.0 / (8.0 * SHORTTRIALS * length));
+            printf(" %f ", lowest * 1.0 / (8.0 * length));
+            fflush(stdout);
         }
         printf("\n");
     }

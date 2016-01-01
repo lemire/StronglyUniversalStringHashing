@@ -25,7 +25,7 @@ typedef struct U128 {
 
 // Multuply two uint64_ts and get the most significant 64 bits
 // of the result; Intel only.
-inline uint64_t hi64mul(uint64_t x, uint64_t y) {
+static inline uint64_t hi64mul(uint64_t x, uint64_t y) {
   uint64_t lo, hi;
   __asm__ ("mulq %3" : "=a,a" (lo), "=d,d" (hi) : "%0,0" (x), "r,m" (y));
   return hi;
@@ -33,12 +33,12 @@ inline uint64_t hi64mul(uint64_t x, uint64_t y) {
 
 // Multiply two u128s, but don't compute the least significant 64 bits
 // or the most significant 128 bits.
-inline u128 multHi128(u128 x, u128 y) {
+static inline u128 multHi128(u128 x, u128 y) {
   return (u128) {.hi = x.hi * y.lo + x.lo * y.hi + hi64mul(x.lo, y.lo),
                  .lo = 0};
 }
 
-// An L*2^{1-d} almost strongly universal hash functions on strings of
+// An L*2^{1-d} almost bigendian universal hash function on strings of
 // 64-bit words, producing a 64-bit output.
 uint64_t hornerHash(const void * randomSource,
                     const uint64_t * x,
@@ -60,58 +60,60 @@ uint64_t hornerHash(const void * randomSource,
   return accum.hi;
 }
 
+// Hashes two 64-bit words (newer and accum) down to one,
+// universally. h0 and h1 must be chosen uniformly at random.
+//
+// This method first rehashes `accum` using `h0` and `h1`. It is
+// essentially (accum * (h0 + (h1<<64))) >> 64, where all operations
+// are performed on 128-bit words. This is a variant on the
+// multiply-shift hashing in Dietzfelbinger's "Universal hashing and
+// k-wise independent random variables via integer arithmetic without
+// primes". It doesn't use the addition component. This makes it only
+// delta-universal, not strongly universal. However, that is enough so
+// that adding `newer` maintains the universailty, as has been noted
+// by many.
+static inline void univHash(const uint64_t h0, const uint64_t h1,
+                            const uint64_t newer, uint64_t *accum) {
+  *accum = newer + *accum * h1 + hi64mul(*accum, h0);
+}
+
 // Horner's method can only dispatch one 128-bit multiplication at a
 // time, since each loop iteration depends on the one before
 // it. unrolledHorner changes the order in which the words are hashed
-// and can hash four words simultaneously, if the processor supports
-// it.
-uint64_t unrolledHorner(const void * randomSource,
-                        const uint64_t * x,
-                        uint64_t length) {
-  u128 h;
-  memcpy(&h, randomSource, sizeof(u128));
-  // h must be odd:
-  h.lo |= 1;
-  if (1 == length) {
-    return multHi128(h, (u128) {.hi = length, .lo = x[0]}).hi;
+// and can hash multiple words simultaneously, if the processor
+// supports it.
+#define DECLARE_UNROLLED_HORNER(MANY)                                        \
+  uint64_t unrolledHorner##MANY(const void *randomSource, const uint64_t *x, \
+                                const uint64_t length) {                     \
+    uint64_t accums[MANY];                                                   \
+    accums[0] = length;                                                      \
+    accums[1] = x[1];                                                        \
+    for (size_t i = 2; i < MANY; ++i) {                                      \
+      accums[i] = (i < length) ? x[i] : 0;                                   \
+    }                                                                        \
+    size_t i = (length < MANY) ? length : MANY;                              \
+    const uint64_t *r64 = (const uint64_t *)randomSource;                    \
+    for (; i + MANY <= length; i += MANY) {                                  \
+      for (size_t j = 0; j < MANY; ++j) {                                    \
+        univHash(r64[0], r64[1], x[i + j], &accums[j]);                      \
+      }                                                                      \
+    }                                                                        \
+    for (size_t j = 0; i+j < length; j += 1) {                               \
+      univHash(r64[0], r64[1], x[i+j], &accums[j]);                          \
+    }                                                                        \
+    for (size_t j = 1; j < MANY; ++j) {                                      \
+      univHash(r64[0], r64[1], accums[j], &accums[0]);                       \
+    }                                                                        \
+    return accums[0] * (r64[2] | ((uint64_t)1));                             \
   }
-  if (2 == length) {
-    u128 tmp = multHi128(h, (u128) {.hi = length, .lo = x[0]});
-    tmp.lo = x[1];
-    return multHi128(h, tmp).hi;
-  }
-  u128 accums[4] = {(u128) {.hi = length}, (u128) {.hi = x[0]},
-                    (u128) {.hi = x[1]}, (u128) {.hi = x[2]}};
-  size_t i = 3;
-  // This is the main loop:
-  for (; i + 3 < length; i += 4) {
-    for (size_t j = 0; j < 4; ++j) {
-      accums[j].lo = x[i+j];
-      accums[j] = multHi128(h, accums[j]);
-    }
-  }
-  // We might have 1, 2, or 3 words left over at the end that we
-  // couldn't handle in our unrolled loop which could only do 4 at
-  // once:
-  for(; i + 1 < length; i += 2) {
-    for (size_t j = 0; j < 2; ++j) {
-      accums[j].lo = x[i+j];
-      accums[j] = multHi128(h, accums[j]);
-    }
-  }
-  for(; i < length; i += 1) {
-    for (size_t j = 0; j < 1; ++j) {
-      accums[j].lo = x[i+j];
-      accums[j] = multHi128(h, accums[j]);
-    }
-  }
-  // Finally, we combine all of the hash values we have already computed.
-  for (size_t j = 1; j < 4; ++j) {
-    accums[0].lo = accums[j].hi;
-    accums[0] = multHi128(h, accums[0]);
-  }
-  return accums[0].hi;
-}
+
+DECLARE_UNROLLED_HORNER(3)
+DECLARE_UNROLLED_HORNER(4)
+DECLARE_UNROLLED_HORNER(5)
+DECLARE_UNROLLED_HORNER(6)
+DECLARE_UNROLLED_HORNER(7)
+DECLARE_UNROLLED_HORNER(8)
+DECLARE_UNROLLED_HORNER(9)
 
 // One other way to calculate a 64-bit hash value is to calculate two
 // 32-bit hash values. In order to make this almost big-endian
@@ -123,27 +125,293 @@ uint64_t unrolledHorner(const void * randomSource,
 // collision probability approximately L*2^{-31}, so the probability
 // that they both collide is about L^2 * 2^{-62}, rather than
 // L*{2^-63} in the constructions above. This method is thus better
-// suited for shorter strings.
+// suited for shorter strings than longer ones.
+//
+// This function is unrolled in a manenr similar to unrolledHorner,
+// above.
 uint64_t twiceHorner32(const void * randomSource,
-                       const uint64_t * y,
-                       uint64_t length) {
-  // The 32 most significant bits in a 64-bit word:
-  static const uint64_t mask = 0xffffffff00000000ull;
-  // View the input as 32-bit ints:
-  const uint32_t * x = (const uint32_t *)y;
-  // View the random data as 64-bit ints:
-  const uint64_t * r = (const uint64_t *)randomSource;
-  // Both must be odd
-  uint64_t h1 = r[0] | 0x1ull;
-  uint64_t h2 = r[1] | 0x1ull;
-
-  uint64_t accum1 = h1 * length;
-  uint64_t accum2 = h2 * length;
-  for (size_t i = 0; i < 2*length; ++i) {
-    accum1 = h1 * (x[i] + (accum1 & mask));
-    accum2 = h2 * (x[i] + (accum2 & mask));
+                       const uint64_t * x,
+                       const uint64_t length) {
+  u128 h;
+  memcpy(&h, randomSource, sizeof(u128));
+  // h.lo and h.hi must be odd:
+  h.lo |= 1;
+  h.hi |= 1;
+  if (1 == length) {
+    return multHi128(h, (u128) {.hi = length, .lo = x[0]}).hi;
   }
-  return h1 * ((accum2 >> 32) + (accum1 & mask));
+  if (2 == length) {
+    u128 tmp = multHi128(h, (u128) {.hi = length, .lo = x[0]});
+    tmp.lo = x[1];
+    return multHi128(h, tmp).hi;
+  }
+  u128 accums[4] = {(u128) {.hi = length}, (u128) {.hi = x[0]},
+                    (u128) {.hi = x[1]}, (u128) {.hi = x[2]}};
+  size_t i = 3;
+  // This is the main loop.
+  for (; i + 3 < length; i += 4) {
+    for (size_t j = 0; j < 4; ++j) {
+      accums[j].lo = x[i+j] * h.lo;
+      accums[j].hi *= h.hi;
+      accums[j].hi &= 0xffffffff00000000ull;
+      accums[j].hi |= accums[j].lo >> 32;
+    }
+  }
+  // We might have 1, 2, or 3 words left over at the end that we
+  // couldn't handle in our unrolled loop which could only do 4 at
+  // once:
+  for(; i < length; i += 1) {
+    for (size_t j = 0; j < 1; ++j) {
+      accums[j].lo = x[i+j] * h.lo;
+      accums[j].hi *= h.hi;
+      accums[j].hi &= 0xffffffff00000000ull;
+      accums[j].hi |= accums[j].lo >> 32;
+    }
+  }
+  // Finally, we combine all of the hash values we have already computed.
+  for (size_t j = 1; j < 4; ++j) {
+    accums[0].lo = accums[j].hi;
+    accums[0] = multHi128(h, accums[0]);
+  }
+  return accums[0].hi;
 }
+
+// Fast universal hashing using the CLNH family:
+
+// Using the random words in `r64`, universally hash `data` down to 64 bits
+static inline uint64_t bigHashDown(const uint64_t *r64, const __m128i *data) {
+  uint64_t d64[2] = {_mm_extract_epi64(*data, 0),
+                     _mm_extract_epi64(*data, 1)};
+  univHash(r64[0], r64[1], d64[0], &d64[1]);
+  return d64[1];
+}
+
+// Big-endian universally hash `data` with the random bits in `r64`.
+static inline uint64_t bie(const uint64_t r64, const uint64_t data) {
+  return data * (r64 | 0x1ul);
+}
+
+// Hash universally `accum` and `data` using the random bits in `r128`.
+static inline void clCombine(const __m128i r128, __m128i *accum,
+                             const __m128i data) {
+  *accum = _mm_xor_si128(*accum, r128);
+  *accum = _mm_clmulepi64_si128(*accum, *accum, 1);
+  *accum = _mm_xor_si128(*accum, data);
+}
+
+// Helper functions for hashing an array of __m128i `accum` and a
+// single __m128i `extra` down into `accum[0]` using the random bits
+// in `r128`.
+static inline void clArrayCombineExtra2(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  clCombine(r128, &accum[0], extra);
+  clCombine(r128, &accum[0], accum[1]);
+}
+
+static inline void clArrayCombineExtra3(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  clCombine(r128, &accum[0], extra);
+  clCombine(r128, &accum[1], accum[2]);
+  clCombine(r128, &accum[0], accum[1]);
+}
+
+static inline void clArrayCombineExtra4(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  for (size_t i = 0; i < 2; ++i) {
+    clCombine(r128, &accum[i], accum[i + 2]);
+  }
+  clArrayCombineExtra2(r128, accum, extra);
+}
+
+static inline void clArrayCombineExtra5(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  clCombine(r128, &accum[0], extra);
+  for (size_t i = 1; i <= 2; ++i) {
+    clCombine(r128, &accum[i], accum[i + 2]);
+  }
+  clArrayCombineExtra2(r128, accum, accum[2]);
+}
+
+static inline void clArrayCombineExtra6(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  for (size_t i = 0; i < 3; ++i) {
+    clCombine(r128, &accum[i], accum[i + 3]);
+  }
+  clArrayCombineExtra3(r128, accum, extra);
+}
+
+static inline void clArrayCombineExtra8(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  for (size_t i = 0; i < 4; ++i) {
+    clCombine(r128, &accum[i], accum[i + 4]);
+  }
+  clArrayCombineExtra4(r128, accum, extra);
+}
+
+static inline void clArrayCombineExtra9(const __m128i r128, __m128i *accum,
+                                        const __m128i extra) {
+  clCombine(r128, &accum[0], extra);
+  for (size_t i = 1; i <= 4; ++i) {
+    clCombine(r128, &accum[i], accum[i + 4]);
+  }
+  clArrayCombineExtra4(r128, accum, accum[4]);
+}
+
+static inline void clArrayCombineExtra10(const __m128i r128, __m128i *accum,
+                                         const __m128i extra) {
+  for (size_t i = 0; i < 5; ++i) {
+    clCombine(r128, &accum[i], accum[i + 5]);
+  }
+  clArrayCombineExtra5(r128, accum, extra);
+}
+
+static inline void clArrayCombineExtra11(const __m128i r128, __m128i *accum,
+                                         const __m128i extra) {
+  clCombine(r128, &accum[0], extra);
+  for (size_t i = 1; i <= 5; ++i) {
+    clCombine(r128, &accum[i], accum[i + 5]);
+  }
+  clArrayCombineExtra5(r128, accum, accum[5]);
+}
+
+static inline void clArrayCombineExtra12(const __m128i r128, __m128i *accum,
+                                         const __m128i extra) {
+  for (size_t i = 0; i < 6; ++i) {
+    clCombine(r128, &accum[i], accum[i + 6]);
+  }
+  clArrayCombineExtra6(r128, accum, extra);
+}
+
+// Iterated hashing using the CLNH family
+#define ITERATECL(MANY)                                                     \
+  uint64_t iterateCL##MANY(const void *randomSource, const uint64_t *x,     \
+                           const size_t length) {                           \
+    const uint64_t *r64 = &(((const uint64_t *)(randomSource))[2]);         \
+    const __m128i *z = (const __m128i *)x;                                  \
+    const size_t zlen = length / 2;                                         \
+    __m128i accum[MANY];                                                    \
+    for (size_t j = 0; j < MANY; ++j) {                                     \
+      accum[j] = (j < zlen) ? _mm_lddqu_si128(&z[j]) : _mm_setzero_si128(); \
+    }                                                                       \
+    size_t i = (zlen >= MANY) ? MANY : zlen;                                \
+    const __m128i r128 = _mm_lddqu_si128((const __m128i *)randomSource);    \
+    for (; i + MANY <= zlen; i += MANY) {                                   \
+      for (size_t j = 0; j < MANY; ++j) {                                   \
+        clCombine(r128, &accum[j], _mm_lddqu_si128(&z[i + j]));             \
+      }                                                                     \
+    }                                                                       \
+    for (size_t j = 0; j < MANY; ++j) {                                     \
+      if (i + j < zlen) {                                                   \
+        clCombine(r128, &accum[j], _mm_lddqu_si128(&z[i + j]));             \
+      }                                                                     \
+    }                                                                       \
+    clArrayCombineExtra##MANY(                                              \
+        r128, accum,                                                        \
+        _mm_set_epi64x(length, (length & 1) ? x[length - 1] : 0));          \
+    const uint64_t bhd = bigHashDown(r64, &accum[0]);                       \
+    return bie(r64[2], bhd);                                                \
+  }
+
+ITERATECL(8)
+ITERATECL(9)
+ITERATECL(10)
+ITERATECL(11)
+ITERATECL(12)
+
+#undef ITERATECL
+
+static inline __m128i clCombineFar(const __m128i r128, const __m128i x,
+                                   const __m128i y) {
+  __m128i result = _mm_xor_si128(x, r128);
+  result = _mm_clmulepi64_si128(result, result, 1);
+  result = _mm_xor_si128(result, y);
+  return result;
+}
+
+// Unrolled Carter & Wegman tree-hash with clCombineFar as the
+// reducing function. This is basically "Badger - A Fast and Provably
+// Secure MAC", by Boesgaard et al.
+
+#define HALVE(MANY)                                                       \
+  static inline void halve##MANY(const __m128i r128, const __m128i *from, \
+                                 __m128i *to) {                           \
+    for (size_t i = 0; i < MANY; ++i) {                                   \
+      to[i] = clCombineFar(r128, from[2 * i], from[2 * i + 1]);           \
+    }                                                                     \
+  }
+
+#define HALVE_LOAD(MANY)                                                      \
+  static inline void halveLoad##MANY(const __m128i r128, const __m128i *from, \
+                                     __m128i *to) {                           \
+    for (size_t i = 0; i < MANY; ++i) {                                       \
+      to[i] = clCombineFar(r128, _mm_lddqu_si128(&from[2 * i]),               \
+                           _mm_lddqu_si128(&from[2 * i + 1]));                \
+    }                                                                         \
+  }
+
+#define TREECL(MANY)                                                        \
+  uint64_t treeCL##MANY(const void *randomSource, const uint64_t *x,        \
+                        const size_t length) {                              \
+    const __m128i *r128 = (const __m128i *)randomSource;                    \
+    const size_t depth = 64 - __builtin_clzll(1 + length);                  \
+    __m128i rLevel[64];                                                     \
+    for (size_t i = 0; i < depth; ++i) {                                    \
+      rLevel[i] = _mm_lddqu_si128(&r128[i]);                                \
+    }                                                                       \
+    __m128i tree[64][2 * MANY];                                             \
+    size_t fill[64];                                                        \
+    for (size_t i = 0; i < depth; ++i) {                                    \
+      fill[i] = 0;                                                          \
+    }                                                                       \
+    const __m128i *z = (const __m128i *)x;                                  \
+    const size_t zlen = length / 2;                                         \
+    size_t i = 0;                                                           \
+    for (; i + 2 * MANY <= zlen; i += 2 * MANY) {                           \
+      for (size_t j = 0; 2 * MANY == fill[j]; ++j) {                        \
+        halve##MANY(rLevel[j + 1], tree[j], &tree[j + 1][fill[j + 1]]);     \
+        fill[j] = 0;                                                        \
+        fill[j + 1] += MANY;                                                \
+      }                                                                     \
+      halveLoad##MANY(rLevel[0], &z[i], &tree[0][fill[0]]);                 \
+      fill[0] += MANY;                                                      \
+    }                                                                       \
+    size_t max_fill_level = depth - 1;                                      \
+    for (; fill[max_fill_level] > 0; --max_fill_level) {                    \
+    }                                                                       \
+    for (; i < zlen; i += 2) {                                              \
+      tree[0][fill[0]] = clCombineFar(rLevel[0], _mm_lddqu_si128(&z[i]),    \
+                                      _mm_lddqu_si128(&z[i + 1]));          \
+      ++fill[0];                                                            \
+    }                                                                       \
+    const __m128i final =                                                   \
+        _mm_set_epi64x(length, (length & 1) ? x[length - 1] : 0);           \
+    tree[0][fill[0]] =                                                      \
+        (i < zlen) ? clCombineFar(rLevel[0], _mm_lddqu_si128(&z[i]), final) \
+                   : final;                                                 \
+    ++fill[0];                                                              \
+    i = 0;                                                                  \
+    for (; (i < max_fill_level) || (fill[i] > 1); ++i) {                    \
+      size_t j = 0;                                                         \
+      for (; j + 2 <= fill[i]; j += 2) {                                    \
+        tree[i + 1][fill[i + 1]] =                                          \
+            clCombineFar(rLevel[i + 1], tree[i][j], tree[i][j + 1]);        \
+        ++fill[i + 1];                                                      \
+      }                                                                     \
+      if (j < fill[i]) {                                                    \
+        tree[i + 1][fill[i + 1]] = tree[i][j];                              \
+        ++fill[i + 1];                                                      \
+      }                                                                     \
+    }                                                                       \
+    const uint64_t *r64 = (const uint64_t *)randomSource;                   \
+    r64 += 2 * MANY;                                                        \
+    const uint64_t bhd = bigHashDown(r64, &tree[i][0]);                     \
+    return bie(r64[2], bhd);                                                \
+  }
+
+#define TREECLALL(MANY) HALVE(MANY) HALVE_LOAD(MANY) TREECL(MANY)
+
+TREECLALL(8)
+TREECLALL(9)
+TREECLALL(10)
 
 #endif  // BIGENDIANUNIVERSAL_H

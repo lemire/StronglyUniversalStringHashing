@@ -84,7 +84,7 @@ static __inline__ ticks fancystopRDTSCP(void) {
 #include "bigendianuniversal.h"
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 10
+#define HowManyFunctions64 12
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
                                                 &hashVHASH64,
@@ -94,8 +94,10 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
                                                 &hashSipHash,
                                                 &GHASH64bit,
                                                 &hornerHash,
-                                                &unrolledHorner,
+                                                &unrolledHorner4,
                                                 &twiceHorner32
+                                                ,&iterateCL11
+                                                ,&treeCL9
                                                };
 
 hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
@@ -115,6 +117,8 @@ const char* functionnames64[HowManyFunctions64] = {
     "hornerHash                          ",
     "unrolled Horner                     ",
     "twice Horner32                      "
+    ,"iterateCL 11                        "
+    ,"treeCL 9                            "
 };
 
 const char* functionnames[HowManyFunctions] = {
