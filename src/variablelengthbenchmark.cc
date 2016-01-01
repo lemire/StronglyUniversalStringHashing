@@ -67,6 +67,7 @@ ticks stopRDTSCP(void) {
  return ((ticks) cycles_high << 32) | cycles_low;
  }*/
 
+extern "C" {
 #include "hashfunctions32bits.h"
 #include "hashfunctions64bits.h"
 
@@ -76,6 +77,7 @@ ticks stopRDTSCP(void) {
 #include "clmulhierarchical64bits.h"
 #include "ghash.h"
 #include "bigendianuniversal.h"
+}
 
 #define HowManyFunctions64 8
 
@@ -115,7 +117,7 @@ int main(int c, char ** arg) {
     struct timeval start, finish;
     uint64_t randbuffer[150] __attribute__ ((aligned (16)));// 150 should be plenty
     uint32_t sumToFoolCompiler = 0;
-    uint64_t * intstring = malloc(N * sizeof(uint64_t)); // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
+    uint64_t * intstring = (uint64_t *)malloc(N * sizeof(uint64_t)); // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
     for (i = 0; i < 150; ++i) {
         randbuffer[i] = rand() | ((uint64_t)(rand()) << 32);
     }

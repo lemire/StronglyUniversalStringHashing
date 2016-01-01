@@ -25,8 +25,8 @@ benchmark128bitpolyhashing: src/benchmark128bitpolyhashing.c include/clmul.h
 benchmark64bitreductions: src/benchmark64bitreductions.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark64bitreductions src/benchmark64bitreductions.c   -Iinclude 
 
-variablelengthbenchmark: src/variablelengthbenchmark.c include/*.h City.o siphash24.o vmac.o 
-	$(CC) $(CFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
+variablelengthbenchmark: src/variablelengthbenchmark.cc include/*.h City.o siphash24.o vmac.o 
+	$(CXX) $(CXXFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.cc City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
 clmulunit: src/clmulunit.c include/*.h
 	$(CC) $(CFLAGS) -o clmulunit src/clmulunit.c -Iinclude 

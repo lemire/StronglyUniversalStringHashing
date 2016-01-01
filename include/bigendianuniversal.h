@@ -132,7 +132,7 @@ uint64_t twiceHorner32(const void * randomSource,
   // View the input as 32-bit ints:
   const uint32_t * x = (const uint32_t *)y;
   // View the random data as 64-bit ints:
-  const uint64_t * r = randomSource;
+  const uint64_t * r = (const uint64_t *)randomSource;
   // Both must be odd
   uint64_t h1 = r[0] | 0x1ull;
   uint64_t h2 = r[1] | 0x1ull;

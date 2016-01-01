@@ -197,13 +197,14 @@ uint32_t pyramidal_Multilinear(const void *  randomsource, const uint32_t *  str
     int newlength = ((length+blocksize-1)/blocksize);
     uint32_t * array = (uint32_t *)  malloc(newlength * sizeof(uint32_t));
     __hashMulti(randomsource, string, array,  length, blocksize);
-    randomsource+=blocksize+1;
+    const char * randomChars = (const char *)randomsource;
+    randomChars+=blocksize+1;
     length = newlength;
     while(length>1) {
         newlength = ((length+blocksize-1)/blocksize);
         uint32_t * array2 = (uint32_t *) malloc(newlength * sizeof(uint32_t));
-        __hashMulti(randomsource, array, array2,  length, blocksize);
-        randomsource+=blocksize+1;
+        __hashMulti(randomChars, array, array2,  length, blocksize);
+        randomChars+=blocksize+1;
         free(array);
         array = array2;
         length = newlength;
