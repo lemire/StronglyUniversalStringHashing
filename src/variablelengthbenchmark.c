@@ -77,8 +77,10 @@ ticks stopRDTSCP(void) {
 #include "ghash.h"
 #include "bigendianuniversal.h"
 #include "treehash/simple-treehash.h"
+#include "treehash/recursive-treehash.h"
+#include "treehash/binary-treehash.h"
 
-#define HowManyFunctions64 11
+#define HowManyFunctions64 13
 
 hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  &hashCity, &hashSipHash,&GHASH64bit
@@ -88,6 +90,8 @@ hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  ,&iterateCL11
                                                  ,&treeCL9
                                                  ,&simple_treehash
+                                                 ,&recursive_treehash
+                                                 ,&binary_treehash
                                                };
 
 const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
@@ -98,6 +102,8 @@ const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
                                                     ,"iterateCL 11        "
                                                     ,"treeCL9             "
                                                     ,"simple_treehash     "
+                                                    ,"recursive_treehash  "
+                                                    ,"binary_treehash     "
                                                   };
 
 int main(int c, char ** arg) {
