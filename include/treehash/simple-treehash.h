@@ -36,7 +36,7 @@ uint64_t simple_treehash(const void * rvoid, const uint64_t * data, const size_t
     readFrom = level;
     ++r128;
   }
-  const uint64_t result = bigendian(*r128, level[0], length);
+  const uint64_t result = bigendian(*r128, readFrom[0], length);
   free(level);
   return result;
 }
