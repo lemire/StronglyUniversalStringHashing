@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 typedef uint64_t ui128[2];
 
 // Multiply two unsigned 64-bit ints, producing a 128-bit int but
