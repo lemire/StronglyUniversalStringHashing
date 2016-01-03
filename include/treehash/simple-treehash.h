@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include "util.h"
 
 uint64_t simple_treehash(const void * rvoid, const uint64_t * data, const size_t length) {
