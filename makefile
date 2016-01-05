@@ -61,5 +61,5 @@ smhasher: smhasherpackage-submake cl3264.o vhash4smhasher.o vmac.o rijndael-alg-
 	$(CXX) $(FLAGS) -o smhasher smhasherpackage/*.o cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o
 
 clean:
-	$(MAKE) -C smhasherpackage
+	$(MAKE) -C smhasherpackage clean
 	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity smhasher variablelenthbenchmark  *.o
