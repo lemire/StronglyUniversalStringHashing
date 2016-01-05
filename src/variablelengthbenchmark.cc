@@ -77,9 +77,10 @@ extern "C" {
 #include "clmulhierarchical64bits.h"
 #include "ghash.h"
 #include "bigendianuniversal.h"
+#include "treehash/simple-treehash.h"
 }
 
-#define HowManyFunctions64 10
+#define HowManyFunctions64 11
 
 hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  &hashCity, &hashSipHash,&GHASH64bit
@@ -88,6 +89,7 @@ hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                 ,&twiceHorner32
                                                  ,&iterateCL11
                                                  ,&treeCL9
+                                                 ,&simple_treehash
                                                };
 
 const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
@@ -96,7 +98,8 @@ const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
                                                     "unrolled Horner     ",
                                                     "twice Horner32      "
                                                     ,"iterateCL 11        "
-                                                    ,"treeCL9"
+                                                    ,"treeCL9             "
+                                                    ,"simple_treehash     "
                                                   };
 
 int main(int c, char ** arg) {
