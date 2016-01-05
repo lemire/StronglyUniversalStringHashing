@@ -86,7 +86,7 @@ static inline void univHash(const uint64_t h0, const uint64_t h1,
 // supports it.
 #define DECLARE_UNROLLED_HORNER(MANY)                                        \
   uint64_t unrolledHorner##MANY(const void *randomSource, const uint64_t *x, \
-                                const uint64_t length) {                     \
+                                const size_t length) {                     \
     uint64_t accums[MANY];                                                   \
     accums[0] = length;                                                      \
     accums[1] = x[1];                                                        \
@@ -133,7 +133,7 @@ DECLARE_UNROLLED_HORNER(9)
 // above.
 uint64_t twiceHorner32(const void * randomSource,
                        const uint64_t * x,
-                       const uint64_t length) {
+                       const size_t length) {
   u128 h;
   memcpy(&h, randomSource, sizeof(u128));
   // h.lo and h.hi must be odd:
