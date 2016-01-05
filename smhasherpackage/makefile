@@ -1,14 +1,12 @@
-.SUFFIXES:
-#
-.SUFFIXES: .cpp .o .c .h
+.PHONY: all
 
-CXXFLAGS = -O2 -mavx -march=native  -Wall 
+all: $(patsubst %.c,%.o,$(wildcard *.c)) $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 
-all:  smhasher
+%.o: %.c *.h
+	$(CC) $(CFLAGS) -w -c $<
 
-smhasher: *.h *.cpp *.c cl3264.o         vhash4smhasher.o  vmac.o rijndael-alg-fst.o
-	$(CXX) $(CXXFLAGS)  -o smhasher *cpp *.c cl3264.o  vhash4smhasher.o vmac.o rijndael-alg-fst.o
+%.o: %.cpp *.h
+	$(CXX) $(CXXFLAGS) -w -c $<
 
-
-clean: 
-	rm -f smhasher *.o
+clean:
+	rm -f *.o
