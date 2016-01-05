@@ -19,7 +19,7 @@ uint64_t hashCity(const void*  rs, const uint64_t *  string, const size_t length
 // SipHash
 uint64_t hashSipHash(const void*  rs, const uint64_t *  string, const size_t length) {
     uint64_t answer;
-    siphash((uint8_t * ) &answer, (const uint8_t * )string, length *sizeof(uint64_t),rs );
+    siphash((uint8_t * ) &answer, (const uint8_t * )string, length *sizeof(uint64_t), (const uint8_t *)rs );
     return answer;
 }
 

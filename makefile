@@ -3,7 +3,7 @@
 .SUFFIXES: .cpp .o .c .h
 
 CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native -Wall -Wextra -funroll-loops
-CXXFLAGS = -O2 -mavx  -march=native
+CXXFLAGS = -O2 -mavx  -march=native -std=c++0x
 
 all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher benchmark128bitmultiplication benchmark128bitpolyhashing
 
@@ -25,8 +25,8 @@ benchmark128bitpolyhashing: src/benchmark128bitpolyhashing.c include/clmul.h
 benchmark64bitreductions: src/benchmark64bitreductions.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark64bitreductions src/benchmark64bitreductions.c   -Iinclude 
 
-variablelengthbenchmark: src/variablelengthbenchmark.c include/*.h include/treehash/*.h City.o siphash24.o vmac.o 
-	$(CC) $(CFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
+variablelengthbenchmark: src/variablelengthbenchmark.cc include/*.h include/treehash/*.h City.o siphash24.o vmac.o 
+	$(CXX) $(CXXFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.cc City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
 clmulunit: src/clmulunit.c include/*.h
 	$(CC) $(CFLAGS) -o clmulunit src/clmulunit.c -Iinclude 
@@ -51,7 +51,7 @@ vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
 	$(CC) $(CFLAGS) -c VHASH/vmac.c -IVHASH 
 
 smhasher: smhasherpackage/*.h smhasherpackage/*.cpp smhasherpackage/*.c cl3264.o         vhash4smhasher.o  vmac.o rijndael-alg-fst.o
-	$(CXX) $(CXXFLAGS)  -o smhasher smhasherpackage/*cpp smhasherpackage/*.c cl3264.o  vhash4smhasher.o vmac.o rijndael-alg-fst.o -Ismhasherpackage
+	$(CXX) $(CXXFLAGS)  -o smhasher -x c++ smhasherpackage/*.cpp -x c smhasherpackage/*.c -x none cl3264.o  vhash4smhasher.o vmac.o rijndael-alg-fst.o -Ismhasherpackage
 
 clean: 
 	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity smhasher variablelenthbenchmark  *.o
