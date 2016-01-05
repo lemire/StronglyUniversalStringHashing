@@ -51,7 +51,7 @@ vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
 	$(CC) $(CFLAGS) -c VHASH/vmac.c -IVHASH 
 
 smhasher: smhasherpackage/*.h smhasherpackage/*.cpp smhasherpackage/*.c cl3264.o         vhash4smhasher.o  vmac.o rijndael-alg-fst.o
-	$(CXX) $(CXXFLAGS)  -o smhasher smhasherpackage/*cpp smhasherpackage/*.c cl3264.o  vhash4smhasher.o vmac.o rijndael-alg-fst.o -Ismhasherpackage
+	$(CXX) $(CXXFLAGS)  -o smhasher -x c++ smhasherpackage/*.cpp -x c smhasherpackage/*.c -x none cl3264.o  vhash4smhasher.o vmac.o rijndael-alg-fst.o -Ismhasherpackage
 
 clean: 
 	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity smhasher variablelenthbenchmark  *.o
