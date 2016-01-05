@@ -34,8 +34,9 @@ static inline uint64_t hi64mul(uint64_t x, uint64_t y) {
 // Multiply two u128s, but don't compute the least significant 64 bits
 // or the most significant 128 bits.
 static inline u128 multHi128(u128 x, u128 y) {
-  return (u128) {.hi = x.hi * y.lo + x.lo * y.hi + hi64mul(x.lo, y.lo),
-                 .lo = 0};
+  const u128 result = {x.hi * y.lo + x.lo * y.hi + hi64mul(x.lo, y.lo),
+                       0};
+  return result;
 }
 
 // An L*2^{1-d} almost bigendian universal hash function on strings of
@@ -49,7 +50,8 @@ uint64_t hornerHash(const void * randomSource,
   h.lo |= 1;
   // We treat the length as the first word in the string, ensuring
   // that no string is a prefix of any other.
-  u128 accum = multHi128(h, (u128) {.hi = length, .lo = x[0]});
+  u128 accum = {length, x[0]};
+  accum = multHi128(h, accum);
   for (size_t i = 1; i < length; ++i) {
     // accum.hi holds the hash value we have accumulated so far. We
     // put the next word to hash into accum.lo to make one two-word
@@ -84,7 +86,7 @@ static inline void univHash(const uint64_t h0, const uint64_t h1,
 // supports it.
 #define DECLARE_UNROLLED_HORNER(MANY)                                        \
   uint64_t unrolledHorner##MANY(const void *randomSource, const uint64_t *x, \
-                                const uint64_t length) {                     \
+                                const size_t length) {                     \
     uint64_t accums[MANY];                                                   \
     accums[0] = length;                                                      \
     accums[1] = x[1];                                                        \
@@ -131,22 +133,25 @@ DECLARE_UNROLLED_HORNER(9)
 // above.
 uint64_t twiceHorner32(const void * randomSource,
                        const uint64_t * x,
-                       const uint64_t length) {
+                       const size_t length) {
   u128 h;
   memcpy(&h, randomSource, sizeof(u128));
   // h.lo and h.hi must be odd:
   h.lo |= 1;
   h.hi |= 1;
   if (1 == length) {
-    return multHi128(h, (u128) {.hi = length, .lo = x[0]}).hi;
+    const u128 tmp = {length, x[0]};
+    return multHi128(h, tmp).hi;
   }
   if (2 == length) {
-    u128 tmp = multHi128(h, (u128) {.hi = length, .lo = x[0]});
+    u128 tmp = {length, x[0]};
+    tmp = multHi128(h, tmp);
     tmp.lo = x[1];
     return multHi128(h, tmp).hi;
   }
-  u128 accums[4] = {(u128) {.hi = length}, (u128) {.hi = x[0]},
-                    (u128) {.hi = x[1]}, (u128) {.hi = x[2]}};
+  u128 accums[4];
+  accums[0].hi = length; accums[1].hi = x[0];
+  accums[2].hi = x[1]; accums[3].hi = x[2];
   size_t i = 3;
   // This is the main loop.
   for (; i + 3 < length; i += 4) {
@@ -180,10 +185,11 @@ uint64_t twiceHorner32(const void * randomSource,
 
 // Using the random words in `r64`, universally hash `data` down to 64 bits
 static inline uint64_t bigHashDown(const uint64_t *r64, const __m128i *data) {
-  uint64_t d64[2] = {_mm_extract_epi64(*data, 0),
-                     _mm_extract_epi64(*data, 1)};
-  univHash(r64[0], r64[1], d64[0], &d64[1]);
-  return d64[1];
+  int64_t d64[2] = {_mm_extract_epi64(*data, 0),
+                    _mm_extract_epi64(*data, 1)};
+  uint64_t * u64 = (uint64_t *)d64;
+  univHash(r64[0], r64[1], u64[0], &u64[1]);
+  return u64[1];
 }
 
 // Big-endian universally hash `data` with the random bits in `r64`.

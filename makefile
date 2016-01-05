@@ -2,8 +2,12 @@
 #
 .SUFFIXES: .cpp .o .c .h
 
-CFLAGS = -std=gnu99 -ggdb  -O2 -mavx  -march=native -Wall -Wextra -funroll-loops
-CXXFLAGS = -O2 -mavx  -march=native
+.phony: all clean smhasherpackage-submake
+
+FLAGS = -ggdb -O2 -mavx -march=native -Wall -Wextra -funroll-loops
+CFLAGS = $(FLAGS) -std=gnu99
+CXXFLAGS = $(FLAGS) -std=c++0x
+export
 
 all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher benchmark128bitmultiplication benchmark128bitpolyhashing
 
@@ -25,8 +29,8 @@ benchmark128bitpolyhashing: src/benchmark128bitpolyhashing.c include/clmul.h
 benchmark64bitreductions: src/benchmark64bitreductions.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark64bitreductions src/benchmark64bitreductions.c   -Iinclude 
 
-variablelengthbenchmark: src/variablelengthbenchmark.c include/*.h City.o siphash24.o vmac.o 
-	$(CC) $(CFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
+variablelengthbenchmark: src/variablelengthbenchmark.cc include/*.h City.o siphash24.o vmac.o 
+	$(CXX) $(CXXFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.cc City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
 clmulunit: src/clmulunit.c include/*.h
 	$(CC) $(CFLAGS) -o clmulunit src/clmulunit.c -Iinclude 
@@ -50,8 +54,12 @@ vhash4smhasher.o:	src/vhash4smhasher.c include/*.h
 vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
 	$(CC) $(CFLAGS) -c VHASH/vmac.c -IVHASH 
 
-smhasher: smhasherpackage/*.h smhasherpackage/*.cpp smhasherpackage/*.c cl3264.o         vhash4smhasher.o  vmac.o rijndael-alg-fst.o
-	$(CXX) $(CXXFLAGS)  -o smhasher smhasherpackage/*cpp smhasherpackage/*.c cl3264.o  vhash4smhasher.o vmac.o rijndael-alg-fst.o -Ismhasherpackage
+smhasherpackage-submake:
+	$(MAKE) -C smhasherpackage
 
-clean: 
+smhasher: smhasherpackage-submake cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o
+	$(CXX) $(FLAGS) -o smhasher smhasherpackage/*.o cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o
+
+clean:
+	$(MAKE) -C smhasherpackage
 	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity smhasher variablelenthbenchmark  *.o
