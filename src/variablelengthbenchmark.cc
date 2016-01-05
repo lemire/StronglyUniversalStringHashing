@@ -144,7 +144,7 @@ int main(int c, char ** arg) {
     printf("\n");
     fflush(stdout);
     for (length = lengthStart; length <= lengthEnd; length += 1) {
-        SHORTTRIALS = 80000000 / length;
+        SHORTTRIALS = 8000000 / length;
         printf("%8d \t\t", length);
         hashFunction64 thisfunc64;
         for (i = 0; i < HowManyFunctions64; ++i) {
