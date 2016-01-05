@@ -2,6 +2,8 @@
 #
 .SUFFIXES: .cpp .o .c .h
 
+.phony: all clean smhasherpackage-submake
+
 FLAGS = -ggdb -O2 -mavx -march=native -Wall -Wextra -funroll-loops
 CFLAGS = $(FLAGS) -std=gnu99
 CXXFLAGS = $(FLAGS) -std=c++0x
@@ -52,8 +54,10 @@ vhash4smhasher.o:	src/vhash4smhasher.c include/*.h
 vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
 	$(CC) $(CFLAGS) -c VHASH/vmac.c -IVHASH 
 
-smhasher: smhasherpackage/*.h smhasherpackage/*.cpp smhasherpackage/*.c cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o
+smhasherpackage-submake:
 	$(MAKE) -C smhasherpackage
+
+smhasher: smhasherpackage-submake cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o
 	$(CXX) $(FLAGS) -o smhasher smhasherpackage/*.o cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o
 
 clean:
