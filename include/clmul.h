@@ -10,7 +10,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <x86intrin.h>
+
+//////////////////////////
+/// next line would be the "right thing to do" but instead we include
+/// just the SSE/AVX dependencies we need otherwise the fact that
+/// we mix C and C++ leads to a build error with Intel compilers.
+/// See https://github.com/lemire/StronglyUniversalStringHashing/issues/19
+//////////////////////////
+//#include <x86intrin.h> // can't do that on Intel compiler.
+#include <wmmintrin.h>
+#include <pmmintrin.h>
+#include <tmmintrin.h>
+#include <smmintrin.h>
+///////// End of compatibility hack.
 
 void printme32(__m128i v1) {
     printf(" %u %u %u %u  ", _mm_extract_epi32(v1,0), _mm_extract_epi32(v1,1), _mm_extract_epi32(v1,2), _mm_extract_epi32(v1,3));
