@@ -9,7 +9,7 @@ CFLAGS = $(FLAGS) -std=gnu99
 CXXFLAGS = $(FLAGS) -std=c++0x
 export
 
-all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher benchmark128bitmultiplication benchmark128bitpolyhashing
+all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher benchmark128bitmultiplication benchmark128bitpolyhashing boosted-treehash-params.exe
 
 nhvsclnh.o: src/nhvsclnh.c
 	$(CC) $(CFLAGS)  -c  src/nhvsclnh.c
@@ -31,6 +31,9 @@ benchmark64bitreductions: src/benchmark64bitreductions.c include/clmul.h
 
 variablelengthbenchmark: src/variablelengthbenchmark.cc include/*.h include/treehash/*.hh City.o siphash24.o vmac.o 
 	$(CXX) $(CXXFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.cc City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
+
+boosted-treehash-params.exe: src/boosted-treehash-params.cc include/*.h include/treehash/*.hh
+	$(CXX) $(CXXFLAGS) -Iinclude -o $@ $<
 
 clmulunit: src/clmulunit.c include/*.h
 	$(CC) $(CFLAGS) -o clmulunit src/clmulunit.c -Iinclude 
