@@ -1,5 +1,8 @@
+#ifndef SIMPLE_TREEHASH
+#define SIMPLE_TREEHASH
+
 #include <stdlib.h>
-#include "util.h"
+#include "util.hh"
 
 uint64_t simple_treehash(const void * rvoid, const uint64_t * data, const size_t length) {
   const ui128* r128 = (const ui128 *)rvoid;
@@ -20,3 +23,5 @@ uint64_t simple_treehash(const void * rvoid, const uint64_t * data, const size_t
   free(level);
   return result;
 }
+
+#endif

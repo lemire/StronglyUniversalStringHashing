@@ -1,4 +1,7 @@
-#include "util.h"
+#ifndef RECURSIVE_TREEHASH
+#define RECURSIVE_TREEHASH
+
+#include "util.hh"
 
 // The basic treehash requires the allocation of additional space
 // approximately half of the size of the input. This version avoids
@@ -156,3 +159,5 @@ uint64_t recursive_treehash(const void* rvoid, const uint64_t* data,
   const size_t depth = 64 - __builtin_clzll(length-1);
   return bigendian(r128[depth], result, length);
 }
+
+#endif

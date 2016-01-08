@@ -1,4 +1,7 @@
-#include "util.h"
+#ifndef BINARY_TREEHASH
+#define BINARY_TREEHASH
+
+#include "util.hh"
 
 // This version of treehash is based on the recursive treehash. That
 // version was basically an depth-first traversal in which first the
@@ -137,3 +140,5 @@ uint64_t binary_treehash(const void* rvoid, const uint64_t* data,
   r128 = &r128[(length & (length-1)) ? (last+1) : last];
   return bigendian(*r128, workspace[last], length);
 }
+
+#endif

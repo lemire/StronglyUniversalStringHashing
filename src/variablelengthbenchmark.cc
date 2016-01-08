@@ -77,12 +77,14 @@ extern "C" {
 #include "clmulhierarchical64bits.h"
 #include "ghash.h"
 #include "bigendianuniversal.h"
-#include "treehash/simple-treehash.h"
-#include "treehash/recursive-treehash.h"
-#include "treehash/binary-treehash.h"
 }
 
-#define HowManyFunctions64 13
+#include "treehash/simple-treehash.hh"
+#include "treehash/recursive-treehash.hh"
+#include "treehash/binary-treehash.hh"
+#include "treehash/boosted-treehash.hh"
+
+#define HowManyFunctions64 20
 
 hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  &hashCity, &hashSipHash,&GHASH64bit
@@ -94,6 +96,13 @@ hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  ,&simple_treehash
                                                  ,&recursive_treehash
                                                  ,&binary_treehash
+                                                 ,&boosted_treehash<1>
+                                                 ,&boosted_treehash<2>
+                                                 ,&boosted_treehash<3>
+                                                 ,&boosted_treehash<4>
+                                                 ,&boosted_treehash<5>
+                                                 ,&boosted_treehash<6>
+                                                 ,&boosted_treehash<7>
                                                };
 
 const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
@@ -106,6 +115,13 @@ const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
                                                     ,"simple_treehash     "
                                                     ,"recursive_treehash  "
                                                     ,"binary_treehash     "
+                                                    ,"boosted_treehash<1> "
+                                                    ,"boosted_treehash<2> "
+                                                    ,"boosted_treehash<3> "
+                                                    ,"boosted_treehash<4> "
+                                                    ,"boosted_treehash<5> "
+                                                    ,"boosted_treehash<6> "
+                                                    ,"boosted_treehash<7> "
                                                   };
 
 int main(int c, char ** arg) {
