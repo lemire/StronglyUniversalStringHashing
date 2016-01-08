@@ -48,7 +48,7 @@ inline uint64_t finish_treehash<0>(const ui128*, uint64_t simple_workspace[1]) {
 template <size_t log>
 static inline uint64_t static_treehash(
     const ui128* r128, const uint64_t* data,
-    uint64_t simple_workspace[1 << (log - 1)]) {
+    uint64_t *simple_workspace) {
   static const size_t power = 1ull << log;
   for (size_t i = 0; i < power / 2; ++i) {
     simple_workspace[i] = deltaDietz(*r128, data[2 * i], data[2 * i + 1]);
@@ -58,7 +58,7 @@ static inline uint64_t static_treehash(
 
 template <>
 inline uint64_t static_treehash<0>(const ui128*, const uint64_t* data,
-                                   uint64_t[0]) {
+                                   uint64_t *) {
   return data[0];
 }
 
@@ -68,7 +68,7 @@ inline uint64_t static_treehash<0>(const ui128*, const uint64_t* data,
 template <size_t log>
 static inline void finalize_treehash(
     const ui128* r128, const uint64_t* data, const size_t length,
-    uint64_t binary_workspace[64], uint64_t simple_workspace[1 << (log - 2)]) {
+    uint64_t binary_workspace[64], uint64_t * simple_workspace) {
   static const size_t power = 1ull << log;
 
   if (power / 2 <= length) {
