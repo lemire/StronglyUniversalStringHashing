@@ -87,5 +87,8 @@ int main() {
     }
     cout << endl;
   }
-  cerr << "# ignore " << sum << endl;
+  if (0 == sum) {
+    cerr << "# Magic happens: sum of all hashes is 0!" << endl;
+    return 1;
+  }
 };
