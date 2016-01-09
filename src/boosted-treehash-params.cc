@@ -83,11 +83,6 @@ int main() {
           min_idx = k;
         }
       }
-      /*
-      for (size_t k = 0; k < max_depth; ++k) {
-        min_val = min(min_val, cycles[k][loc]);
-      }
-      */
       cout << i << " " << j << " " << min_idx << endl;
     }
     cout << endl;
