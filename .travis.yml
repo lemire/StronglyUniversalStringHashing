@@ -9,7 +9,7 @@ env:
     - PLUS=g++-4.8 MINUS=gcc-4.8
     - PLUS=clang++ MINUS=clang
 
-addones:
+addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
