@@ -83,7 +83,7 @@ int main() {
           min_idx = k;
         }
       }
-      cout << i << " " << j << " " << min_idx << endl;
+      cout << i << " " << j << " " << 1+min_idx << endl;
     }
     cout << endl;
   }
