@@ -40,12 +40,20 @@ uint64_t * alloc_random(size_t n) {
 
 uint64_t sum = 0;
 
+const size_t MAX_DEPTH = 9;
+
 template<size_t N>
-ticks bench(const void * r, const uint64_t * data, const size_t i) {
+void bench(vector<ticks> * out, const void * r, const uint64_t * data, const size_t i) {
   const ticks start = startRDTSC();
   sum += boosted_treehash<N>(r, data, i);
   const ticks finish = startRDTSC();
-  return finish-start;
+  out->push_back(finish-start);
+  bench<N+1>(out+1, r, data, i);
+}
+
+template<>
+void bench<MAX_DEPTH>(vector<ticks> *, const void *, const uint64_t *, const size_t) {
+  return;
 }
 
 int main() {
@@ -53,23 +61,17 @@ int main() {
   const uint64_t * const data = alloc_random(max_len);
   const void * const r64 = alloc_random(128);
   size_t iters = 10000;
-  const size_t max_depth = 9;
-  vector<vector<ticks> > cycles(max_depth, vector<ticks>(iters));
+  vector<vector<ticks> > cycles(MAX_DEPTH, vector<ticks>());
   size_t samples = 100;
   cout << "# length percentile optimal-treeboost " << endl;
   for (size_t i = 1; i < max_len; i = 1 + 1.001*i) {
-    for (size_t j = 0; j < iters; ++j) {
-      cycles[0][j] = bench<1>(r64, data, i);
-      cycles[1][j] = bench<2>(r64, data, i);
-      cycles[2][j] = bench<3>(r64, data, i);
-      cycles[3][j] = bench<4>(r64, data, i);
-      cycles[4][j] = bench<5>(r64, data, i);
-      cycles[5][j] = bench<6>(r64, data, i);
-      cycles[6][j] = bench<7>(r64, data, i);
-      cycles[7][j] = bench<8>(r64, data, i);
-      cycles[8][j] = bench<9>(r64, data, i);
+    for (size_t j = 0; j < MAX_DEPTH; ++j) {
+      cycles[j].clear();
     }
-    for (size_t j = 0; j < max_depth; ++j) {
+    for (size_t j = 0; j < iters; ++j) {
+      bench<0>(&cycles[0], r64, data, i);
+    }
+    for (size_t j = 0; j < MAX_DEPTH; ++j) {
       sort(cycles[j].begin(), cycles[j].end(), std::greater<ticks>());
     }
     for (size_t j = 0; j <= samples; ++j) {
@@ -77,13 +79,13 @@ int main() {
       if (loc >= iters) loc = iters-1;
       ticks min_val = numeric_limits<ticks>::max();
       int min_idx = -1;
-      for (size_t k = 0; k < max_depth; ++k) {
+      for (size_t k = 0; k < MAX_DEPTH; ++k) {
         if (cycles[k][loc] < min_val) {
           min_val = cycles[k][loc];
           min_idx = k;
         }
       }
-      cout << i << " " << j << " " << 1+min_idx << endl;
+      cout << i << " " << j << " " << min_idx << endl;
     }
     cout << endl;
   }
