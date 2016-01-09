@@ -9,7 +9,7 @@ CFLAGS = $(FLAGS) -std=gnu99
 CXXFLAGS = $(FLAGS) -std=c++0x
 export
 
-all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasher benchmark128bitmultiplication benchmark128bitpolyhashing boosted-treehash-params.exe
+all: clmulunit variablelengthbenchmark  benchmark benchmark64bitreductions uniformsanity smhasherpackage-submake smhasher benchmark128bitmultiplication benchmark128bitpolyhashing boosted-treehash-params.exe
 
 nhvsclnh.o: src/nhvsclnh.c
 	$(CC) $(CFLAGS)  -c  src/nhvsclnh.c
@@ -60,7 +60,7 @@ vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
 smhasherpackage-submake:
 	$(MAKE) -C smhasherpackage
 
-smhasher: smhasherpackage-submake cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o
+smhasher: smhasherpackage/makefile cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o | smhasherpackage-submake
 	$(CXX) $(FLAGS) -o smhasher smhasherpackage/*.o cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o
 
 clean:
