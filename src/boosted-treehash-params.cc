@@ -43,7 +43,7 @@ uint64_t sum = 0;
 template<size_t N>
 ticks bench(const void * r, const uint64_t * data, const size_t i) {
   const ticks start = startRDTSC();
-  sum += boosted_treehash<1>(r, data, i);
+  sum += boosted_treehash<N>(r, data, i);
   const ticks finish = startRDTSC();
   return finish-start;
 }
