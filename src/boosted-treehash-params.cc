@@ -57,7 +57,7 @@ int main() {
   vector<vector<ticks> > cycles(max_depth, vector<ticks>(iters));
   size_t samples = 100;
   cout << "# length percentile optimal-treeboost " << endl;
-  for (size_t i = 1; i < max_len; i = 1 + 1.01*i) {
+  for (size_t i = 1; i < max_len; i = 1 + 1.001*i) {
     for (size_t j = 0; j < iters; ++j) {
       cycles[0][j] = bench<1>(r64, data, i);
       cycles[1][j] = bench<2>(r64, data, i);
