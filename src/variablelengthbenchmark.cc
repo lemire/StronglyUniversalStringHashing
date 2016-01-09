@@ -13,6 +13,10 @@
 #include <sys/time.h>
 #include <assert.h>
 
+#include <iostream>
+
+using namespace std;
+
 #ifdef __AVX__
 #define __PCLMUL__ 1
 #endif
@@ -37,7 +41,7 @@ extern "C" {
 #include "treehash/binary-treehash.hh"
 #include "treehash/boosted-treehash.hh"
 
-#define HowManyFunctions64 20
+#define HowManyFunctions64 21
 
 hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  &hashCity, &hashSipHash,&GHASH64bit
@@ -56,6 +60,7 @@ hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
                                                  ,&boosted_treehash<5>
                                                  ,&boosted_treehash<6>
                                                  ,&boosted_treehash<7>
+                                                 ,&simple_cl_treehash
                                                };
 
 const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
@@ -75,6 +80,8 @@ const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
                                                     ,"boosted_treehash<5> "
                                                     ,"boosted_treehash<6> "
                                                     ,"boosted_treehash<7> "
+                                                    ,"simple_cl_treehash  "
+
                                                   };
 
 int main(int c, char ** arg) {
@@ -96,7 +103,12 @@ int main(int c, char ** arg) {
     struct timeval start, finish;
     uint64_t randbuffer[150] __attribute__ ((aligned (16)));// 150 should be plenty
     uint32_t sumToFoolCompiler = 0;
-    uint64_t * intstring = (uint64_t *)malloc(lengthEnd * sizeof(uint64_t)); // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
+    uint64_t * intstring;
+    // We need 32 bytes of alignment for working with __m256i's
+    if (posix_memalign((void **)(&intstring), 32, sizeof(uint64_t)*lengthEnd)) {
+      cerr << "Failed to allocate " << lengthEnd << " words." << endl;
+      return 1;
+    }
     for (i = 0; i < 150; ++i) {
         randbuffer[i] = rand() | ((uint64_t)(rand()) << 32);
     }
