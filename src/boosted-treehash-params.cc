@@ -1,3 +1,15 @@
+// This program benchmarks different depths of boosting in
+// boosted_treehash and prints tuples of
+//
+// 1. Length, in 64-bit words, of the strings being hashed
+// 2. Percentile
+// 3. The fastest parameter for that percentile
+//
+// For instance, the line "1023 74 8" means that when hashing strings
+// of length 1023, the 72nd percentile boosted_treehash<8> isfaster
+// than the 72nd percentile boosted_treehash<n> for other values of
+// n that were tested;
+
 #include <vector>
 #include <iostream>
 #include <algorithm>
@@ -39,8 +51,10 @@ uint64_t *alloc_random(size_t n) {
   return ans;
 }
 
+// A dummy value we update only to force computation
 uint64_t sum = 0;
 
+// One more than the maximum parameter N to boosted_treehash<N>
 const size_t MAX_DEPTH = 9;
 
 template <size_t N>
