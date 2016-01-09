@@ -16,20 +16,21 @@ extern "C" {
 #include "timers.h"
 }
 
-void fill_random(uint64_t * data, size_t n) {
+void fill_random(uint64_t *data, size_t n) {
   const int rfd = open("/dev/urandom", O_RDONLY);
   if (-1 == rfd) {
     const int err = errno;
     fprintf(stderr, "%s\n", strerror(err));
     exit(err);
   }
-  char * const cdata = (char *)data;
-  for (size_t i = 0; i < n; i += read(rfd, &cdata[i], sizeof(uint64_t)*n-i));
+  char *const cdata = (char *)data;
+  for (size_t i = 0; i < n; i += read(rfd, &cdata[i], sizeof(uint64_t) * n - i))
+    ;
   (void)close(rfd);
 }
 
-uint64_t * alloc_random(size_t n) {
-  uint64_t * ans = (uint64_t *)malloc(sizeof(uint64_t) * n);
+uint64_t *alloc_random(size_t n) {
+  uint64_t *ans = (uint64_t *)malloc(sizeof(uint64_t) * n);
   if (!ans) {
     fprintf(stderr, "Failed allocation of %zd words\n", n);
     exit(1);
@@ -42,29 +43,31 @@ uint64_t sum = 0;
 
 const size_t MAX_DEPTH = 9;
 
-template<size_t N>
-void bench(vector<ticks> * out, const void * r, const uint64_t * data, const size_t i) {
+template <size_t N>
+void bench(vector<ticks> *out, const void *r, const uint64_t *data,
+           const size_t i) {
   const ticks start = startRDTSC();
   sum += boosted_treehash<N>(r, data, i);
   const ticks finish = startRDTSC();
-  out->push_back(finish-start);
-  bench<N+1>(out+1, r, data, i);
+  out->push_back(finish - start);
+  bench<N + 1>(out + 1, r, data, i);
 }
 
-template<>
-void bench<MAX_DEPTH>(vector<ticks> *, const void *, const uint64_t *, const size_t) {
+template <>
+void bench<MAX_DEPTH>(vector<ticks> *, const void *, const uint64_t *,
+                      const size_t) {
   return;
 }
 
 int main() {
   size_t max_len = 2048;
-  const uint64_t * const data = alloc_random(max_len);
-  const void * const r64 = alloc_random(128);
+  const uint64_t *const data = alloc_random(max_len);
+  const void *const r64 = alloc_random(128);
   size_t iters = 10000;
   vector<vector<ticks> > cycles(MAX_DEPTH, vector<ticks>());
   size_t samples = 100;
   cout << "# length percentile optimal-treeboost " << endl;
-  for (size_t i = 1; i < max_len; i = 1 + 1.001*i) {
+  for (size_t i = 1; i < max_len; i = 1 + 1.001 * i) {
     for (size_t j = 0; j < MAX_DEPTH; ++j) {
       cycles[j].clear();
     }
@@ -75,8 +78,8 @@ int main() {
       sort(cycles[j].begin(), cycles[j].end(), std::greater<ticks>());
     }
     for (size_t j = 0; j <= samples; ++j) {
-      size_t loc = (iters * j)/samples;
-      if (loc >= iters) loc = iters-1;
+      size_t loc = (iters * j) / samples;
+      if (loc >= iters) loc = iters - 1;
       ticks min_val = numeric_limits<ticks>::max();
       int min_idx = -1;
       for (size_t k = 0; k < MAX_DEPTH; ++k) {
