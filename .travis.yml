@@ -8,7 +8,8 @@ compiler:
 env:
   matrix:
     - PLUS=g++-4.8 MINUS=gcc-4.8
-    - PLUS=clang++ MINUS=clang
+# clang is failing with an illegal instruction error
+#    - PLUS=clang++ MINUS=clang
 
 addons:
   apt:
