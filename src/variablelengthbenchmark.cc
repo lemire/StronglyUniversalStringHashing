@@ -113,7 +113,7 @@ int main(int c, char ** arg) {
     printf("#First number is input length in  8-byte words.\n");
     printf("0 ");
     for (i = 0; i < HowManyFunctions64; ++i) {
-        if (which_algos & (0x1 << i))
+        if (which_algos & (0x1ull << i))
           cout << '"' << hashFunctions[i].name << "\" ";
     }
     printf("\n");
@@ -123,7 +123,7 @@ int main(int c, char ** arg) {
         printf("%8d \t\t", length);
 
         for (i = 0; i < HowManyFunctions64; ++i) {
-            if (!(which_algos & (0x1 << i)))
+            if (!(which_algos & (0x1ull << i)))
                 continue;  // skip unselected algos
             const hashFunction64 thisfunc64 = hashFunctions[i].f;
             sumToFoolCompiler += thisfunc64(randbuffer, intstring, length); // we do not count the first one
