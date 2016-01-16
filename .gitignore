@@ -1,5 +1,6 @@
 clmulunit
 variablelengthbenchmark
+variablelengthbenchmark-debug
 benchmark
 benchmark64bitreductions
 uniformsanity
