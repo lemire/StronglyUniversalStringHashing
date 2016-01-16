@@ -7,11 +7,13 @@
 // this code will hash strings of 64-bit characters. To use on
 // strings of 8-bit characters, you may need some adequate padding.
 //
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cassert>
+#include <cinttypes>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+
 #include <sys/time.h>
-#include <assert.h>
 
 #include <iostream>
 
@@ -41,56 +43,48 @@ extern "C" {
 #include "treehash/binary-treehash.hh"
 #include "treehash/boosted-treehash.hh"
 
-#define HowManyFunctions64 21
+struct NamedFunc {
+  const hashFunction64 f;
+  const string name;
+  NamedFunc(const hashFunction64& f, const string& name) : f(f), name(name) {}
+};
 
-hashFunction64 funcArr64[HowManyFunctions64] = { &hashVHASH64, &CLHASH,
-                                                 &hashCity, &hashSipHash,&GHASH64bit
-                                                ,&hornerHash
-                                                ,&unrolledHorner4
-                                                ,&twiceHorner32
-                                                 ,&iterateCL11
-                                                 ,&treeCL9
-                                                 ,&simple_treehash
-                                                 ,&recursive_treehash
-                                                 ,&binary_treehash
-                                                 ,&boosted_treehash<1>
-                                                 ,&boosted_treehash<2>
-                                                 ,&boosted_treehash<3>
-                                                 ,&boosted_treehash<4>
-                                                 ,&boosted_treehash<5>
-                                                 ,&boosted_treehash<6>
-                                                 ,&boosted_treehash<7>
-                                                 ,&simple_cl_treehash
-                                               };
+#define NAMED(f) NamedFunc(f, #f)
 
-const char* functionnames64[HowManyFunctions64] = { "64-bit VHASH        ",
-                                                    "64-bit CLHASH       ", "Google's City       ", "SipHash             ","GHASH          ",
-                                                    "hornerHash          ",
-                                                    "unrolled Horner     ",
-                                                    "twice Horner32      "
-                                                    ,"iterateCL 11        "
-                                                    ,"treeCL9             "
-                                                    ,"simple_treehash     "
-                                                    ,"recursive_treehash  "
-                                                    ,"binary_treehash     "
-                                                    ,"boosted_treehash<1> "
-                                                    ,"boosted_treehash<2> "
-                                                    ,"boosted_treehash<3> "
-                                                    ,"boosted_treehash<4> "
-                                                    ,"boosted_treehash<5> "
-                                                    ,"boosted_treehash<6> "
-                                                    ,"boosted_treehash<7> "
-                                                    ,"simple_cl_treehash  "
+NamedFunc hashFunctions[] = {
+    // From the 2015 paper:
+    NAMED(&hashVHASH64), NAMED(&CLHASH), NAMED(&hashCity), NAMED(&hashSipHash),
+    NAMED(&GHASH64bit),
+    // Horner methods:
+    NAMED(&hornerHash), NAMED(&unrolledHorner4), NAMED(&twiceHorner32),
+    NAMED(&iterateCL11),
+    // Tree hashing:
+    NAMED(&treeCL9), NAMED(&simple_treehash), NAMED(&recursive_treehash),
+    NAMED(&binary_treehash), NAMED(&boosted_treehash<1>),
+    NAMED(&boosted_treehash<2>), NAMED(&boosted_treehash<3>),
+    NAMED(&boosted_treehash<4>), NAMED(&boosted_treehash<5>),
+    NAMED(&boosted_treehash<6>), NAMED(&boosted_treehash<7>),
+    NAMED(&simple_cl_treehash), NAMED(&generic_simple_treehash<MultiplyShift>),
+    NAMED(&generic_simple_treehash<NH>), NAMED(&generic_simple_treehash<CLNH>),
+    NAMED((&generic_simple_treehash<Wide<MultiplyShift, 15> >)),
+    NAMED((&generic_simple_treehash<Wide<NH, 4> >)),
+    NAMED((&generic_simple_treehash<Wide<CLNH, 4> >)),
+    NAMED((&generic_simple_treehash<Wide<CLNHx2, 4> >)),
+};
 
-                                                  };
+const int HowManyFunctions64 =
+    sizeof(hashFunctions) / sizeof(hashFunctions[0]);
 
 int main(int c, char ** arg) {
     (void) (c);
     (void) (arg);
-    int which_algos = 0xffffffff;
-    assert(HowManyFunctions64 <= 32);
-    if (c > 1)
-        which_algos = atoi(arg[1]);  // bitmask
+    uint64_t which_algos = ~0;
+    assert(HowManyFunctions64 <= 64);
+    if (c > 1) {
+      if (1 != sscanf(arg[1], "%" SCNu64, &which_algos)) {
+        return 1;
+      }
+    }
     int lengthStart = 1, lengthEnd = 2048; // inclusive
     if (c > 2)
         lengthStart = atoi(arg[2]);
@@ -117,21 +111,21 @@ int main(int c, char ** arg) {
     }
     printf("#Reporting the number of cycles per byte.\n");
     printf("#First number is input length in  8-byte words.\n");
-    printf("#          ");
+    printf("0 ");
     for (i = 0; i < HowManyFunctions64; ++i) {
         if (which_algos & (0x1 << i))
-            printf("%s ", functionnames64[i]);
+          cout << '"' << hashFunctions[i].name << "\" ";
     }
     printf("\n");
     fflush(stdout);
     for (length = lengthStart; length <= lengthEnd; length += 1) {
         SHORTTRIALS = 8000000 / length;
         printf("%8d \t\t", length);
-        hashFunction64 thisfunc64;
+
         for (i = 0; i < HowManyFunctions64; ++i) {
             if (!(which_algos & (0x1 << i)))
                 continue;  // skip unselected algos
-            thisfunc64 = funcArr64[i];
+            const hashFunction64 thisfunc64 = hashFunctions[i].f;
             sumToFoolCompiler += thisfunc64(randbuffer, intstring, length); // we do not count the first one
             gettimeofday(&start, 0);
             ticks lowest = ~(ticks)0;
