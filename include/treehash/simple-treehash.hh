@@ -108,7 +108,7 @@ uint64_t generic_simple_treehash(const void *rvoid, const uint64_t *data,
   static_assert(sizeof(uint64_t) * ATOM_WORD_SIZE == T::ATOM_SIZE,
                 "sizeof(Atom) must be a multiple of sizeof(uint64_t)");
   if (length < 2 * ATOM_WORD_SIZE) {
-    return short_simple_treehash<ATOM_WORD_SIZE>(rvoid, data, length);
+    return short_simple_treehash<2 * ATOM_WORD_SIZE>(rvoid, data, length);
   }
   const size_t atom_length = length / ATOM_WORD_SIZE;
   const Atom *atom_data = reinterpret_cast<const Atom *>(data);
@@ -157,7 +157,7 @@ static inline void prefill_rand128x2(__m256i * r128x2, const __m128i * r128,
 
 uint64_t simple_cl_treehash(const void * rvoid, const uint64_t * data,
                             const size_t length) {
-  if (length < 8) return short_simple_treehash<4>(rvoid, data, length);
+  if (length < 8) return short_simple_treehash<8>(rvoid, data, length);
   const __m128i* r128 = (const __m128i *)rvoid;
   // We will reduce length * 64 bits down to 256 bits. This requires
   // ceiling(log2(length)) - 2 units of randomness, where one unit is
