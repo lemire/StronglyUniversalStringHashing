@@ -40,8 +40,8 @@ static inline uint64_t bigendian(const ui128 h, const uint64_t x,
 // Badger paper, as well as by Woelfel in "A construction method for
 // optimally universal hash families and its consequences for the
 // existence of RBIBDs.".
-static inline __m256i clUniv512(const __m256i r128x2, const __m256i d[2]) {
-  __m256i result = _mm256_xor_si256(r128x2, d[0]);
+static inline __m256i clUniv512(const __m256i r128x2, const __m256i d0, const __m256i d1) {
+  __m256i result = _mm256_xor_si256(r128x2, d0);
 
   // I think cast gets the lower bits of an __m256i
   __m128i x = _mm256_castsi256_si128(result);
@@ -54,7 +54,171 @@ static inline __m256i clUniv512(const __m256i r128x2, const __m256i d[2]) {
   result = _mm256_castsi128_si256(x);
   result = _mm256_inserti128_si256(result, y, 1);
 
-  return _mm256_xor_si256(result, d[1]);
+  return _mm256_xor_si256(result, d1);
 }
+
+// In the interest of reducing code duplication, it is useful to
+// parameterize treehashes by the primitive they use. By "primitive",
+// I mean the building block that hashes R^2 down to R for some
+// universe R. or instance, deltaDietz hashes uint64_t^2 down to
+// uint64_t.
+//
+// We'll need a few ingredients:
+struct MultiplyShift {
+  // First, we need to know what R is in the notation above. This is
+  // called an Atom, because from the point of view of the
+  // parameterized hash algorithm, it cannot be broken up into
+  // component parts.
+  typedef uint64_t Atom;
+
+ private:
+  // Second, we need to know the type of the random data needed to
+  // hash Atom^2 down to Atom.
+  typedef ui128 Rand;
+
+ public:
+  // Third, we need to know the size of Atom in bytes. The sizeof
+  // keyword won't always be enough is clients of this class, since
+  // sometimes Atom is an array and "decays" into pointers.
+  const static size_t ATOM_SIZE = sizeof(uint64_t);
+  // Fourth, we need a way to copy Atoms.
+  inline static void AtomCopy(Atom *x, const Atom &y) { *x = y; }
+  // Fifth, we need to expose the hash family itself.
+  inline void Hash(Atom *out, int i, const Atom &in0, const Atom &in1) const {
+    *out = deltaDietz(r[i], in0, in1);
+  }
+
+  // Sixth, we need to store a particular array of random values. We
+  // have to store these because some primitives need to preprocess
+  // the random bits into an array of Rands. There is an example
+  // below, but an easy one to think of is hashing modulo a prime. For
+  // those hash families, we get data in, say, 8-bit chunks, but we
+  // need random values modulo p, so we have to pre-process.
+  //
+  // We will need one Rand for each level of the tree hash. When we
+  // pre-process, these values may require extra storage space. Since
+  // that depends on the primitive, we keep the data in this struct
+  // itself.
+ private:
+  const Rand *r;
+
+ public:
+  // In a primitive that needs preprocessing, depth indicates how many
+  // random items to take - it is the depth of the treehash. We take
+  // as an argument a const void ** that we update to point to random
+  // data that this part of the tree hash will not need, so that it is
+  // fresh when it is needed at the end of the tree hash.
+  explicit MultiplyShift(const void **rvoid, const size_t depth)
+      : r(reinterpret_cast<const Rand *>(*rvoid)) {
+    *rvoid = reinterpret_cast<const void *>(r + depth);
+  }
+};
+
+struct NH {
+  typedef ui128 Atom;
+
+ private:
+  typedef ui128 Rand;
+
+ public:
+  const static size_t ATOM_SIZE = sizeof(ui128);
+  inline static void AtomCopy(Atom *x, const Atom &y) {
+    (*x)[0] = y[0];
+    (*x)[1] = y[1];
+  }
+  inline void Hash(Atom *out, const int i, const Atom &in0,
+                   const Atom &in1) const {
+    (*out)[0] = in0[0] + r[i][0];
+    (*out)[1] = in0[1] + r[i][1];
+    *reinterpret_cast<unsigned __int128 *>(out) =
+        *reinterpret_cast<const unsigned __int128 *>(in1) +
+        (((unsigned __int128)((*out)[0])) * ((unsigned __int128)((*out[1]))));
+  }
+
+  explicit NH(const void **rvoid, const size_t depth)
+      : r(reinterpret_cast<const Rand *>(rvoid)) {
+    *rvoid = reinterpret_cast<const void *>(r + depth);
+  }
+
+ private:
+  const Rand *r;
+};
+
+struct CLNH {
+  typedef __m128i Atom;
+
+ private:
+  typedef __m128i Rand;
+
+ public:
+  const static size_t ATOM_SIZE = sizeof(__m128i);
+  inline static void AtomCopy(Atom *x, const Atom &y) { *x = y; }
+  inline void Hash(Atom *out, const int i, const Atom &in0,
+                   const Atom &in1) const {
+    *out = _mm_xor_si128(in0, r[i]);
+    *out = _mm_clmulepi64_si128(*out, *out, 1);
+    *out = _mm_xor_si128(*out, in1);
+  }
+
+  explicit CLNH(const void **rvoid, const size_t depth)
+      : r(reinterpret_cast<const Rand *>(rvoid)) {
+    *rvoid = reinterpret_cast<const void *>(r + depth);
+  }
+
+ private:
+  const Rand *r;
+};
+
+struct CLNHx2 {
+  typedef __m256i Atom;
+
+  const static size_t ATOM_SIZE = sizeof(__m256i);
+
+  inline static void AtomCopy(Atom *x, const Atom &y) { *x = y; }
+
+  explicit CLNHx2(const void **rvoid, const size_t depth) {
+    const __m128i *const r128 = reinterpret_cast<const __m128i *>(rvoid);
+    for (size_t i = 0; i < depth; ++i) {
+      r[i] = _mm256_broadcastsi128_si256(r128[i]);
+    }
+    *rvoid = reinterpret_cast<const void *>(r128 + depth);
+  }
+
+  inline void Hash(Atom *out, const int i, const Atom &in0,
+                   const Atom &in1) const {
+    *out = clUniv512(r[i], in0, in1);
+  }
+
+ private:
+  typedef __m256i Rand;
+  Rand r[62];
+};
+
+// This primitive just wraps another primitive, but operates on arrays
+// of a given static size.
+template <typename T, size_t n>
+struct Wide {
+  typedef typename T::Atom Atom[n];
+
+  const static size_t ATOM_SIZE = T::ATOM_SIZE * n;
+
+  inline static void AtomCopy(Atom *x, const Atom &y) {
+    for (size_t i = 0; i < n; ++i) {
+      T::AtomCopy(&(*x)[i], y[i]);
+    }
+  }
+
+  explicit Wide(const void **rvoid, const size_t depth) : t(rvoid, depth) {}
+
+  inline void Hash(Atom *out, const int j, const Atom &in0,
+                   const Atom &in1) const {
+    for (size_t i = 0; i < n; ++i) {
+      t.Hash(&(*out)[i], j, in0[i], in1[i]);
+    }
+  }
+
+ private:
+  T t;
+};
 
 #endif
