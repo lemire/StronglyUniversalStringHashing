@@ -177,7 +177,7 @@ struct CLNHx2 {
   inline static void AtomCopy(Atom *x, const Atom &y) { *x = y; }
 
   explicit CLNHx2(const void **rvoid, const size_t depth) {
-    const __m128i *const r128 = reinterpret_cast<const __m128i *>(rvoid);
+    const __m128i *const r128 = reinterpret_cast<const __m128i *>(*rvoid);
     for (size_t i = 0; i < depth; ++i) {
       r[i] = _mm256_broadcastsi128_si256(r128[i]);
     }
