@@ -1,8 +1,6 @@
-# makefile will be updated when make did something. This serves as a
-# proxy to the upstream makefile that something in this directory has
-# changed.
-makefile: $(patsubst %.c,%.o,$(wildcard *.c)) $(patsubst %.cpp,%.o,$(wildcard *.cpp))
-	touch makefile
+.PHONY: all clean
+
+all: $(patsubst %.c,%.o,$(wildcard *.c)) $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 
 %.o: %.c *.h
 	$(CC) $(CFLAGS) -w -c $<

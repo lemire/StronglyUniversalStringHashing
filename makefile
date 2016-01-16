@@ -1,17 +1,15 @@
 .SUFFIXES:
-#
-.SUFFIXES: .cpp .o .c .h
 
 .phony: all clean smhasherpackage-submake
 
-FLAGS = -ggdb -O2 -mavx -mavx2 -march=native -Wall -Wextra -funroll-loops
+FLAGS = -ggdb -O2 -mavx -mavx2 -march=native -Wall -Wextra -Wstrict-overflow -Wstrict-aliasing -funroll-loops
 DEBUGFLAGS = $(FLAGS) -ggdb3 -O0 -fno-unroll-loops
 CFLAGS = $(FLAGS) -std=gnu99
 CXXFLAGS = $(FLAGS) -std=c++0x
 CXXDEBUGFLAGS = $(DEBUGFLAGS) -std=c++0x
 export
 
-all: clmulunit variablelengthbenchmark variablelengthbenchmark-debug benchmark benchmark64bitreductions uniformsanity smhasherpackage-submake smhasher benchmark128bitmultiplication benchmark128bitpolyhashing boosted-treehash-params.exe
+all: clmulunit variablelengthbenchmark variablelengthbenchmark-debug benchmark benchmark64bitreductions uniformsanity smhasher benchmark128bitmultiplication benchmark128bitpolyhashing boosted-treehash-params.exe
 
 nhvsclnh.o: src/nhvsclnh.c
 	$(CC) $(CFLAGS)  -c  src/nhvsclnh.c
@@ -62,10 +60,8 @@ vhash4smhasher.o:	src/vhash4smhasher.c include/*.h
 vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
 	$(CC) $(CFLAGS) -c VHASH/vmac.c -IVHASH 
 
-smhasherpackage-submake:
+smhasher: $(wildcard smhasherpackage/*.h) $(wildcard smhasherpackage/*.c) $(wildcard smhasherpackage/*.cpp) cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o
 	$(MAKE) -C smhasherpackage
-
-smhasher: smhasherpackage/makefile cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o | smhasherpackage-submake
 	$(CXX) $(FLAGS) -o smhasher smhasherpackage/*.o cl3264.o vhash4smhasher.o vmac.o rijndael-alg-fst.o
 
 clean:
