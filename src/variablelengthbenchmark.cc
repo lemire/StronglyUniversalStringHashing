@@ -137,7 +137,7 @@ int main(int c, char ** arg) {
                 lowest = (lowest < diff) ? lowest : diff;
             }
             gettimeofday(&finish, 0);
-            printf(" %f ", lowest * 1.0 / (8.0 * length));
+            printf(" %.2f ", lowest * 1.0 / (8.0 * length));
             fflush(stdout);
         }
         printf("\n");
