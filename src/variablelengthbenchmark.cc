@@ -109,7 +109,7 @@ int main(int c, char ** arg) {
     for (i = 0; i < lengthEnd; ++i) {
         intstring[i] = rand() | ((uint64_t)(rand()) << 32);
     }
-    printf("#Reporting the number of cycles per byte.\n");
+    printf("#Reporting the number of bytes per cycle.\n");
     printf("#First number is input length in  8-byte words.\n");
     printf("0 ");
     for (i = 0; i < HowManyFunctions64; ++i) {
@@ -137,7 +137,7 @@ int main(int c, char ** arg) {
                 lowest = (lowest < diff) ? lowest : diff;
             }
             gettimeofday(&finish, 0);
-            printf(" %.3f ", lowest * 1.0 / (8.0 * length));
+            printf(" %.2f ", (8.0 * length)/(lowest * 1.0));
             fflush(stdout);
         }
         printf("\n");
