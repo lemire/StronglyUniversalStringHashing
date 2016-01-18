@@ -35,13 +35,10 @@ extern "C" {
 #include "clmulpoly64bits.h"
 #include "clmulhierarchical64bits.h"
 #include "ghash.h"
-#include "bigendianuniversal.h"
 }
 
-#include "treehash/simple-treehash.hh"
-#include "treehash/recursive-treehash.hh"
 #include "treehash/binary-treehash.hh"
-#include "treehash/boosted-treehash.hh"
+#include "treehash/generic-treehash.hh"
 
 struct NamedFunc {
   const hashFunction64 f;
@@ -55,22 +52,11 @@ NamedFunc hashFunctions[] = {
     // From the 2015 paper:
     NAMED(&hashVHASH64), NAMED(&CLHASH), NAMED(&hashCity), NAMED(&hashSipHash),
     NAMED(&GHASH64bit),
-    // Horner methods:
-    NAMED(&hornerHash), NAMED(&unrolledHorner4), NAMED(&twiceHorner32),
-    NAMED(&iterateCL11),
     // Tree hashing:
-    NAMED(&treeCL9), NAMED(&simple_treehash), NAMED(&recursive_treehash),
-    NAMED(&binary_treehash), NAMED(&boosted_treehash<1>),
-    NAMED(&boosted_treehash<2>), NAMED(&boosted_treehash<3>),
-    NAMED(&boosted_treehash<4>), NAMED(&boosted_treehash<5>),
-    NAMED(&boosted_treehash<6>), NAMED(&boosted_treehash<7>),
-    NAMED(&simple_cl_treehash), NAMED(&generic_simple_treehash<MultiplyShift>),
-    NAMED(&generic_simple_treehash<NH>), NAMED(&generic_simple_treehash<CLNH>),
-    NAMED((&generic_simple_treehash<Wide<MultiplyShift, 15> >)),
-    NAMED((&generic_simple_treehash<Wide<NH, 4> >)),
-    NAMED((&generic_simple_treehash<Wide<CLNH, 4> >)),
-    NAMED((&generic_simple_treehash<Wide<CLNHx2, 4> >)),
-};
+    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash,
+                             Wide<CLNH, 7> >)),
+    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash,
+                             Wide<NH, 9> >))};
 
 const int HowManyFunctions64 =
     sizeof(hashFunctions) / sizeof(hashFunctions[0]);
