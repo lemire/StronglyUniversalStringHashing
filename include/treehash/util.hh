@@ -128,15 +128,16 @@ struct NH {
   }
   inline void Hash(Atom *out, const int i, const Atom &in0,
                    const Atom &in1) const {
-    (*out)[0] = in0[0] + r[i][0];
-    (*out)[1] = in0[1] + r[i][1];
-    *reinterpret_cast<unsigned __int128 *>(out) =
+    // Use a temporary Atom in case out == &in0 or out == &in1
+    const Atom tmp = {in0[0] + r[i][0], in0[1] + r[i][1]};
+    const unsigned __int128 tmp2 =
         *reinterpret_cast<const unsigned __int128 *>(in1) +
-        (((unsigned __int128)((*out)[0])) * ((unsigned __int128)((*out[1]))));
+        (((unsigned __int128)(tmp[0])) * ((unsigned __int128)(tmp[1])));
+    memcpy(out, &tmp2, sizeof(tmp2));
   }
 
   explicit NH(const void **rvoid, const size_t depth)
-      : r(reinterpret_cast<const Rand *>(rvoid)) {
+      : r(reinterpret_cast<const Rand *>(*rvoid)) {
     *rvoid = reinterpret_cast<const void *>(r + depth);
   }
 
@@ -155,13 +156,14 @@ struct CLNH {
   inline static void AtomCopy(Atom *x, const Atom &y) { *x = y; }
   inline void Hash(Atom *out, const int i, const Atom &in0,
                    const Atom &in1) const {
-    *out = _mm_xor_si128(in0, r[i]);
-    *out = _mm_clmulepi64_si128(*out, *out, 1);
-    *out = _mm_xor_si128(*out, in1);
+    Atom tmp = _mm_xor_si128(in0, r[i]);
+    tmp = _mm_clmulepi64_si128(tmp, tmp, 1);
+    tmp = _mm_xor_si128(tmp, in1);
+    *out = tmp;
   }
 
   explicit CLNH(const void **rvoid, const size_t depth)
-      : r(reinterpret_cast<const Rand *>(rvoid)) {
+      : r(reinterpret_cast<const Rand *>(*rvoid)) {
     *rvoid = reinterpret_cast<const void *>(r + depth);
   }
 
