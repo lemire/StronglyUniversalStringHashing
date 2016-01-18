@@ -137,7 +137,7 @@ struct NH {
   }
 
   explicit NH(const void **rvoid, const size_t depth)
-      : r(reinterpret_cast<const Rand *>(rvoid)) {
+      : r(reinterpret_cast<const Rand *>(*rvoid)) {
     *rvoid = reinterpret_cast<const void *>(r + depth);
   }
 
@@ -163,7 +163,7 @@ struct CLNH {
   }
 
   explicit CLNH(const void **rvoid, const size_t depth)
-      : r(reinterpret_cast<const Rand *>(rvoid)) {
+      : r(reinterpret_cast<const Rand *>(*rvoid)) {
     *rvoid = reinterpret_cast<const void *>(r + depth);
   }
 
