@@ -9,7 +9,7 @@ CXXFLAGS = $(FLAGS) -std=c++0x
 CXXDEBUGFLAGS = $(DEBUGFLAGS) -std=c++0x
 export
 
-all: clmulunit variablelengthbenchmark variablelengthbenchmark-debug benchmark benchmark64bitreductions uniformsanity smhasher benchmark128bitmultiplication benchmark128bitpolyhashing boosted-treehash-params.exe
+all: clmulunit classicvariablelengthbenchmark variablelengthbenchmark variablelengthbenchmark-debug benchmark benchmark64bitreductions uniformsanity smhasher benchmark128bitmultiplication benchmark128bitpolyhashing boosted-treehash-params.exe
 
 nhvsclnh.o: src/nhvsclnh.c
 	$(CC) $(CFLAGS)  -c  src/nhvsclnh.c
@@ -28,6 +28,9 @@ benchmark128bitpolyhashing: src/benchmark128bitpolyhashing.c include/clmul.h
 
 benchmark64bitreductions: src/benchmark64bitreductions.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark64bitreductions src/benchmark64bitreductions.c   -Iinclude 
+
+classicvariablelengthbenchmark: src/classicvariablelengthbenchmark.c include/*.h City.o siphash24.o vmac.o 
+	$(CC) $(CFLAGS) -o classicvariablelengthbenchmark src/classicvariablelengthbenchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH
 
 variablelengthbenchmark: src/variablelengthbenchmark.cc include/*.h include/treehash/*.hh City.o siphash24.o vmac.o 
 	$(CXX) $(CXXFLAGS) -o variablelengthbenchmark src/variablelengthbenchmark.cc City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
@@ -66,4 +69,4 @@ smhasher: $(wildcard smhasherpackage/*.h) $(wildcard smhasherpackage/*.c) $(wild
 
 clean:
 	$(MAKE) -C smhasherpackage clean
-	rm -f multilinearhashing variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity smhasher variablelenthbenchmark  *.o
+	rm -f multilinearhashing classicvariablelengthbenchmark variablelengthbenchmark benchmark benchmark64bitreductions clmulunit uniformsanity smhasher variablelenthbenchmark  *.o
