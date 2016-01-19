@@ -141,4 +141,216 @@ uint64_t binary_treehash(const void* rvoid, const uint64_t* data,
   return bigendian(*r128, workspace[last], length);
 }
 
+// This is just linke binary_treehash, but works on generic primitives
+// like CLNH. See util.hh.
+template <typename T>
+struct GenericBinaryTreehash {
+ private:
+
+  // We store a value of type T (rather than just using static
+  // functions) because it may need to construct its randomness. See
+  // util.hh.
+  T primitive;
+  typedef typename T::Atom Atom;
+
+ public:
+
+  // As in the primitives in util.hh, the constructor adjusts *r so it
+  // does not point at any randomness to be used by this object.
+  GenericBinaryTreehash(const void** r, const int depth)
+      : primitive(r, depth){};
+
+
+  // The method treehash is not static because it needs to use
+  // primitive and workspace.
+  Atom* treehash(const Atom* data, const size_t length) {
+    for (size_t i = 0; i < length; ++i) {
+      if (i & 1) {
+        cascade(data[i], __builtin_ctzll(i + 1));
+      } else {
+        T::AtomCopy(&workspace[0], data[i]);
+      }
+    }
+    const size_t last = rollup(length);
+    return &workspace[last];
+  }
+
+ private:
+  Atom workspace[64];
+
+  inline void cascade(const Atom& carry, int limit) {
+    const Atom* last = &carry;
+    int i = 0;
+    for (; i + 1 < limit; ++i) {
+      primitive.Hash(&workspace[i], i, workspace[i], *last);
+      last = &workspace[i];
+    }
+    primitive.Hash(&workspace[i + 1], i, workspace[i], *last);
+  }
+
+  inline size_t rollup(size_t count) {
+    int i = __builtin_ctzll(count);
+    size_t last = i;
+    ++i;
+    count >>= i;
+    for (; count > 0; ++i, count >>= 1) {
+      if (count & 1) {
+        primitive.Hash(&workspace[i], i, workspace[i], workspace[last]);
+        last = i;
+      }
+    }
+    return last;
+  }
+
+};
+
+// GenericBinaryTreeHash uses T::AtomCopy one out of every two
+// iterations of the main loop of treehash. In fact, it copies the
+// entire input. ZeroCopyGenericBinaryTreehash performs the same
+// calculation without the copies.
+template <typename T>
+struct ZeroCopyGenericBinaryTreehash {
+ private:
+  T primitive;
+
+  typedef typename T::Atom Atom;
+
+  // ZeroCopyGenericBinaryTreehash has some member variables that
+  // GenericBinaryTreeHash does not.
+  //
+  // First, it stores the depth that was passed in in the
+  // constructor. This will be used later to simplify rollup.
+  int depth;
+  // Second, it uses overflow as a storage location to put the result
+  // of T::Hash when workspace[0] is full.
+  Atom overflow;
+  // Additionally, workspace can be a bit smaller, since the levels
+  // are all going to be bumped up. In GenericBinaryTreeHash,
+  // workspace[0] was the input, workspace[1] was the t::Hash of the
+  // input, workspace[2] was the T::Hash of workspace[1], and so
+  // in. In this class, the input is not stored in a member
+  // variable. overflow and workspace[0] are hashes of the input, and
+  // so on.
+  Atom workspace[63];
+
+  inline void cascade(int limit) {
+    const Atom* last = &overflow;
+    int i = 0;
+    for (; i + 1 < limit; ++i) {
+      primitive.Hash(&workspace[i], i+1, workspace[i], *last);
+      last = &workspace[i];
+    }
+    primitive.Hash(&workspace[i + 1], i+1, workspace[i], *last);
+  }
+
+  // The parameter extra represents any data from the input that didn'
+  // have a pair, so it used only in rollup, not cascade or the
+  // treehash main loop. It is repurposed in the function body to
+  // represent the Atom most recently produced.
+  inline void rollup(const Atom * extra, size_t count) {
+    int i = __builtin_ctzll(count);
+    size_t last = i;
+    ++i;
+    count >>= i;
+    if (!extra) extra = &workspace[last];
+    for (; count > 0; ++i, count >>= 1) {
+      if (count & 1) {
+        primitive.Hash(&workspace[i], i+1, workspace[i], *extra);
+        last = i;
+        extra = &workspace[last];
+      }
+    }
+  }
+
+ public:
+  Atom* treehash(const Atom* data, const size_t length) {
+    for (size_t i = 0; i+2 <= length; i += 2) {
+      if (i & 2) {
+        // workspace[0] is full
+        primitive.Hash(&overflow, 0, data[i], data[i+1]);
+        cascade(__builtin_ctzll(i + 1));
+      } else {
+        primitive.Hash(&workspace[0], 0, data[i], data[i+1]);
+      }
+    }
+    rollup((length & 1) ? &data[length-1] : nullptr, length/2);
+    // Since length >= 2, depth >= 1, so workspace[depth-1] has been populated.
+    return &workspace[depth-1];
+  }
+
+  ZeroCopyGenericBinaryTreehash(const void** r, const int depth)
+    : primitive(r, depth), depth(depth) {};
+};
+
+// ZeroCopyGenericBinaryTreehash iterated over the input two Atoms at
+// once. BoostedZeroCopyGenericBinaryTreehash increases that two four
+// by reusing workspace[0] and workspace[1] as scratch space.
+template <typename T>
+struct BoostedZeroCopyGenericBinaryTreehash {
+ private:
+  T primitive;
+
+  typedef typename T::Atom Atom;
+
+  int depth;
+  Atom overflow;
+  Atom workspace[63];
+
+  inline void cascade(int limit) {
+    const Atom* last = &overflow;
+    int i = 0;
+    for (; i + 1 < limit; ++i) {
+      primitive.Hash(&workspace[i], i+1, workspace[i], *last);
+      last = &workspace[i];
+    }
+    primitive.Hash(&workspace[i + 1], i+1, workspace[i], *last);
+  }
+
+  inline void rollup(const Atom * extra, size_t count) {
+    int i = __builtin_ctzll(count);
+    size_t last = i;
+    ++i;
+    count >>= i;
+    if (!extra) extra = &workspace[last];
+    for (; count > 0; ++i, count >>= 1) {
+      if (count & 1) {
+        primitive.Hash(&workspace[i], i+1, workspace[i], *extra);
+        last = i;
+        extra = &workspace[last];
+      }
+    }
+  }
+
+ public:
+  Atom* treehash(const Atom* data, const size_t length) {
+    size_t i = 0;
+    for (;i+4 <= length; i += 4) {
+      if (i & 4) {
+        // workspace[1] is full, but overflow and workspace[0] are empty.
+        primitive.Hash(&workspace[0], 0, data[i], data[i+1]);
+        primitive.Hash(&overflow, 0, data[i+2], data[i+3]);
+        cascade(__builtin_ctzll(i + 1));
+      } else {
+        // workspace[0] and workspace[1] are empty.
+        primitive.Hash(&workspace[0], 0, data[i], data[i+1]);
+        primitive.Hash(&workspace[1], 0, data[i+2], data[i+3]);
+        primitive.Hash(&workspace[1], 1, workspace[0], workspace[1]);
+      }
+    }
+    if (i+2 <= length) {
+      if (i & 2) {
+        primitive.Hash(&overflow, 0, data[i], data[i+1]);
+        cascade(__builtin_ctzll(i + 1));
+      } else {
+        primitive.Hash(&workspace[0], 0, data[i], data[i+1]);
+      }
+    }
+    rollup((length & 1) ? &data[length-1] : nullptr, length/2);
+    return &workspace[depth-1];
+  }
+
+  BoostedZeroCopyGenericBinaryTreehash(const void** r, const int depth)
+    : primitive(r, depth), depth(depth) {};
+};
+
 #endif
