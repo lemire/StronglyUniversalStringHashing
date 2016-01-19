@@ -95,7 +95,7 @@ int main(int c, char ** arg) {
     for (i = 0; i < lengthEnd; ++i) {
         intstring[i] = rand() | ((uint64_t)(rand()) << 32);
     }
-    printf("#Reporting the number of bytes per cycle.\n");
+    printf("#Reporting the number of cycles per byte.\n");
     printf("#First number is input length in  8-byte words.\n");
     printf("0 ");
     for (i = 0; i < HowManyFunctions64; ++i) {
@@ -114,16 +114,13 @@ int main(int c, char ** arg) {
             const hashFunction64 thisfunc64 = hashFunctions[i].f;
             sumToFoolCompiler += thisfunc64(randbuffer, intstring, length); // we do not count the first one
             gettimeofday(&start, 0);
-            ticks lowest = ~(ticks)0;
+            const ticks bef = startRDTSC();
             for (j = 0; j < SHORTTRIALS; ++j) {
-                const ticks bef = startRDTSC();
                 sumToFoolCompiler += thisfunc64(randbuffer, intstring, length);
-                const ticks aft = stopRDTSCP();
-                const ticks diff = aft-bef;
-                lowest = (lowest < diff) ? lowest : diff;
             }
+            const ticks aft = stopRDTSCP();
             gettimeofday(&finish, 0);
-            printf(" %.2f ", (8.0 * length)/(lowest * 1.0));
+            printf(" %.3f ", ((aft-bef) * 1.0)/(8.0 * SHORTTRIALS * length));
             fflush(stdout);
         }
         printf("\n");
