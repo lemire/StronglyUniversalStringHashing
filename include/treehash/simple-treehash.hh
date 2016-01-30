@@ -75,6 +75,26 @@ static inline uint64_t split_simple_treehash_without_length(
   return result;
 }
 
+template <typename T, size_t N>
+static inline const typename T::Atom *
+split_generic_simple_treehash_without_length(const void **rvoid,
+                                             typename T::Atom level[],
+                                             const typename T::Atom lhs[],
+                                             const uint64_t *data,
+                                             const size_t length) {
+  typedef typename T::Atom Atom;
+  memcpy(level, lhs, N * T::ATOM_SIZE);
+  memcpy(reinterpret_cast<char *>(level) + N * T::ATOM_SIZE, data,
+         length * sizeof(uint64_t));
+  memset(reinterpret_cast<char *>(level) + N * T::ATOM_SIZE +
+             length * sizeof(uint64_t),
+         0, N * T::ATOM_SIZE - length * sizeof(uint64_t));
+  T prefill(rvoid, 64 - __builtin_clzll(N));
+  return generic_simple_treehash_without_length(
+      prefill, level,
+      N + (length + sizeof(Atom) / sizeof(uint64_t) - 1) / sizeof(Atom), level);
+}
+
 uint64_t simple_treehash(const void *rvoid, const uint64_t *data,
                          const size_t length) {
   const ui128 *r128 = (const ui128 *)rvoid;

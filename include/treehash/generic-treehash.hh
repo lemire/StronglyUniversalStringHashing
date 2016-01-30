@@ -7,12 +7,12 @@
 // hashing primitives. Here, ALGO's constructor must use a logarithmic
 // amount of randomness and ALGO::treehash must return a pointer to
 // its result.
-template <template<typename> class ALGO, typename T>
+template <template<typename> class ALGO, typename T, size_t N>
 uint64_t generic_treehash(const void *rvoid, const uint64_t *data,
                                  const size_t length) {
-  typedef typename T::Atom Atom;
-  static const size_t ATOM_WORD_SIZE = T::ATOM_SIZE / sizeof(uint64_t);
-  static_assert(sizeof(uint64_t) * ATOM_WORD_SIZE == T::ATOM_SIZE,
+  typedef typename Wide<T,N>::Atom Atom;
+  static const size_t ATOM_WORD_SIZE = Wide<T,N>::ATOM_SIZE / sizeof(uint64_t);
+  static_assert(sizeof(uint64_t) * ATOM_WORD_SIZE == Wide<T,N>::ATOM_SIZE,
                 "sizeof(Atom) must be a multiple of sizeof(uint64_t)");
   if (length < 2 * ATOM_WORD_SIZE) {
     return short_simple_treehash<2 * ATOM_WORD_SIZE>(rvoid, data, length);
@@ -28,16 +28,19 @@ uint64_t generic_treehash(const void *rvoid, const uint64_t *data,
   // __builtin_clzll(length-1) is ceiling(log2(length)).
   const size_t levels_count = 64 - __builtin_clzll(atom_length - 1);
 
-  // The ALGO constructor moved rvoid forward past levels_count levels
+  // The ALGO constructor moves rvoid forward past levels_count levels
   // of the randomness that T needs.
-  ALGO<T> hasher(&rvoid, levels_count);
+  ALGO<Wide<T,N> > hasher(&rvoid, levels_count);
 
   const Atom *tree_result = hasher.treehash(atom_data, atom_length);
+
   const size_t data_read = ATOM_WORD_SIZE * atom_length;
-  const ui128 *r128 = reinterpret_cast<const ui128 *>(rvoid);
-  const uint64_t result = split_simple_treehash_without_length<T>(
-      &r128, *tree_result, &data[data_read], length - data_read);
-  return bigendian(*r128, result, length);
+  typename T::Atom level[2*N];
+  const typename T::Atom *result1 =
+      split_generic_simple_treehash_without_length<T, N>(
+          &rvoid, level, *tree_result, &data[data_read], length - data_read);
+  const uint64_t result2 = T::Reduce(&rvoid, *result1);
+  return bigendian(*reinterpret_cast<const ui128 *>(rvoid), result2, length);
 }
 
 #endif  // GENERIC_TREEHASH

@@ -141,6 +141,12 @@ struct NH {
     *rvoid = reinterpret_cast<const void *>(r + depth);
   }
 
+  inline static uint64_t Reduce(const void**rvoid, const Atom& x) {
+    const ui128 * r128 = *reinterpret_cast<const ui128 **>(rvoid);
+    *rvoid = reinterpret_cast<const void *>(r128+1);
+    return deltaDietz(*r128, x[0], x[1]);
+  }
+
  private:
   const Rand *r;
 };
@@ -165,6 +171,14 @@ struct CLNH {
   explicit CLNH(const void **rvoid, const size_t depth)
       : r(reinterpret_cast<const Rand *>(*rvoid)) {
     *rvoid = reinterpret_cast<const void *>(r + depth);
+  }
+
+  inline static uint64_t Reduce(const void**rvoid, const Atom& x) {
+    const ui128 * r128 = *reinterpret_cast<const ui128 **>(rvoid);
+    *rvoid = reinterpret_cast<const void *>(r128+1);
+    uint64_t tmp[2];
+    memcpy(tmp, &x, sizeof(x));
+    return deltaDietz(*r128, tmp[0], tmp[1]);
   }
 
  private:
