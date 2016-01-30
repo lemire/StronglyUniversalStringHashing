@@ -71,7 +71,7 @@ static inline uint64_t split_simple_treehash_without_length(
   memcpy(reinterpret_cast<char *>(level) + T::ATOM_SIZE, data,
          length * sizeof(uint64_t));
   const uint64_t result =
-      simple_treehash_without_length(r128, level, length, level);
+    simple_treehash_without_length(r128, level, T::ATOM_SIZE + length, level);
   return result;
 }
 
