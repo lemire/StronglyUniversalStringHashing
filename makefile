@@ -3,8 +3,9 @@
 .phony: all clean smhasherpackage-submake
 
 FLAGS = -ggdb -O2 -mavx -mavx2 -march=native -Wall -Wextra -Wstrict-overflow -Wstrict-aliasing -funroll-loops
-DEBUGFLAGS = $(FLAGS) -ggdb3 -O0 -fno-unroll-loops
+DEBUGFLAGS = $(FLAGS) -ggdb3 -O0 -fno-unroll-loops -fsanitize=undefined
 CFLAGS = $(FLAGS) -std=gnu99
+CDEBUGFLAGS = $(DEBUGFLAGS) -std=gnu99
 CXXFLAGS = $(FLAGS) -std=c++0x
 CXXDEBUGFLAGS = $(DEBUGFLAGS) -std=c++0x
 export
@@ -19,6 +20,9 @@ uniformsanity: src/uniform_sanity.c include/*.h City.o vmac.o siphash24.o
 
 benchmark: src/benchmark.c include/*.h City.o siphash24.o vmac.o 
 	$(CC) $(CFLAGS) -o benchmark src/benchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
+
+benchmark-debug: src/benchmark.c include/*.h City.o siphash24.o vmac.o 
+	$(CC) $(CDEBUGFLAGS) -o benchmark-debug src/benchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
 benchmark128bitmultiplication: src/benchmark128bitmultiplication.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark128bitmultiplication src/benchmark128bitmultiplication.c   -Iinclude 
