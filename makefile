@@ -18,11 +18,11 @@ nhvsclnh.o: src/nhvsclnh.c
 uniformsanity: src/uniform_sanity.c include/*.h City.o vmac.o siphash24.o
 	$(CC) $(CFLAGS)  -o uniformsanity src/uniform_sanity.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
-benchmark: src/benchmark.c include/*.h City.o siphash24.o vmac.o 
-	$(CC) $(CFLAGS) -o benchmark src/benchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
+benchmark: src/benchmark.cc include/*.h include/treehash/*.hh City.o siphash24.o vmac.o 
+	$(CXX) $(CXXFLAGS) -o benchmark src/benchmark.cc City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
-benchmark-debug: src/benchmark.c include/*.h City.o siphash24.o vmac.o 
-	$(CC) $(CDEBUGFLAGS) -o benchmark-debug src/benchmark.c City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
+benchmark-debug: src/benchmark.cc include/*.h include/treehash/*.hh City.o siphash24.o vmac.o 
+	$(CXX) $(CXXDEBUGFLAGS) -o benchmark-debug src/benchmark.cc City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
 benchmark128bitmultiplication: src/benchmark128bitmultiplication.c include/clmul.h  
 	$(CC) $(CFLAGS) -o benchmark128bitmultiplication src/benchmark128bitmultiplication.c   -Iinclude 

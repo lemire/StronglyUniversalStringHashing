@@ -129,11 +129,19 @@ struct NH {
   inline void Hash(Atom *out, const int i, const Atom &in0,
                    const Atom &in1) const {
     // Use a temporary Atom in case out == &in0 or out == &in1
-    const Atom tmp = {in0[0] + r[i][0], in0[1] + r[i][1]};
-    const unsigned __int128 tmp2 =
-        *reinterpret_cast<const unsigned __int128 *>(in1) +
-        (((unsigned __int128)(tmp[0])) * ((unsigned __int128)(tmp[1])));
-    memcpy(out, &tmp2, sizeof(tmp2));
+    const Atom tmp0 = {in0[0] + r[i][0], in0[1] + r[i][1]};
+    unsigned __int128 tmp2 =
+        (((unsigned __int128)(tmp0[0])) * ((unsigned __int128)(tmp0[1])));
+    uint64_t *tmp3 = reinterpret_cast<uint64_t *>(&tmp2);
+
+    __asm__("addq %3, %1 \n\t"
+            "adcq %2, %0"
+            : "+r"(tmp3[1]), "+r"(tmp3[0])
+            : "r"(in1[1]), "r"(in1[0])
+            : "cc");
+
+    *out[0] = tmp3[0];
+    *out[1] = tmp3[1];
   }
 
   explicit NH(const void **rvoid, const size_t depth)

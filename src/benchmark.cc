@@ -71,20 +71,29 @@ static __inline__ ticks fancystopRDTSCP(void) {
 	return ((ticks) cycles_high << 32) | cycles_low;
 }*/
 
+extern "C" {
+
 #include "hashfunctions32bits.h"
 #include "hashfunctions64bits.h"
 
+}
+
 #ifdef __PCLMUL__
 
+extern "C" {
 #include "clmulhashfunctions32bits.h"
 #include "clmulhashfunctions64bits.h"
 #include "clmulpoly64bits.h"
 #include "ghash.h"
 #include "clmulhierarchical64bits.h"
-#include "bigendianuniversal.h"
+}
+
+#include "treehash/binary-treehash.hh"
+#include "treehash/generic-treehash.hh"
+
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 12
+#define HowManyFunctions64 9
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
                                                 &hashVHASH64,
@@ -93,11 +102,8 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
                                                 &hashGaloisFieldfast64halfunrolled_precomp,
                                                 &hashSipHash,
                                                 &GHASH64bit,
-                                                &hornerHash,
-                                                &unrolledHorner4,
-                                                &twiceHorner32
-                                                ,&iterateCL11
-                                                ,&treeCL9
+                                                &generic_treehash<BoostedZeroCopyGenericBinaryTreehash, CLNH, 7>,
+                                                &generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>
                                                };
 
 hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
@@ -114,11 +120,8 @@ const char* functionnames64[HowManyFunctions64] = {
     "GFMultilinear (half multiplication) ",
     "SipHash                             ",
     "GHASH                               ",
-    "hornerHash                          ",
-    "unrolled Horner                     ",
-    "twice Horner32                      "
-    ,"iterateCL 11                        "
-    ,"treeCL 9                            "
+    "generic_tree<Boosted..., CLNH, 7>   ",
+    "generic_tree<Boosted..., NH, 7>     "
 };
 
 const char* functionnames[HowManyFunctions] = {
