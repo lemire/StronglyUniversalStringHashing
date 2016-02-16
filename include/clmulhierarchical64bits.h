@@ -229,11 +229,10 @@ uint64_t CLHASH(const void* rs, const uint64_t * string,
 }
 // there always remain an incomplete word that has 1,2, 3, 4, 5, 6, 7 used bytes.
 // we append 0s to it
-uint64_t createLastWord(const size_t lengthbyte, const uint64_t lastw) {
+static inline uint64_t createLastWord(const size_t lengthbyte, const uint64_t * lastw) {
     const int significantbytes = lengthbyte % sizeof(uint64_t);
-    //assert(significantbytes!=0);
-    const uint64_t mask = (~((uint64_t)0)) >> ((sizeof(uint64_t)- significantbytes)*8);
-    const uint64_t lastword = lastw  & mask;// could be cleverer
+    uint64_t lastword = 0;
+    memcpy(&lastword,lastw,significantbytes); // could possibly be faster?
     return lastword;
 }
 
@@ -282,7 +281,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
                 acc = _mm_xor_si128(acc, h1);
             } else {
                 const uint64_t lastword = createLastWord(lengthbyte,
-                                          *(string + length));
+                                          (string + length));
                 const __m128i h1 =
                     __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
                         rs64, string + t, remain, lastword);
@@ -291,7 +290,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
         } else if (lengthbyte % sizeof(uint64_t) != 0) {// added to address issue #2 raised by Eik List
             // there are no completely filled words left, but there is one partial word.
             acc = mul128by128to128_lazymod127(polyvalue, acc);
-            const uint64_t lastword = createLastWord(lengthbyte, *(string + length));
+            const uint64_t lastword = createLastWord(lengthbyte, (string + length));
             const __m128i h1 = __clmulhalfscalarproductOnlyExtraWord( rs64, lastword);
             acc = _mm_xor_si128(acc, h1);
         }
@@ -310,7 +309,7 @@ uint64_t CLHASHbyte(const void* rs, const char * stringbyte,
             return precompReduction64(acc) ;
 #endif
         }
-        const uint64_t lastword = createLastWord(lengthbyte, *(string + length));
+        const uint64_t lastword = createLastWord(lengthbyte, (string + length));
         __m128i acc = __clmulhalfscalarproductwithtailwithoutreductionWithExtraWord(
                           rs64, string, length, lastword);
         const uint64_t keylength =  *(const uint64_t *)(rs64 + m128neededperblock + 2);

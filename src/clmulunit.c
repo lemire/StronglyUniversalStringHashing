@@ -507,6 +507,7 @@ void clhashavalanchetest() {
         }
     }
     free(array);
+    free(array1);
     free(rs);
     printf("Test passed! \n");
 }
@@ -531,9 +532,9 @@ void clhashcollisiontest()
         for (size_t j = 1; j <= sizeof(uint64_t); ++j) {
             // #Bytes / block + x, with 1 <= x < 8
             const uint64_t mlen = i * CLNH_NUM_BYTES_PER_BLOCK + j;
-            uint8_t* m = (uint8_t*)malloc(RANDOM_BYTES_NEEDED_FOR_CLHASH);
+            uint8_t* m = (uint8_t*)malloc(mlen);
 
-            for (j2 = 0; j2 < RANDOM_BYTES_NEEDED_FOR_CLHASH; ++j2) {
+            for (j2 = 0; j2 < mlen; ++j2) {
                 m[j2] = j2 & 0xFF;
             }
 
@@ -583,7 +584,7 @@ void clhashtest() {
         array[k] = 0;
     }
     for(int k = 0; k < RANDOM_BYTES_NEEDED_FOR_CLHASH ; ++k) {
-        rs[k] = 0;
+        rs[k] = (char) (1-k);
     }
 
     printf("[clhashtest] initial sanity checking \n");
@@ -610,8 +611,9 @@ void clhashtest() {
                            (const __m128i *)rs, (const uint64_t *) farray, 128);
         assert( _mm_extract_epi64(acc,0) == _mm_extract_epi64(acc2,0));
         assert( _mm_extract_epi64(acc,1) == _mm_extract_epi64(acc2,1));
+        free(farray);
     }
-/*    printf("[clhashtest] checking that flipping a bit changes hash value with CLHASH \n");
+    printf("[clhashtest] checking that flipping a bit changes hash value with CLHASH \n");
     for(int bit = 0; bit < 64; ++bit ) {
         uint64_t x = 0;
         uint64_t orig = CLHASH(rs, &x, 1);
@@ -621,7 +623,6 @@ void clhashtest() {
         x ^= ((uint64_t)1) << bit;
         uint64_t back = CLHASH(rs, &x, 1);
         assert(back == orig);
-
     }
     printf("[clhashtest] checking that flipping a bit changes hash value with CLHASHbyte \n");
     for(int bit = 0; bit < 64; ++bit ) {
@@ -636,7 +637,6 @@ void clhashtest() {
             assert(back == orig);
         }
     }
-*/
     printf("[clhashtest] checking that CLHASHbyte agrees with CLHASH\n");
     for(int k = 0; k <= 2048; ++k ) {
         uint64_t * farray = (uint64_t*)malloc(k * sizeof(uint64_t));
@@ -652,7 +652,6 @@ void clhashtest() {
     free(array);
     free(rs);
     printf("Test passed! \n");
-
 }
 
 
