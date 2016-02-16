@@ -384,6 +384,11 @@ static inline __m128i clCombineFar(const __m128i r128, const __m128i x,
     size_t max_fill_level = depth - 1;                                      \
     for (; fill[max_fill_level] > 0; --max_fill_level) {                    \
     }                                                                       \
+    for (size_t j = 0; 2 * MANY == fill[j]; ++j) {                          \
+      halve##MANY(rLevel[j + 1], tree[j], &tree[j + 1][fill[j + 1]]);       \
+      fill[j] = 0;                                                          \
+      fill[j + 1] += MANY;                                                  \
+    }                                                                       \
     for (; i < zlen; i += 2) {                                              \
       tree[0][fill[0]] = clCombineFar(rLevel[0], _mm_lddqu_si128(&z[i]),    \
                                       _mm_lddqu_si128(&z[i + 1]));          \
