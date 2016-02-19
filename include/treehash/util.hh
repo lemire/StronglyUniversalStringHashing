@@ -159,6 +159,40 @@ struct NH {
   const Rand *r;
 };
 
+// Basic mltilinear, with two multiplications and one addition:
+struct NHCL {
+  typedef __m128i Atom;
+
+ private:
+  typedef __m128i Rand;
+
+ public:
+  const static size_t ATOM_SIZE = sizeof(__m128i);
+  inline static void AtomCopy(Atom *x, const Atom &y) { *x = y; }
+  inline void Hash(Atom *out, const int i, const Atom &in0,
+                   const Atom &in1) const {
+    const Atom tmp1 = _mm_clmulepi64_si128(r[i], in0, 0);
+    const Atom tmp2 = _mm_clmulepi64_si128(r[i], in1, 3);
+    *out = _mm_xor_si128(tmp1, tmp2);
+  }
+
+  explicit NHCL(const void **rvoid, const size_t depth)
+      : r(reinterpret_cast<const Rand *>(*rvoid)) {
+    *rvoid = reinterpret_cast<const void *>(r + depth);
+  }
+
+  inline static uint64_t Reduce(const void **rvoid, const Atom &x) {
+    const ui128 *r128 = *reinterpret_cast<const ui128 **>(rvoid);
+    *rvoid = reinterpret_cast<const void *>(r128 + 1);
+    uint64_t tmp[2];
+    memcpy(tmp, &x, sizeof(x));
+    return deltaDietz(*r128, tmp[0], tmp[1]);
+  }
+
+ private:
+  const Rand *r;
+};
+
 struct CLNH {
   typedef __m128i Atom;
 
