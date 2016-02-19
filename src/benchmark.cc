@@ -93,7 +93,7 @@ extern "C" {
 
 
 #define HowManyFunctions 12
-#define HowManyFunctions64 9
+#define HowManyFunctions64 10
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
                                                 &hashVHASH64,
@@ -103,6 +103,7 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
                                                 &hashSipHash,
                                                 &GHASH64bit,
                                                 &generic_treehash<BoostedZeroCopyGenericBinaryTreehash, CLNH, 7>,
+                                                &generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHCL, 7>,
                                                 &generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>
                                                };
 
@@ -121,6 +122,7 @@ const char* functionnames64[HowManyFunctions64] = {
     "SipHash                             ",
     "GHASH                               ",
     "generic_tree<Boosted..., CLNH, 7>   ",
+    "generic_tree<Boosted..., NHCL, 7>   ",
     "generic_tree<Boosted..., NH, 7>     "
 };
 
