@@ -92,7 +92,7 @@ split_generic_simple_treehash_without_length(const void **rvoid,
   T prefill(rvoid, 64 - __builtin_clzll(N));
   return generic_simple_treehash_without_length(
       prefill, level,
-      N + (length + sizeof(Atom) / sizeof(uint64_t) - 1) / sizeof(Atom), level);
+      N + (length + sizeof(Atom) - 1) / sizeof(Atom), level);
 }
 
 uint64_t simple_treehash(const void *rvoid, const uint64_t *data,
