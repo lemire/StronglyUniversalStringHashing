@@ -306,18 +306,32 @@ struct BoostedZeroCopyGenericBinaryTreehash {
     primitive.Hash(&workspace[i + 1], i+1, workspace[i], *last);
   }
 
-  inline void rollup(const Atom * extra, size_t count) {
-    int i = __builtin_ctzll(count);
-    size_t last = i;
-    ++i;
-    count >>= i;
-    if (!extra) extra = &workspace[last];
-    for (; count > 0; ++i, count >>= 1) {
-      if (count & 1) {
-        primitive.Hash(&workspace[i], i+1, workspace[i], *extra);
-        last = i;
-        extra = &workspace[last];
+  inline size_t rollup(const Atom * extra, size_t count) {
+    if (extra) {
+      int i = __builtin_ctzll(count);
+      primitive.Hash(&workspace[i], i+1, workspace[i], *extra);
+      int last = i;
+      ++i;
+      count >>= i;
+      for (; count > 0; ++i, count >>= 1) {
+        if (count & 1) {
+          primitive.Hash(&workspace[i], i+1, workspace[i], workspace[last]);
+          last = i;
+        }
       }
+      return last;
+    } else {
+      int i = __builtin_ctzll(count);
+      int last = i;
+      ++i;
+      count >>= i;
+      for (; count > 0; ++i, count >>= 1) {
+        if (count & 1) {
+          primitive.Hash(&workspace[i], i+1, workspace[i], workspace[last]);
+          last = i;
+        }
+      }
+      return last;
     }
   }
 
@@ -329,7 +343,7 @@ struct BoostedZeroCopyGenericBinaryTreehash {
         // workspace[1] is full, but overflow and workspace[0] are empty.
         primitive.Hash(&workspace[0], 0, data[i], data[i+1]);
         primitive.Hash(&overflow, 0, data[i+2], data[i+3]);
-        cascade(__builtin_ctzll(i + 1));
+        cascade(__builtin_ctzll((i + 4)/2));
       } else {
         // workspace[0] and workspace[1] are empty.
         primitive.Hash(&workspace[0], 0, data[i], data[i+1]);
@@ -345,8 +359,8 @@ struct BoostedZeroCopyGenericBinaryTreehash {
         primitive.Hash(&workspace[0], 0, data[i], data[i+1]);
       }
     }
-    rollup((length & 1) ? &data[length-1] : nullptr, length/2);
-    return &workspace[depth-1];
+    const size_t last = rollup((length & 1) ? &data[length-1] : nullptr, length/2);
+    return &workspace[last];
   }
 
   BoostedZeroCopyGenericBinaryTreehash(const void** r, const int depth)
