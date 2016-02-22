@@ -172,8 +172,9 @@ struct NHCL {
   inline void Hash(Atom *out, const int i, const Atom &in0,
                    const Atom &in1) const {
     const Atom tmp1 = _mm_clmulepi64_si128(r[i], in0, 0);
-    const Atom tmp2 = _mm_clmulepi64_si128(r[i], in1, 3);
-    *out = _mm_xor_si128(tmp1, tmp2);
+    const Atom tmp2 = _mm_clmulepi64_si128(r[i], in0, 3);
+    const Atom tmp3 = _mm_xor_si128(tmp1, tmp2);
+    *out = _mm_xor_si128(tmp3, in1);
   }
 
   explicit NHCL(const void **rvoid, const size_t depth)
