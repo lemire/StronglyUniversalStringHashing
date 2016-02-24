@@ -14,6 +14,7 @@ using namespace std;
 
 extern "C" {
 #include "hashfunctions64bits.h"
+#include "pcg.h"
 }
 
 #include "treehash/binary-treehash.hh"
@@ -36,6 +37,7 @@ const int HowManyFunctions64 =
     sizeof(hashFunctions) / sizeof(hashFunctions[0]);
 
 void testunused() {
+  printf("[%s] %s\n", __FILE__, __func__);
   assert(HowManyFunctions64 <= 64);
   int lengthStart = 1, lengthEnd = 2048; // inclusive
   int i;
@@ -49,10 +51,10 @@ void testunused() {
     return 1;
   }
   for (i = 0; i < 150; ++i) {
-      randbuffer[i] = rand() | ((uint64_t)(rand()) << 32);
+      randbuffer[i] = pcg64_random();
   }
   for (i = 0; i < lengthEnd; ++i) {
-      intstring[i] = rand() | ((uint64_t)(rand()) << 32);
+      intstring[i] = pcg64_random();
   }
   for (length = lengthStart; length <= lengthEnd; length += 1) {
     cout << length << " ";
