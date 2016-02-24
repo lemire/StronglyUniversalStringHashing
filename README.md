@@ -37,8 +37,8 @@ Usage
 If you plan to use clmul instructions, please run the corresponding
 tests:
 
-    make clmulunit
-    ./clmulunit
+    make clmulunit hashunit
+    ./clmulunit ; ./hashunit
 
 
 Licensing
