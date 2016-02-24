@@ -142,7 +142,12 @@ uint64_t binary_treehash(const void* rvoid, const uint64_t* data,
 }
 
 // This is just linke binary_treehash, but works on generic primitives
-// like CLNH. See util.hh.
+// like CLNH. See util.hh, which has examples that show the interface
+// that T must provide. Perhaps most important are Atom and Hash. Atom
+// is the type that T operates on, and Hash reduces two Atoms to one,
+// almost-universally.
+//
+// Not threadsafe.
 template <typename T>
 struct GenericBinaryTreehash {
  private:
@@ -208,6 +213,8 @@ struct GenericBinaryTreehash {
 // iterations of the main loop of treehash. In fact, it copies the
 // entire input. ZeroCopyGenericBinaryTreehash performs the same
 // calculation without the copies.
+//
+// Not threadsafe.
 template <typename T>
 struct ZeroCopyGenericBinaryTreehash {
  private:
@@ -285,6 +292,8 @@ struct ZeroCopyGenericBinaryTreehash {
 // ZeroCopyGenericBinaryTreehash iterated over the input two Atoms at
 // once. BoostedZeroCopyGenericBinaryTreehash increases that two four
 // by reusing workspace[0] and workspace[1] as scratch space.
+//
+// Not threadsafe.
 template <typename T>
 struct BoostedZeroCopyGenericBinaryTreehash {
  private:
@@ -338,7 +347,17 @@ struct BoostedZeroCopyGenericBinaryTreehash {
  public:
   Atom* treehash(const Atom* data, const size_t length) {
     size_t i = 0;
-    for (;i+4 <= length; i += 4) {
+    for (;i+8 <= length; i += 8) {
+      // workspace[0] and workspace[1] are empty.
+      primitive.Hash(&workspace[0], 0, data[i], data[i+1]);
+      primitive.Hash(&workspace[1], 0, data[i+2], data[i+3]);
+      primitive.Hash(&workspace[1], 1, workspace[0], workspace[1]);
+      // workspace[1] is full, but overflow and workspace[0] are empty.
+      primitive.Hash(&workspace[0], 0, data[i+4], data[i+5]);
+      primitive.Hash(&overflow, 0, data[i+6], data[i+7]);
+      cascade(__builtin_ctzll((i + 8)/2));
+    }
+    if (i+4 <= length) {
       if (i & 4) {
         // workspace[1] is full, but overflow and workspace[0] are empty.
         primitive.Hash(&workspace[0], 0, data[i], data[i+1]);
@@ -350,6 +369,7 @@ struct BoostedZeroCopyGenericBinaryTreehash {
         primitive.Hash(&workspace[1], 0, data[i+2], data[i+3]);
         primitive.Hash(&workspace[1], 1, workspace[0], workspace[1]);
       }
+      i += 4;
     }
     if (i+2 <= length) {
       if (i & 2) {

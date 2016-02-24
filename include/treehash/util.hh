@@ -13,7 +13,20 @@ static inline uint64_t mulHi(uint64_t x, uint64_t y) {
   __asm__("mulq %3" : "=a,a"(lo), "=d,d"(hi) : "%0,0"(x), "r,m"(y));
   return hi;
 }
-// Universal hashing of x and y
+
+// Universal hashing of x and y. deltaDietz, like most hash functions
+// in this file, relies on the following fact, referenced in the
+// Badger paper as well as "A Construction Method for Optimally
+// Universal Hash Families and its Consequences for the Existence of
+// RBIBDs": if H is epsilon-almost delta universal, then the family
+// consisting of the functions h'(x,y) = x + h(y), where h is from H,
+// is universal.
+//
+// The proof is short: let (x0,y0) != (x1,y1). Then Pr_h(x0 + h(y0) =
+// x1 + h(y1)) = Pr_h(x0 - x1 = h(y0) - h(y1)), by arithmetic. If y0 =
+// y1, then x0 != x1 and the probability reduces to Pr_h(x0 = x1) =
+// 0. Otherwise, by the delta-universality of H, the probability of
+// h(y0) - h(y1) being ANY constant, INCLUDING x0 - x1, is low.
 static inline uint64_t deltaDietz(const ui128 h, const uint64_t x,
                                    const uint64_t y) {
   return x + y * h[1] + mulHi(y, h[0]);
