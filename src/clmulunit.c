@@ -767,25 +767,19 @@ void clhashsanity() {
     for(int k = 0; k < N; ++k) {
         data[k] = k ;
     }
-    //printf(" %llu %llu %llu  \n ", CLHASH(keys, data,1),CLHASH(keys, data,2),CLHASH(keys, data,3));
 
     uint64_t r11 = CLHASH(keys, data,2);
     uint64_t r11b = CLHASHbyte(keys, (const char *)data,2*sizeof(uint64_t));
-    //printf("[clhashsanity] r11 = %llu r11b = %llu \n ", r11, r11b);
 
     assert(r11==r11b);
     uint64_t r1 = CLHASH(keys, data,3);
 
-    //printf("[clhashsanity] length 3 word %llu  \n ", r1);
     assert(r1 == 1446687103829102880ULL);
     uint64_t r2 = CLHASHbyte(keys, (const char*)data,3*8);
-    //printf("[clhashsanity] length 3 word %llu  \n ", r2);
     assert(r2 == 1446687103829102880ULL);
     uint64_t r3 = CLHASH(keys, data,N);
-    //printf("[clhashsanity] length N word %llu  \n ", r3);
     assert(r3 == 2476377298766458265ULL);
     uint64_t r4 = CLHASHbyte(keys, (const char*)data,N*8);
-    //printf("[clhashsanity] length N word %llu  \n ", r4);
     assert(r4 == 2476377298766458265ULL);
     free(keys);
     free(data);
