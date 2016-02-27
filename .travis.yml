@@ -21,4 +21,4 @@ addons:
 before_script:
   - export CXX=$PLUS CC=$MINUS
 
-script: make && hashunit && ./uniformsanity && ./clmulunit
+script: make && ./hashunit && ./uniformsanity && ./clmulunit
