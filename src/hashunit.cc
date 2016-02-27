@@ -30,10 +30,10 @@ struct NamedFunc {
 #define NAMED(f) NamedFunc(f, #f)
 
 NamedFunc hashFunctions[] = {
-    NAMED((&CLHASH)),
-    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, CLNH, 1>)),
-    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHCL, 7>)),
-    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>))
+  NAMED((&CLHASH)),
+  NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, CLNH, 7>)),
+  NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHCL, 7>)),
+  NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>))
 };
 
 const int HowManyFunctions64 =
@@ -44,7 +44,7 @@ const int HowManyFunctions64 =
 int testbitflipping() {
     printf("[%s] %s\n", __FILE__, __func__);
     int i = 0;
-    int lengthStart = 1, lengthEnd = 2048; // inclusive
+    int lengthStart = 1, lengthEnd = 256; // inclusive
     uint64_t randbuffer[150] __attribute__ ((aligned (16)));// 150 should be plenty
 
     uint64_t * intstring;
@@ -59,6 +59,7 @@ int testbitflipping() {
     }
     int re = 0;
     for(int trial = 0; trial < 50 ; ++ trial ) {
+      cout << trial << " ";
         for (i = 0; i < 150; ++i) {
             randbuffer[i] = pcg64_random();
         }
@@ -104,7 +105,7 @@ endoflength:
 int testunused() {
     printf("[%s] %s\n", __FILE__, __func__);
     assert(HowManyFunctions64 <= 64);
-    int lengthStart = 1, lengthEnd = 2048; // inclusive
+    int lengthStart = 1, lengthEnd = 256; // inclusive
     int i;
     int length;
     uint64_t randbuffer[150] __attribute__ ((aligned (16)));// 150 should be plenty
@@ -121,9 +122,12 @@ int testunused() {
     for (i = 0; i < lengthEnd; ++i) {
         intstring[i] = pcg64_random();
     }
+    int result = 0;
     for (i = 0; i < HowManyFunctions64; ++i) {
         const hashFunction64 thisfunc64 = hashFunctions[i].f;
+        cout << "testing " << hashFunctions[i].name << endl;
         for (length = lengthStart; length <= lengthEnd; length += 1) {
+          cout << length << " ";
             for (int place = 0; place < length; ++place) {
                 const auto first_run = thisfunc64(randbuffer, intstring, length);
                 const auto old_val = intstring[place];
@@ -136,11 +140,11 @@ int testunused() {
                     intstring[place] = new_val2;
                     const auto second_run2 = thisfunc64(randbuffer, intstring, length);
                     if (second_run2 == second_run) {
-                        cout << "testing " << hashFunctions[i].name << endl;
                         cerr << " You may have a bug. \n" <<endl;
                         cerr << second_run << " " << second_run2 << endl
                              << new_val << " " << new_val2 << endl;
                         cerr << endl;
+                        result = 1;
                         goto endoflength;
                     }
                 }
@@ -150,7 +154,7 @@ endoflength:
         {}
     }
     free(intstring);
-    return 1;
+    return result;
 }
 
 int main(int c, char ** arg) {
