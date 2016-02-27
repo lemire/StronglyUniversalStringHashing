@@ -14,6 +14,44 @@ static inline uint64_t mulHi(uint64_t x, uint64_t y) {
   return hi;
 }
 
+static inline void mulBoth(uint64_t * x, uint64_t * y) {
+  unsigned __int128 X = *x;
+  unsigned __int128 Y = *y;
+  X = X * Y;
+  *x = X;
+  *y = X >> 64;
+}
+
+static inline void addCarry(uint64_t * a, uint64_t * b, 
+                            uint64_t c, uint64_t d,
+                            uint64_t e, uint64_t f) {
+
+  *a = c + e;
+  __asm__ ("adcq %1, %2" : "+r"(d): "r"(f));
+  *b = d;
+  
+  // __asm__ ("addq    %r8, %rdx \n\t"
+  //          "adcq    %r9, %rcx \n\t"
+  //          "movq    %rdx, (%rdi) \n\t"
+  //          "movq    %rcx, (%rsi)");
+           // : "=r"(*a), "=r"(*b)
+           // : "r"(c), "r"(d), "r"(e), "r"(f));
+}
+
+// void addCarry(uint64_t * a, uint64_t * b, uint64_t c, uint64_t d) {
+//   __asm__ ("addq    (%rdi), %rdx \n"
+//         "adcq    (%rsi), %rcx \n"
+//         "movq    %rdx, (%rdi) \n"
+//            "movq    %rcx, (%rsi)");
+  
+// }
+
+// static inline void mulBoth(uint64_t * x, uint64_t * y) {
+//   uint64_t lo, hi;
+//   __asm__("mulq %3" : "=a,a"(lo), "=d,d"(hi) : "%0,0"(x), "r,m"(y));
+//   return hi;
+// }
+
 // Universal hashing of x and y. deltaDietz, like most hash functions
 // in this file, relies on the following fact, referenced in the
 // Badger paper as well as "A Construction Method for Optimally
@@ -142,19 +180,9 @@ struct NH {
   inline void Hash(Atom *out, const int i, const Atom &in0,
                    const Atom &in1) const {
     // Use a temporary Atom in case out == &in0 or out == &in1
-    const Atom tmp0 = {in0[0] + r[i][0], in0[1] + r[i][1]};
-    unsigned __int128 tmp2 =
-        (((unsigned __int128)(tmp0[0])) * ((unsigned __int128)(tmp0[1])));
-    uint64_t *tmp3 = reinterpret_cast<uint64_t *>(&tmp2);
-
-    __asm__("addq %3, %1 \n\t"
-            "adcq %2, %0"
-            : "+r"(tmp3[1]), "+r"(tmp3[0])
-            : "r"(in1[1]), "r"(in1[0])
-            : "cc");
-
-    *out[0] = tmp3[0];
-    *out[1] = tmp3[1];
+    Atom tmp0 = {in0[0] + r[i][0], in0[1] + r[i][1]};
+    mulBoth(&tmp0[0], &tmp0[1]);
+    addCarry(&out[0][0], &out[0][1], tmp0[0], tmp0[1], in1[0], in1[1]);
   }
 
   explicit NH(const void **rvoid, const size_t depth)
@@ -185,8 +213,8 @@ struct NHCL {
   inline void Hash(Atom *out, const int i, const Atom &in0,
                    const Atom &in1) const {
     const Atom rk = r[i];
-    const Atom tmp1 = _mm_clmulepi64_si128(rk, in0, 0);
-    const Atom tmp2 = _mm_clmulepi64_si128(rk, in0, 3);
+    const Atom tmp1 = _mm_clmulepi64_si128(rk, in0, 0x00);
+    const Atom tmp2 = _mm_clmulepi64_si128(rk, in0, 0x11);
     const Atom tmp3 = _mm_xor_si128(tmp1, tmp2);
     *out = _mm_xor_si128(tmp3, in1);
   }

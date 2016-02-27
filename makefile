@@ -3,7 +3,7 @@
 .phony: all clean smhasherpackage-submake
 
 FLAGS = -ggdb -O2 -mavx -mavx2 -march=native -Wall -Wextra -Wstrict-overflow -Wstrict-aliasing -funroll-loops
-DEBUGFLAGS = $(FLAGS) -ggdb3 -O0 -fno-unroll-loops #-fsanitize=undefined
+DEBUGFLAGS = $(FLAGS) -ggdb3 -O0 -fno-unroll-loops -fsanitize=undefined
 CFLAGS = $(FLAGS) -std=gnu99
 CDEBUGFLAGS = $(DEBUGFLAGS) -std=gnu99
 CXXFLAGS = $(FLAGS) -std=c++0x
