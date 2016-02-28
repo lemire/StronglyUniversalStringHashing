@@ -10,6 +10,9 @@
 template <template<typename> class ALGO, typename T, size_t N>
 uint64_t generic_treehash(const void *rvoid, const uint64_t *data,
                                  const size_t length) {
+  if (T::alignmentRequired && (0 != (reinterpret_cast<size_t>(data) & (T::ATOM_SIZE - 1)))) {
+    return generic_treehash<ALGO, typename T::Unaligned, N>(rvoid, data, length);
+  }
   typedef typename Wide<T,N>::Atom Atom;
   static const size_t ATOM_WORD_SIZE = Wide<T,N>::ATOM_SIZE / sizeof(uint64_t);
   static_assert(sizeof(uint64_t) * ATOM_WORD_SIZE == Wide<T,N>::ATOM_SIZE,

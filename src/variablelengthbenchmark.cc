@@ -55,7 +55,8 @@ NamedFunc hashFunctions[] = {
     // Tree hashing:
     NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, CLNH, 7>)),
     NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHCL, 7>)),
-    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>))};
+    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>))
+};
 
 const int HowManyFunctions64 =
     sizeof(hashFunctions) / sizeof(hashFunctions[0]);
@@ -63,6 +64,10 @@ const int HowManyFunctions64 =
 int main(int c, char ** arg) {
     (void) (c);
     (void) (arg);
+    bool aligned = true;
+    if (NULL != strstr(arg[0], "unaligned")) {
+      aligned = false;
+    }
     uint64_t which_algos = ~0;
     assert(HowManyFunctions64 <= 64);
     if (c > 1) {
@@ -84,9 +89,14 @@ int main(int c, char ** arg) {
     uint32_t sumToFoolCompiler = 0;
     uint64_t * intstring;
     // We need 32 bytes of alignment for working with __m256i's
+    ++lengthEnd;
     if (posix_memalign((void **)(&intstring), 32, sizeof(uint64_t)*lengthEnd)) {
       cerr << "Failed to allocate " << lengthEnd << " words." << endl;
       return 1;
+    }
+    --lengthEnd;
+    if (!aligned) {
+      intstring = reinterpret_cast<decltype(intstring)>(1 + reinterpret_cast<char *>(intstring));
     }
     for (i = 0; i < 150; ++i) {
         randbuffer[i] = rand() | ((uint64_t)(rand()) << 32);
@@ -124,8 +134,10 @@ int main(int c, char ** arg) {
         }
         printf("\n");
     }
+    if (!aligned) {
+      intstring = reinterpret_cast<decltype(intstring)>(-1 + reinterpret_cast<char *>(intstring));
+    }
     free(intstring);
     printf("# ignore this #%d\n", sumToFoolCompiler);
 
 }
-

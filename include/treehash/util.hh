@@ -166,6 +166,8 @@ struct MultiplyShift {
 };
 
 struct NH {
+  static const bool alignmentRequired = false;
+  typedef NH Unaligned;
   typedef ui128 Atom;
 
  private:
@@ -200,8 +202,48 @@ struct NH {
   const Rand *r;
 };
 
+struct NHCLunaligned {
+  static const bool alignmentRequired = false;
+  typedef NHCLunaligned Unaligned;
+  typedef __m128i Atom;
+
+ private:
+  typedef __m128i Rand;
+
+ public:
+  const static size_t ATOM_SIZE = sizeof(__m128i);
+  inline static void AtomCopy(Atom *x, const Atom &y) { *x = y; }
+  inline void Hash(Atom *out, const int i, const Atom &in0,
+                   const Atom &in1) const {
+    const Atom rk = r[i];
+    const Atom tmp0 = _mm_lddqu_si128(&in0);
+    const Atom tmp1 = _mm_clmulepi64_si128(rk, tmp0, 0x00);
+    const Atom tmp2 = _mm_clmulepi64_si128(rk, tmp0, 0x11);
+    const Atom tmp3 = _mm_xor_si128(tmp1, tmp2);
+    *out = _mm_xor_si128(tmp3, _mm_lddqu_si128(&in1));
+  }
+
+  explicit NHCLunaligned(const void **rvoid, const size_t depth)
+      : r(reinterpret_cast<const Rand *>(*rvoid)) {
+    *rvoid = reinterpret_cast<const void *>(r + depth);
+  }
+
+  inline static uint64_t Reduce(const void **rvoid, const Atom &x) {
+    const ui128 *r128 = *reinterpret_cast<const ui128 **>(rvoid);
+    *rvoid = reinterpret_cast<const void *>(r128 + 1);
+    uint64_t tmp[2];
+    memcpy(tmp, &x, sizeof(x));
+    return deltaDietz(*r128, tmp[0], tmp[1]);
+  }
+
+ private:
+  const Rand *r;
+};
+
 // Basic mltilinear, with two multiplications and one addition:
 struct NHCL {
+  static const bool alignmentRequired = true;
+  typedef NHCLunaligned Unaligned;
   typedef __m128i Atom;
 
  private:
@@ -236,7 +278,46 @@ struct NHCL {
   const Rand *r;
 };
 
+struct CLNHunaligned {
+  static const bool alignmentRequired = false;
+  typedef CLNHunaligned Unaligned;
+  typedef __m128i Atom;
+
+ private:
+  typedef __m128i Rand;
+
+ public:
+  const static size_t ATOM_SIZE = sizeof(__m128i);
+  inline static void AtomCopy(Atom *x, const Atom &y) { *x = _mm_lddqu_si128(&y); }
+  inline void Hash(Atom *out, const int i, const Atom &in0,
+                   const Atom &in1) const {
+    Atom tmp = _mm_xor_si128(_mm_lddqu_si128(&in0), r[i]);
+    tmp = _mm_clmulepi64_si128(tmp, tmp, 1);
+    tmp = _mm_xor_si128(tmp, _mm_lddqu_si128(&in1));
+    *out = tmp;
+  }
+
+  explicit CLNHunaligned(const void **rvoid, const size_t depth)
+      : r(reinterpret_cast<const Rand *>(*rvoid)) {
+    *rvoid = reinterpret_cast<const void *>(r + depth);
+  }
+
+  inline static uint64_t Reduce(const void**rvoid, const Atom& x) {
+    const ui128 * r128 = *reinterpret_cast<const ui128 **>(rvoid);
+    *rvoid = reinterpret_cast<const void *>(r128+1);
+    uint64_t tmp[2];
+    memcpy(tmp, &x, sizeof(x));
+    return deltaDietz(*r128, tmp[0], tmp[1]);
+  }
+
+ private:
+  const Rand *r;
+};
+
+
 struct CLNH {
+  static const bool alignmentRequired = true;
+  typedef CLNHunaligned Unaligned;
   typedef __m128i Atom;
 
  private:

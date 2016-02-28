@@ -48,6 +48,9 @@ variablelengthbenchmark: src/variablelengthbenchmark.cc include/*.h include/tree
 variablelengthbenchmark-debug: src/variablelengthbenchmark.cc include/*.h include/treehash/*.hh City.o siphash24.o vmac.o 
 	$(CXX) $(CXXDEBUGFLAGS) -o $@ src/variablelengthbenchmark.cc City.o siphash24.o vmac.o rijndael-alg-fst.o  -Iinclude -ICity -ISipHash -IVHASH 
 
+variablelengthbenchmark-unaligned: variablelengthbenchmark
+	ln -sf variablelengthbenchmark variablelengthbenchmark-unaligned
+
 boosted-treehash-params.exe: src/boosted-treehash-params.cc include/*.h include/treehash/*.hh
 	$(CXX) $(CXXFLAGS) -Iinclude -o $@ $<
 
