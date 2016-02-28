@@ -35,14 +35,12 @@ To test correctness of hash functions using PCLMULQDQ:
 Licensing
 ==========
 
-In a subdirectory, we have included a modified version of smhasher
-which is covered under the MIT license.
+This project is licenced as described in the LICENSE file, with the
+following exceptions for code written by other authors:
 
-In another subdirectory, we have included an implementation of
-VHASH. It has been put in the public domain by its authors.
+  * smhasher and CityHash are MIT licensed.
 
-In yet another directory, we have included a C port of CityHash,
-published under a MIT license by Google.
+  * VHASH and siphash are public domain.
 
 Related projects
 =================
