@@ -1,6 +1,6 @@
 .SUFFIXES:
 
-.phony: all clean smhasherpackage-submake
+.phony: all clean analysis-target
 
 FLAGS = -ggdb -O2 -mavx -mavx2 -march=native -Wall -Wextra -Wstrict-overflow \
         -Wstrict-aliasing -funroll-loops
@@ -16,8 +16,8 @@ all: clmulunit hashunit classicvariablelengthbenchmark variablelengthbenchmark \
      uniformsanity smhasher benchmark128bitmultiplication \
      benchmark128bitpolyhashing boosted-treehash-params.exe
 
-nhvsclnh.o: src/nhvsclnh.c
-	$(CC) $(CFLAGS)  -c  src/nhvsclnh.c
+analysis-target:
+	$(MAKE) -C analysis
 
 uniformsanity: src/uniform_sanity.c include/*.h City.o vmac.o siphash24.o
 	$(CC) $(CFLAGS) -o uniformsanity src/uniform_sanity.c City.o \
@@ -114,6 +114,7 @@ smhasher: $(wildcard smhasherpackage/*.h) $(wildcard smhasherpackage/*.c) \
 
 clean:
 	$(MAKE) -C smhasherpackage clean
+	$(MAKE) -C analysis clean
 	rm -f multilinearhashing classicvariablelengthbenchmark \
             variablelengthbenchmark benchmark benchmark64bitreductions \
             hashunit clmulunit uniformsanity smhasher variablelenthbenchmark \
