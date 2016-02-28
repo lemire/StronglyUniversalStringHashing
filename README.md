@@ -57,8 +57,6 @@ by Google.
 Related projects
 =================
 
-For a C++ project with similar goals, see:
+For a project with similar goals, see:
 
 https://github.com/lemire/fasthashing
-
-
