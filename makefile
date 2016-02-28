@@ -1,6 +1,6 @@
 .SUFFIXES:
 
-.phony: all clean analysis-target
+.phony: all clean analysis-target test-target
 
 FLAGS = -ggdb -O2 -mavx -mavx2 -march=native -Wall -Wextra -Wstrict-overflow \
         -Wstrict-aliasing -funroll-loops
@@ -11,13 +11,16 @@ CXXFLAGS = $(FLAGS) -std=c++0x
 CXXDEBUGFLAGS = $(DEBUGFLAGS) -std=c++0x
 export
 
-all: clmulunit hashunit classicvariablelengthbenchmark variablelengthbenchmark \
+all: test-target classicvariablelengthbenchmark variablelengthbenchmark \
      variablelengthbenchmark-debug benchmark benchmark64bitreductions \
      uniformsanity smhasher benchmark128bitmultiplication \
      benchmark128bitpolyhashing boosted-treehash-params.exe
 
 analysis-target:
 	$(MAKE) -C analysis
+
+test-target: City.o siphash24.o vmac.o rijndael-alg-fst.o
+	$(MAKE) -C test
 
 uniformsanity: src/uniform_sanity.c include/*.h City.o vmac.o siphash24.o
 	$(CC) $(CFLAGS) -o uniformsanity src/uniform_sanity.c City.o \
@@ -54,17 +57,6 @@ classicvariablelengthbenchmark: src/classicvariablelengthbenchmark.c \
             src/classicvariablelengthbenchmark.c City.o siphash24.o vmac.o \
             rijndael-alg-fst.o -Iinclude -ICity -ISipHash -IVHASH
 
-hashunit: src/hashunit.cc include/*.h include/treehash/*.hh City.o siphash24.o \
-          vmac.o
-	$(CXX) $(CXXFLAGS) -o hashunit src/hashunit.cc City.o siphash24.o \
-            vmac.o rijndael-alg-fst.o -Iinclude -ICity -ISipHash -IVHASH
-
-hashunit-debug: src/hashunit.cc include/*.h include/treehash/*.hh City.o \
-                siphash24.o vmac.o
-	$(CXX) $(CXXDEBUGFLAGS) -o hashunit-debug src/hashunit.cc City.o \
-            siphash24.o vmac.o rijndael-alg-fst.o -Iinclude -ICity -ISipHash \
-            -IVHASH
-
 variablelengthbenchmark: src/variablelengthbenchmark.cc include/*.h \
                          include/treehash/*.hh City.o siphash24.o vmac.o
 	$(CXX) $(CXXFLAGS) -o variablelengthbenchmark \
@@ -83,9 +75,6 @@ variablelengthbenchmark-unaligned: variablelengthbenchmark
 boosted-treehash-params.exe: src/boosted-treehash-params.cc include/*.h \
                              include/treehash/*.hh
 	$(CXX) $(CXXFLAGS) -Iinclude -o $@ $<
-
-clmulunit: src/clmulunit.c include/*.h
-	$(CC) $(CFLAGS) -o clmulunit src/clmulunit.c -Iinclude
 
 City.o: City/City.c City/City.h
 	$(CC) $(CFLAGS) -c City/City.c -ICity
@@ -115,7 +104,7 @@ smhasher: $(wildcard smhasherpackage/*.h) $(wildcard smhasherpackage/*.c) \
 clean:
 	$(MAKE) -C smhasherpackage clean
 	$(MAKE) -C analysis clean
+	$(MAKE) -C test clean
 	rm -f multilinearhashing classicvariablelengthbenchmark \
             variablelengthbenchmark benchmark benchmark64bitreductions \
-            hashunit clmulunit uniformsanity smhasher variablelenthbenchmark \
-             *.o
+            uniformsanity smhasher variablelenthbenchmark *.o

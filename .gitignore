@@ -1,3 +1,4 @@
+*.exe
 clmulunit
 variablelengthbenchmark
 variablelengthbenchmark-debug
