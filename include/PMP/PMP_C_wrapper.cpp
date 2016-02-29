@@ -13,7 +13,7 @@ extern "C" {
 
 /* Hash the string made of length characters, returns a 64-bit value.*/
 uint64_t pmp64_hash( const unsigned char* chars, size_t length) {
-  return pmp64.hash(chars,length);
+    return pmp64.hash(chars,length);
 }
 
 

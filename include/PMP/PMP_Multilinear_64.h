@@ -58,10 +58,10 @@
 FORCE_INLINE
 void MultiplyWordLoHi(uint64_t& rlo, uint64_t& rhi, uint64_t a, uint64_t b)
 {
-__asm__(
-"    mulq  %[b]\n"
-:"=d"(rhi),"=a"(rlo)
-:"1"(a),[b]"rm"(b));
+    __asm__(
+        "    mulq  %[b]\n"
+        :"=d"(rhi),"=a"(rlo)
+        :"1"(a),[b]"rm"(b));
 }
 
 #endif // _MSC_VER
@@ -94,11 +94,14 @@ __asm__(
 	  ctr1.QuadPart = 0; \
 	  ctr2.QuadPart = 0;\
 	  ULARGE_INTEGER__XX ctr2_0, ctr2_1, ctr2_2, ctr2_3; \
+	  (void) ctr2_0; \
+	  (void) ctr2_1; \
+	  (void) ctr2_2; \
+	  (void) ctr2_3; \
 	  ctr2_0.QuadPart = 0; \
-	  ctr2_1.QuadPart = 0;\
+	  ctr2_1.QuadPart = 0; \
 	  ctr2_2.QuadPart = 0; \
-	  ctr2_3.QuadPart = 0;\
-	  ULARGE_INTEGER__XX mulLow, mulHigh;
+	  ctr2_3.QuadPart = 0;
 #else
 #define PMPML_CHUNK_LOOP_INTRO_L0_64 \
 	  ULARGE_INTEGER__XX ctr0, ctr1, ctr2; \
@@ -464,145 +467,145 @@ __asm__( "mulq %4\n" \
 
 class PMP_Multilinear_Hasher_64
 {
-  private:
-  const random_data_for_PMPML_64* curr_rd;
+private:
+    const random_data_for_PMPML_64* curr_rd;
 
-  // calls to be done from LEVEL=0
-  FORCE_INLINE void hash_of_string_chunk_compact( const uint64_t* coeff, ULARGE_INTEGER__XX constTerm, const uint64_t* x, ULARGELARGE_INTEGER__XX& ret ) const
-  {
-	PMPML_CHUNK_LOOP_INTRO_L0_64
+    // calls to be done from LEVEL=0
+    FORCE_INLINE void hash_of_string_chunk_compact( const uint64_t* coeff, ULARGE_INTEGER__XX constTerm, const uint64_t* x, ULARGELARGE_INTEGER__XX& ret ) const
+    {
+        PMPML_CHUNK_LOOP_INTRO_L0_64
 
 #ifdef PMPML_USE_SSE_64
 
-	__m256i sse_ctr0_0, sse_ctr0_1, sse_ctr1, sse_ctr2, sse_ctr3_0, sse_ctr3_1, a, a_shifted, a_low, data, data_low, product, temp, mask_low;
-	sse_ctr0_0 = _mm256_setzero_si256 (); // Sets the 128-bit value to zero.
-	sse_ctr0_1 = _mm256_setzero_si256 (); // Sets the 128-bit value to zero.
-	sse_ctr1 = _mm256_setzero_si256 ();
-	sse_ctr2 = _mm256_setzero_si256 ();
-	sse_ctr3_0 = _mm256_setzero_si256 ();
-	sse_ctr3_1 = _mm256_setzero_si256 ();
-	mask_low = _mm256_set_epi32 ( 0, -1, 0 , -1, 0, -1, 0 , -1 );
+        __m256i sse_ctr0_0, sse_ctr0_1, sse_ctr1, sse_ctr2, sse_ctr3_0, sse_ctr3_1, a, a_shifted, a_low, data, data_low, product, temp, mask_low;
+        sse_ctr0_0 = _mm256_setzero_si256 (); // Sets the 128-bit value to zero.
+        sse_ctr0_1 = _mm256_setzero_si256 (); // Sets the 128-bit value to zero.
+        sse_ctr1 = _mm256_setzero_si256 ();
+        sse_ctr2 = _mm256_setzero_si256 ();
+        sse_ctr3_0 = _mm256_setzero_si256 ();
+        sse_ctr3_1 = _mm256_setzero_si256 ();
+        mask_low = _mm256_set_epi32 ( 0, -1, 0 , -1, 0, -1, 0 , -1 );
 
 #if ( PMPML_CHUNK_SIZE_64 >= 16 )
-	for ( uint64_t i=0; i<(PMPML_CHUNK_SIZE_64); i+=16 )
+        for ( uint64_t i=0; i<(PMPML_CHUNK_SIZE_64); i+=16 )
 #elif  ( PMPML_CHUNK_SIZE_64 >= 8 )
-	for ( uint64_t i=0; i<(PMPML_CHUNK_SIZE_64); i+=8 )
+        for ( uint64_t i=0; i<(PMPML_CHUNK_SIZE_64); i+=8 )
 #else
 #error PMPML_USE_SSE_64 is incompatible with PMPML_CHUNK_SIZE_64 < 8 in a current implementation
 #endif
-	{
+        {
 #if ( PMPML_CHUNK_SIZE_64 >= 8 )
-		a = _mm256_load_si256 ((__m256i *)(coeff+i)); // Loads 128-bit value. Address p must be 16-byte aligned.
-		data = _mm256_loadu_si256 ((__m256i *)(x+i)); // Loads 128-bit value. Address p does not need be 16-byte aligned.
+            a = _mm256_load_si256 ((__m256i *)(coeff+i)); // Loads 128-bit value. Address p must be 16-byte aligned.
+            data = _mm256_loadu_si256 ((__m256i *)(x+i)); // Loads 128-bit value. Address p does not need be 16-byte aligned.
 
-		// lower 32 bits
-		a_low = _mm256_and_si256 ( mask_low, a );
-		data_low = _mm256_and_si256 ( mask_low, data );
-		product = _mm256_mul_epu32 ( data_low, a_low); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
-		sse_ctr0_0 = _mm256_add_epi64 ( sse_ctr0_0, product );//sse_ctr0 = _mm256_add_epi64 ( sse_ctr0, temp );
-		temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
-		sse_ctr0_1 = _mm256_add_epi64 ( sse_ctr0_1, temp );
-		//temp = _mm256_and_si256 ( mask_low, product );
+            // lower 32 bits
+            a_low = _mm256_and_si256 ( mask_low, a );
+            data_low = _mm256_and_si256 ( mask_low, data );
+            product = _mm256_mul_epu32 ( data_low, a_low); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
+            sse_ctr0_0 = _mm256_add_epi64 ( sse_ctr0_0, product );//sse_ctr0 = _mm256_add_epi64 ( sse_ctr0, temp );
+            temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
+            sse_ctr0_1 = _mm256_add_epi64 ( sse_ctr0_1, temp );
+            //temp = _mm256_and_si256 ( mask_low, product );
 
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 4 + i )
-		// first cross
-		a_shifted = _mm256_srli_epi64( a, 32 );
-		product = _mm256_mul_epu32 ( data_low, a_shifted ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
-		sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, product );//sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, temp );
-		temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
-		sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
-		//temp = _mm256_and_si256 ( mask_low, product );
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 4 + i )
+            // first cross
+            a_shifted = _mm256_srli_epi64( a, 32 );
+            product = _mm256_mul_epu32 ( data_low, a_shifted ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
+            sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, product );//sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, temp );
+            temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
+            sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
+            //temp = _mm256_and_si256 ( mask_low, product );
 
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 5 + i )
-		// second cross
-		data = _mm256_srli_epi64( data, 32 );
-		product = _mm256_mul_epu32 ( data, a_low ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
-		sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, product );//sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, temp );
-		temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
-		sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
-		//temp = _mm256_and_si256 ( mask_low, product );
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 5 + i )
+            // second cross
+            data = _mm256_srli_epi64( data, 32 );
+            product = _mm256_mul_epu32 ( data, a_low ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
+            sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, product );//sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, temp );
+            temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
+            sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
+            //temp = _mm256_and_si256 ( mask_low, product );
 
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 6 + i )
-		// upper 32 bits
-		product = _mm256_mul_epu32 ( data, a_shifted ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
-		sse_ctr3_0 = _mm256_add_epi64 ( sse_ctr3_0, product );//sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
-		temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
-		sse_ctr3_1 = _mm256_add_epi64 ( sse_ctr3_1, temp );
-		//temp = _mm256_and_si256 ( mask_low, product );
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 7 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 6 + i )
+            // upper 32 bits
+            product = _mm256_mul_epu32 ( data, a_shifted ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
+            sse_ctr3_0 = _mm256_add_epi64 ( sse_ctr3_0, product );//sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
+            temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
+            sse_ctr3_1 = _mm256_add_epi64 ( sse_ctr3_1, temp );
+            //temp = _mm256_and_si256 ( mask_low, product );
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 7 + i )
 #endif
 
 #if ( PMPML_CHUNK_SIZE_64 >= 16 )
-		a = _mm256_load_si256 ((__m256i *)(coeff+i+8)); // Loads 128-bit value. Address p must be 16-byte aligned.
-		data = _mm256_loadu_si256 ((__m256i *)(x+i+8)); // Loads 128-bit value. Address p does not need be 16-byte aligned.
+            a = _mm256_load_si256 ((__m256i *)(coeff+i+8)); // Loads 128-bit value. Address p must be 16-byte aligned.
+            data = _mm256_loadu_si256 ((__m256i *)(x+i+8)); // Loads 128-bit value. Address p does not need be 16-byte aligned.
 
-		// lower 32 bits
-		a_low = _mm256_and_si256 ( mask_low, a );
-		data_low = _mm256_and_si256 ( mask_low, data );
-		product = _mm256_mul_epu32 ( data_low, a_low); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
-		sse_ctr0_0 = _mm256_add_epi64 ( sse_ctr0_0, product );//sse_ctr0 = _mm256_add_epi64 ( sse_ctr0, temp );
-		temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
-		sse_ctr0_1 = _mm256_add_epi64 ( sse_ctr0_1, temp );
-		//temp = _mm256_and_si256 ( mask_low, product );
+            // lower 32 bits
+            a_low = _mm256_and_si256 ( mask_low, a );
+            data_low = _mm256_and_si256 ( mask_low, data );
+            product = _mm256_mul_epu32 ( data_low, a_low); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
+            sse_ctr0_0 = _mm256_add_epi64 ( sse_ctr0_0, product );//sse_ctr0 = _mm256_add_epi64 ( sse_ctr0, temp );
+            temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
+            sse_ctr0_1 = _mm256_add_epi64 ( sse_ctr0_1, temp );
+            //temp = _mm256_and_si256 ( mask_low, product );
 
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 12 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 12 + i )
 
-		// first cross
-		a_shifted = _mm256_srli_epi64( a, 32 );
-		product = _mm256_mul_epu32 ( data_low, a_shifted ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
-		sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, product );//sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, temp );
-		temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
-		sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
-		//temp = _mm256_and_si256 ( mask_low, product );
+            // first cross
+            a_shifted = _mm256_srli_epi64( a, 32 );
+            product = _mm256_mul_epu32 ( data_low, a_shifted ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
+            sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, product );//sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, temp );
+            temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
+            sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
+            //temp = _mm256_and_si256 ( mask_low, product );
 
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 13 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 13 + i )
 
-		// second cross
-		data = _mm256_srli_epi64( data, 32 );
-		product = _mm256_mul_epu32 ( data, a_low ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
-		sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, product );//sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, temp );
-		temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
-		sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
-		//temp = _mm256_and_si256 ( mask_low, product );
+            // second cross
+            data = _mm256_srli_epi64( data, 32 );
+            product = _mm256_mul_epu32 ( data, a_low ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
+            sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, product );//sse_ctr1 = _mm256_add_epi64 ( sse_ctr1, temp );
+            temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
+            sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
+            //temp = _mm256_and_si256 ( mask_low, product );
 
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 14 + i )
-		// upper 32 bits
-		product = _mm256_mul_epu32 ( data, a_shifted ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
-		sse_ctr3_0 = _mm256_add_epi64 ( sse_ctr3_0, product );//sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
-		temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
-		sse_ctr3_1 = _mm256_add_epi64 ( sse_ctr3_1, temp );
-		//temp = _mm256_and_si256 ( mask_low, product );
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 15 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 14 + i )
+            // upper 32 bits
+            product = _mm256_mul_epu32 ( data, a_shifted ); // A 128-bit value that contains two 64-bit unsigned integers. The result can be expressed by the following equations. r0 := a0 * b0; r1 := a2 * b2
+            sse_ctr3_0 = _mm256_add_epi64 ( sse_ctr3_0, product );//sse_ctr2 = _mm256_add_epi64 ( sse_ctr2, temp );
+            temp = _mm256_srli_epi64( product, 32 ); // Shifts the 2 signed or unsigned 64-bit integers in a right by count bits while shifting in zeros.
+            sse_ctr3_1 = _mm256_add_epi64 ( sse_ctr3_1, temp );
+            //temp = _mm256_and_si256 ( mask_low, product );
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 15 + i )
 #endif
-	}
+        }
 
 #if (PMPML_CHUNK_OPTIMIZATION_TYPE_64 == 1)
-	uint64_t t0_0, t0_1, t1, t2, t3_0, t3_1;
-	t0_0 = ((uint64_t*)(&sse_ctr0_0))[0] + ((uint64_t*)(&sse_ctr0_0))[1] + ((uint64_t*)(&sse_ctr0_0))[2] + ((uint64_t*)(&sse_ctr0_0))[3];
-	t0_1 = ((uint64_t*)(&sse_ctr0_1))[0] + ((uint64_t*)(&sse_ctr0_1))[1] + ((uint64_t*)(&sse_ctr0_1))[2] + ((uint64_t*)(&sse_ctr0_1))[3];
-	t1 = ((uint64_t*)(&sse_ctr1))[0] + ((uint64_t*)(&sse_ctr1))[1] + ((uint64_t*)(&sse_ctr1))[2] + ((uint64_t*)(&sse_ctr1))[3];
-	t2 = ((uint64_t*)(&sse_ctr2))[0] + ((uint64_t*)(&sse_ctr2))[1] + ((uint64_t*)(&sse_ctr2))[2] + ((uint64_t*)(&sse_ctr2))[3];
-	t3_0 = ((uint64_t*)(&sse_ctr3_0))[0] + ((uint64_t*)(&sse_ctr3_0))[1] + ((uint64_t*)(&sse_ctr3_0))[2] + ((uint64_t*)(&sse_ctr3_0))[3];
-	t3_1 = ((uint64_t*)(&sse_ctr3_1))[0] + ((uint64_t*)(&sse_ctr3_1))[1] + ((uint64_t*)(&sse_ctr3_1))[2] + ((uint64_t*)(&sse_ctr3_1))[3];
+        uint64_t t0_0, t0_1, t1, t2, t3_0, t3_1;
+        t0_0 = ((uint64_t*)(&sse_ctr0_0))[0] + ((uint64_t*)(&sse_ctr0_0))[1] + ((uint64_t*)(&sse_ctr0_0))[2] + ((uint64_t*)(&sse_ctr0_0))[3];
+        t0_1 = ((uint64_t*)(&sse_ctr0_1))[0] + ((uint64_t*)(&sse_ctr0_1))[1] + ((uint64_t*)(&sse_ctr0_1))[2] + ((uint64_t*)(&sse_ctr0_1))[3];
+        t1 = ((uint64_t*)(&sse_ctr1))[0] + ((uint64_t*)(&sse_ctr1))[1] + ((uint64_t*)(&sse_ctr1))[2] + ((uint64_t*)(&sse_ctr1))[3];
+        t2 = ((uint64_t*)(&sse_ctr2))[0] + ((uint64_t*)(&sse_ctr2))[1] + ((uint64_t*)(&sse_ctr2))[2] + ((uint64_t*)(&sse_ctr2))[3];
+        t3_0 = ((uint64_t*)(&sse_ctr3_0))[0] + ((uint64_t*)(&sse_ctr3_0))[1] + ((uint64_t*)(&sse_ctr3_0))[2] + ((uint64_t*)(&sse_ctr3_0))[3];
+        t3_1 = ((uint64_t*)(&sse_ctr3_1))[0] + ((uint64_t*)(&sse_ctr3_1))[1] + ((uint64_t*)(&sse_ctr3_1))[2] + ((uint64_t*)(&sse_ctr3_1))[3];
 
-	ADD_SHIFT_ADD_NORMALIZE_TO_UPPER( t0_0, t0_1 )
-	ADD_SHIFT_ADD_NORMALIZE_TO_UPPER( t1, t2 )
-	ADD_SHIFT_ADD_NORMALIZE_TO_UPPER( t3_0, t3_1 )
+        ADD_SHIFT_ADD_NORMALIZE_TO_UPPER( t0_0, t0_1 )
+        ADD_SHIFT_ADD_NORMALIZE_TO_UPPER( t1, t2 )
+        ADD_SHIFT_ADD_NORMALIZE_TO_UPPER( t3_0, t3_1 )
 
-	uint64_t add_sse1, add_sse2;
+        uint64_t add_sse1, add_sse2;
 
-	t1 += t0_1;
-	add_sse1 = t0_0 + ( ((uint64_t)(uint32_t)t1) << 32 );
-	ctr0.QuadPart += add_sse1;
-	add_sse2 = ctr0.QuadPart < add_sse1;
+        t1 += t0_1;
+        add_sse1 = t0_0 + ( ((uint64_t)(uint32_t)t1) << 32 );
+        ctr0.QuadPart += add_sse1;
+        add_sse2 = ctr0.QuadPart < add_sse1;
 
-	t2 += t3_0 + (t1>>32);
-	t3_1 += t2>>32;
+        t2 += t3_0 + (t1>>32);
+        t3_1 += t2>>32;
 
-	add_sse2 += (uint32_t)t2 + ( ( (uint64_t)(uint32_t)t3_1 ) << 32 );
-	ctr1.QuadPart += add_sse2;
+        add_sse2 += (uint32_t)t2 + ( ( (uint64_t)(uint32_t)t3_1 ) << 32 );
+        ctr1.QuadPart += add_sse2;
 
-	ctr2.QuadPart += (t3_1 >> 32) + (ctr1.QuadPart < add_sse2);
+        ctr2.QuadPart += (t3_1 >> 32) + (ctr1.QuadPart < add_sse2);
 
 
 #elif (PMPML_CHUNK_OPTIMIZATION_TYPE_64 == 2)
@@ -613,448 +616,603 @@ class PMP_Multilinear_Hasher_64
 
 #else // PMPML_USE_SSE_64
 
-	for ( uint64_t i=0; i<(PMPML_CHUNK_SIZE_64); i+=32 )
-	{
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 0 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 1 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 2 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 3 + i )
+        for ( uint64_t i=0; i<(PMPML_CHUNK_SIZE_64); i+=32 )
+        {
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 0 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 1 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 2 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 3 + i )
 #if ( PMPML_CHUNK_SIZE_64 > 4 )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 4 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 5 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 6 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 7 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 4 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 5 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 6 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 7 + i )
 #endif
 #if ( PMPML_CHUNK_SIZE_64 > 8 )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 8 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 9 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 10 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 11 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 12 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 13 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 14 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 15 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 8 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 9 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 10 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 11 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 12 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 13 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 14 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 15 + i )
 #endif
 #if ( PMPML_CHUNK_SIZE_64 > 16 )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 16 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 17 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 18 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 19 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 20 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 21 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 22 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 23 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 24 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 25 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 26 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 27 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 28 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 29 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 30 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 31 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 16 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 17 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 18 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 19 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 20 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 21 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 22 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 23 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 24 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 25 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 26 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 27 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 28 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 29 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_FIRST( 30 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_SECOND( 31 + i )
 #endif
-	}
+        }
 #endif // PMPML_USE_SSE_64
 
-	PMPML_CHUNK_LOOP_PRE_REDUCE_L0_64
+        PMPML_CHUNK_LOOP_PRE_REDUCE_L0_64
 
-	PMPML_CHUNK_REDUCE_128_TO_64____
-	ret.LowPart = ctr0.QuadPart;
-	ret.HighPart = ctr1.QuadPart;
-  }
+        PMPML_CHUNK_REDUCE_128_TO_64____
+        ret.LowPart = ctr0.QuadPart;
+        ret.HighPart = ctr1.QuadPart;
+    }
 
-  FORCE_INLINE void hash_of_beginning_of_string_chunk_short_type2( const uint64_t* coeff, ULARGE_INTEGER__XX constTerm, const unsigned char* tail, std::size_t tail_size, ULARGELARGE_INTEGER__XX& ret ) const
-  {
-	PMPML_CHUNK_LOOP_INTRO_L0_64
-	std::size_t size = tail_size >> PMPML_WORD_SIZE_BYTES_LOG2_64;
-	const uint64_t* x = (const uint64_t*)tail;
+    FORCE_INLINE void hash_of_beginning_of_string_chunk_short_type2( const uint64_t* coeff, ULARGE_INTEGER__XX constTerm, const unsigned char* tail, std::size_t tail_size, ULARGELARGE_INTEGER__XX& ret ) const
+    {
+        PMPML_CHUNK_LOOP_INTRO_L0_64
+        std::size_t size = tail_size >> PMPML_WORD_SIZE_BYTES_LOG2_64;
+        const uint64_t* x = (const uint64_t*)tail;
 
-	switch( size )
-	{
-		case 1:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) } break;
-		case 2:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) } break;
-		case 3:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) } break;
-		case 4:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) } break;
-		case 5:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 ) } break;
-		case 6:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 ) } break;
-		case 7:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 6 ) } break;
-	}
+        switch( size )
+        {
+        case 1:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 )
+        }
+        break;
+        case 2:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 )
+        }
+        break;
+        case 3:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 )
+        }
+        break;
+        case 4:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 )
+        }
+        break;
+        case 5:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 )
+        }
+        break;
+        case 6:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 )
+        }
+        break;
+        case 7:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 6 )
+        }
+        break;
+        }
 
-	uint64_t xLast;
-	switch ( tail_size & ( PMPML_WORD_SIZE_BYTES_64 - 1 ) )
-	{
-		case 0: { xLast = 0x1; break;}
-		case 1: { xLast = 0x100 + tail[tail_size-1]; break;}
-		case 2: { xLast = *((const unsigned short*)(tail + tail_size - 2 )) + 0x10000; break; }
-		case 3: { xLast = tail[ tail_size - 1 ]; xLast = ( xLast << 16 ) + *((const unsigned short*)(tail + tail_size - 3 )) + 0x1000000; break;}
-		case 4: { xLast = *((const unsigned int*)(tail + tail_size - 4)) + UINT64_C( 0x100000000 ); break; }
-		case 5: { xLast = tail[ tail_size - 1 ]; xLast = ( xLast << 32 ) + UINT64_C( 0x10000000000 ) + *((const unsigned int*)(tail + tail_size - 5)); break;}
-		case 6: { xLast = *((const unsigned short*)(tail + tail_size - 2 )); xLast = ( xLast << 32 ) + UINT64_C( 0x1000000000000 ) + *((const unsigned int*)(tail + tail_size - 6)); break;}
-		default: { xLast = tail[ tail_size - 1 ]; xLast <<= 48; uint64_t xLast1 = *((const unsigned short*)(tail + tail_size - 3 )); xLast += (xLast1<<32) + UINT64_C( 0x100000000000000 ) + *((const unsigned int*)(tail + tail_size - 7 )); break;}
-	}
-	PMPML_CHUNK_LOOP_BODY_ULI_T1_64_LAST(size)
+        uint64_t xLast;
+        switch ( tail_size & ( PMPML_WORD_SIZE_BYTES_64 - 1 ) )
+        {
+        case 0: {
+            xLast = 0x1;
+            break;
+        }
+        case 1: {
+            xLast = 0x100 + tail[tail_size-1];
+            break;
+        }
+        case 2: {
+            xLast = *((const unsigned short*)(tail + tail_size - 2 )) + 0x10000;
+            break;
+        }
+        case 3: {
+            xLast = tail[ tail_size - 1 ];
+            xLast = ( xLast << 16 ) + *((const unsigned short*)(tail + tail_size - 3 )) + 0x1000000;
+            break;
+        }
+        case 4: {
+            xLast = *((const unsigned int*)(tail + tail_size - 4)) + UINT64_C( 0x100000000 );
+            break;
+        }
+        case 5: {
+            xLast = tail[ tail_size - 1 ];
+            xLast = ( xLast << 32 ) + UINT64_C( 0x10000000000 ) + *((const unsigned int*)(tail + tail_size - 5));
+            break;
+        }
+        case 6: {
+            xLast = *((const unsigned short*)(tail + tail_size - 2 ));
+            xLast = ( xLast << 32 ) + UINT64_C( 0x1000000000000 ) + *((const unsigned int*)(tail + tail_size - 6));
+            break;
+        }
+        default: {
+            xLast = tail[ tail_size - 1 ];
+            xLast <<= 48;
+            uint64_t xLast1 = *((const unsigned short*)(tail + tail_size - 3 ));
+            xLast += (xLast1<<32) + UINT64_C( 0x100000000000000 ) + *((const unsigned int*)(tail + tail_size - 7 ));
+            break;
+        }
+        }
+        PMPML_CHUNK_LOOP_BODY_ULI_T1_64_LAST(size)
 
-	PMPML_CHUNK_LOOP_PRE_REDUCE_L0_64
-	PMPML_CHUNK_REDUCE_128_TO_64
-	ret.LowPart = ctr0.QuadPart;
-	ret.HighPart = ctr1.QuadPart;
-  }
+        PMPML_CHUNK_LOOP_PRE_REDUCE_L0_64
+        PMPML_CHUNK_REDUCE_128_TO_64
+        ret.LowPart = ctr0.QuadPart;
+        ret.HighPart = ctr1.QuadPart;
+    }
 
-  FORCE_INLINE void hash_of_beginning_of_string_chunk_type2( const uint64_t* coeff, ULARGE_INTEGER__XX constTerm, const unsigned char* tail, std::size_t tail_size, ULARGELARGE_INTEGER__XX& ret ) const
-  {
-	PMPML_CHUNK_LOOP_INTRO_L0_64
-	std::size_t size = tail_size >> PMPML_WORD_SIZE_BYTES_LOG2_64;
-	const uint64_t* x = (const uint64_t*)tail;
+    FORCE_INLINE void hash_of_beginning_of_string_chunk_type2( const uint64_t* coeff, ULARGE_INTEGER__XX constTerm, const unsigned char* tail, std::size_t tail_size, ULARGELARGE_INTEGER__XX& ret ) const
+    {
+        PMPML_CHUNK_LOOP_INTRO_L0_64
+        std::size_t size = tail_size >> PMPML_WORD_SIZE_BYTES_LOG2_64;
+        const uint64_t* x = (const uint64_t*)tail;
 
-	for ( uint32_t i=0; i<(size>>3); i++ )
-	{
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + ( i << 3 ) )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + ( i << 3 ) )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + ( i << 3 ) )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 + ( i << 3 ) )
+        for ( uint32_t i=0; i<(size>>3); i++ )
+        {
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + ( i << 3 ) )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + ( i << 3 ) )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + ( i << 3 ) )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 + ( i << 3 ) )
 #if ( PMPML_CHUNK_SIZE_64 > 4 )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 + ( i << 3 ) )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 + ( i << 3 ) )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 6 + ( i << 3 ) )
-		PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 7 + ( i << 3 ) )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 + ( i << 3 ) )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 + ( i << 3 ) )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 6 + ( i << 3 ) )
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 7 + ( i << 3 ) )
 #endif
-	}
+        }
 
-	uint64_t offset = size & 0xFFFFFFF8;
+        uint64_t offset = size & 0xFFFFFFF8;
 
-	switch( size & 0x7 )
-	{
-		case 0: { break; }
-		case 1:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) } break;
-		case 2:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) } break;
-		case 3:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + offset ) } break;
-		case 4:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 + offset ) } break;
-		case 5:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 + offset ) } break;
-		case 6:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 + offset ) } break;
-		case 7:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 6 + offset ) } break;
-	}
+        switch( size & 0x7 )
+        {
+        case 0: {
+            break;
+        }
+        case 1:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset )
+        }
+        break;
+        case 2:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset )
+        }
+        break;
+        case 3:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + offset )
+        }
+        break;
+        case 4:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 + offset )
+        }
+        break;
+        case 5:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 + offset )
+        }
+        break;
+        case 6:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 + offset )
+        }
+        break;
+        case 7:	{
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 + offset ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 6 + offset )
+        }
+        break;
+        }
 
-	uint64_t xLast;
-	switch ( tail_size & ( PMPML_WORD_SIZE_BYTES_64 - 1 ) )
-	{
-		case 0: { xLast = 0x1; break;}
-		case 1: { xLast = 0x100 + tail[tail_size-1]; break;}
-		case 2: { xLast = *((const unsigned short*)(tail + tail_size - 2 )) + 0x10000; break; }
-		case 3: { xLast = tail[ tail_size - 1 ]; xLast = ( xLast << 16 ) + *((const unsigned short*)(tail + tail_size - 3 )) + 0x1000000; break;}
-		case 4: { xLast = *((const unsigned int*)(tail + tail_size - 4)) + UINT64_C( 0x100000000 ); break; }
-		case 5: { xLast = tail[ tail_size - 1 ]; xLast = ( xLast << 32 ) + UINT64_C( 0x10000000000 ) + *((const unsigned int*)(tail + tail_size - 5)); break;}
-		case 6: { xLast = *((const unsigned short*)(tail + tail_size - 2 )); xLast = ( xLast << 32 ) + UINT64_C( 0x1000000000000 ) + *((const unsigned int*)(tail + tail_size - 6)); break;}
-		default: { xLast = tail[ tail_size - 1 ]; xLast <<= 48; uint64_t xLast1 = *((const unsigned short*)(tail + tail_size - 3 )); xLast += (xLast1<<32) + UINT64_C( 0x100000000000000 ) + *((const unsigned int*)(tail + tail_size - 7 )); break;}
-	}
+        uint64_t xLast;
+        switch ( tail_size & ( PMPML_WORD_SIZE_BYTES_64 - 1 ) )
+        {
+        case 0: {
+            xLast = 0x1;
+            break;
+        }
+        case 1: {
+            xLast = 0x100 + tail[tail_size-1];
+            break;
+        }
+        case 2: {
+            xLast = *((const unsigned short*)(tail + tail_size - 2 )) + 0x10000;
+            break;
+        }
+        case 3: {
+            xLast = tail[ tail_size - 1 ];
+            xLast = ( xLast << 16 ) + *((const unsigned short*)(tail + tail_size - 3 )) + 0x1000000;
+            break;
+        }
+        case 4: {
+            xLast = *((const unsigned int*)(tail + tail_size - 4)) + UINT64_C( 0x100000000 );
+            break;
+        }
+        case 5: {
+            xLast = tail[ tail_size - 1 ];
+            xLast = ( xLast << 32 ) + UINT64_C( 0x10000000000 ) + *((const unsigned int*)(tail + tail_size - 5));
+            break;
+        }
+        case 6: {
+            xLast = *((const unsigned short*)(tail + tail_size - 2 ));
+            xLast = ( xLast << 32 ) + UINT64_C( 0x1000000000000 ) + *((const unsigned int*)(tail + tail_size - 6));
+            break;
+        }
+        default: {
+            xLast = tail[ tail_size - 1 ];
+            xLast <<= 48;
+            uint64_t xLast1 = *((const unsigned short*)(tail + tail_size - 3 ));
+            xLast += (xLast1<<32) + UINT64_C( 0x100000000000000 ) + *((const unsigned int*)(tail + tail_size - 7 ));
+            break;
+        }
+        }
 
-	PMPML_CHUNK_LOOP_BODY_ULI_T1_64_LAST(size)
+        PMPML_CHUNK_LOOP_BODY_ULI_T1_64_LAST(size)
 
-	PMPML_CHUNK_LOOP_PRE_REDUCE_L0_64
-	PMPML_CHUNK_REDUCE_128_TO_64
-	ret.LowPart = ctr0.QuadPart;
-	ret.HighPart = ctr1.QuadPart;
-  }
+        PMPML_CHUNK_LOOP_PRE_REDUCE_L0_64
+        PMPML_CHUNK_REDUCE_128_TO_64
+        ret.LowPart = ctr0.QuadPart;
+        ret.HighPart = ctr1.QuadPart;
+    }
 
-  // a call to be done from subsequent levels
-  FORCE_INLINE void hash_of_num_chunk( const uint64_t* coeff, ULARGE_INTEGER__XX constTerm, const ULARGELARGE_INTEGER__XX* x, ULARGELARGE_INTEGER__XX& ret ) const
-  {
-	ULARGE_INTEGER__XX ctr0, ctr1, ctr2;
-	ctr0.QuadPart = constTerm.QuadPart;
-	ctr1.QuadPart = 0;
-	ctr2.QuadPart = 0;
-	ULARGE_INTEGER__XX mulLow, mulHigh;
+    // a call to be done from subsequent levels
+    FORCE_INLINE void hash_of_num_chunk( const uint64_t* coeff, ULARGE_INTEGER__XX constTerm, const ULARGELARGE_INTEGER__XX* x, ULARGELARGE_INTEGER__XX& ret ) const
+    {
+        ULARGE_INTEGER__XX ctr0, ctr1, ctr2;
+        ctr0.QuadPart = constTerm.QuadPart;
+        ctr1.QuadPart = 0;
+        ctr2.QuadPart = 0;
+        ULARGE_INTEGER__XX mulLow, mulHigh;
 
-	for ( uint64_t i=0; i<(PMPML_CHUNK_SIZE_64); i+=32 )
-	{
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 0 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 1 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 2 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 3 + i )
+        for ( uint64_t i=0; i<(PMPML_CHUNK_SIZE_64); i+=32 )
+        {
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 0 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 1 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 2 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 3 + i )
 #if ( PMPML_CHUNK_SIZE_64 > 4 )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 4 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 5 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 6 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 7 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 4 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 5 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 6 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 7 + i )
 #endif
 #if ( PMPML_CHUNK_SIZE_64 > 8 )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 8 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 9 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 10 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 11 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 12 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 13 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 14 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 15 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 8 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 9 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 10 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 11 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 12 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 13 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 14 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 15 + i )
 #endif
 #if ( PMPML_CHUNK_SIZE_64 > 16 )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 16 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 17 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 18 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 19 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 20 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 21 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 22 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 23 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 24 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 25 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 26 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 27 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 28 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 29 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 30 + i )
-		PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 31 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 16 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 17 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 18 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 19 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 20 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 21 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 22 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 23 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 24 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 25 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 26 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 27 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 28 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 29 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 30 + i )
+            PMPML_CHUNK_LOOP_BODY_ULI_T2_64( 31 + i )
 #endif
-	}
+        }
 
-	PMPML_CHUNK_REDUCE_128_TO_64
+        PMPML_CHUNK_REDUCE_128_TO_64
 
 
-	ret.LowPart = ctr0.QuadPart;
-	ret.HighPart = ctr1.QuadPart;
-  }
+        ret.LowPart = ctr0.QuadPart;
+        ret.HighPart = ctr1.QuadPart;
+    }
 
-  // a call to be done from subsequent levels
-  FORCE_INLINE void hash_of_num_chunk_incomplete( const uint64_t* coeff, uint64_t constTerm, uint64_t prevConstTerm, uint64_t coeffSumLow, uint64_t coeffSumHigh, const ULARGELARGE_INTEGER__XX* x, size_t count, ULARGELARGE_INTEGER__XX& ret ) const
-  {
-	ULARGE_INTEGER__XX ctr0, ctr1, ctr2;
-	ctr0.QuadPart = constTerm;
-	ctr1.QuadPart = 0;
-	ctr2.QuadPart = 0;
-	ULARGE_INTEGER__XX c_ctr0, c_ctr1;
-	c_ctr0.QuadPart = 0;
-	c_ctr1.QuadPart = 0;
-	ULARGE_INTEGER__XX mulLow, mulHigh;
-	uint64_t i;
-	if ( count < ( PMPML_CHUNK_SIZE_64 >> 1 ) )
-	{
-		for ( i=0; i<count; i++ )
-		{
-			PMPML_CHUNK_LOOP_BODY_ULI_T2_AND_ADD_COEFF_64( i );
-		}
-		if ( c_ctr0.QuadPart > coeffSumLow )
-			c_ctr1.QuadPart = coeffSumHigh - c_ctr1.QuadPart - 1;
-		else
-			c_ctr1.QuadPart = coeffSumHigh - c_ctr1.QuadPart;
-		c_ctr0.QuadPart = coeffSumLow - c_ctr0.QuadPart;
-	}
-	else
-	{
-		for ( i=0; i<count; i++ )
-		{
-			PMPML_CHUNK_LOOP_BODY_ULI_T2_64( i )
-		}
-		for ( ; i<PMPML_CHUNK_SIZE_64; i++ )
-		{
-			PMPML_CHUNK_LOOP_BODY_ULI_ADD_COEFF_64( i )
-		}
-	}
-	PMPML_CHUNK_LOOP_BODY_ULI_T2_AND_ADD_SUM_OF_COEFF_64
+    // a call to be done from subsequent levels
+    FORCE_INLINE void hash_of_num_chunk_incomplete( const uint64_t* coeff, uint64_t constTerm, uint64_t prevConstTerm, uint64_t coeffSumLow, uint64_t coeffSumHigh, const ULARGELARGE_INTEGER__XX* x, size_t count, ULARGELARGE_INTEGER__XX& ret ) const
+    {
+        ULARGE_INTEGER__XX ctr0, ctr1, ctr2;
+        ctr0.QuadPart = constTerm;
+        ctr1.QuadPart = 0;
+        ctr2.QuadPart = 0;
+        ULARGE_INTEGER__XX c_ctr0, c_ctr1;
+        c_ctr0.QuadPart = 0;
+        c_ctr1.QuadPart = 0;
+        ULARGE_INTEGER__XX mulLow, mulHigh;
+        uint64_t i;
+        if ( count < ( PMPML_CHUNK_SIZE_64 >> 1 ) )
+        {
+            for ( i=0; i<count; i++ )
+            {
+                PMPML_CHUNK_LOOP_BODY_ULI_T2_AND_ADD_COEFF_64( i );
+            }
+            if ( c_ctr0.QuadPart > coeffSumLow )
+                c_ctr1.QuadPart = coeffSumHigh - c_ctr1.QuadPart - 1;
+            else
+                c_ctr1.QuadPart = coeffSumHigh - c_ctr1.QuadPart;
+            c_ctr0.QuadPart = coeffSumLow - c_ctr0.QuadPart;
+        }
+        else
+        {
+            for ( i=0; i<count; i++ )
+            {
+                PMPML_CHUNK_LOOP_BODY_ULI_T2_64( i )
+            }
+            for ( ; i<PMPML_CHUNK_SIZE_64; i++ )
+            {
+                PMPML_CHUNK_LOOP_BODY_ULI_ADD_COEFF_64( i )
+            }
+        }
+        PMPML_CHUNK_LOOP_BODY_ULI_T2_AND_ADD_SUM_OF_COEFF_64
 
-	PMPML_CHUNK_REDUCE_128_TO_64
+        PMPML_CHUNK_REDUCE_128_TO_64
 
-	ret.LowPart = ctr0.QuadPart;
-	ret.HighPart = ctr1.QuadPart;
-  }
+        ret.LowPart = ctr0.QuadPart;
+        ret.HighPart = ctr1.QuadPart;
+    }
 
-  FORCE_INLINE void procesNextValue( int level, _ULARGELARGE_INTEGER__XX& value, _ULARGELARGE_INTEGER__XX * allValues, std::size_t * cnts, std::size_t& flag ) const
-  {
-	for ( int i=level;;i++ )
-	{
-		// NOTE: it's not necessary to check whether ( i < PMPML_LEVELS_64 ),
-		// if it is guaranteed that the string size is less than 1 << USHF_MACHINE_WORD_SIZE_BITS
-		allValues[ ( i << PMPML_CHUNK_SIZE_LOG2_64 ) + cnts[ i ] ] = value;
-		(cnts[ i ]) ++;
-		if ( cnts[ i ] != PMPML_CHUNK_SIZE_64 )
-			break;
-		cnts[ i ] = 0;
-		hash_of_num_chunk( curr_rd[ i ].random_coeff, *(ULARGE_INTEGER__XX*)(&(curr_rd[i].const_term)), allValues + ( i << PMPML_CHUNK_SIZE_LOG2_64 ), value );
-		if ( ( flag & ( 1 << i ) ) == 0 )
-		{
-			cnts[ i + 1] = 0;
-			flag |= 1 << i;
-		}
-	}
-  }
+    FORCE_INLINE void procesNextValue( int level, _ULARGELARGE_INTEGER__XX& value, _ULARGELARGE_INTEGER__XX * allValues, std::size_t * cnts, std::size_t& flag ) const
+    {
+        for ( int i=level;; i++ )
+        {
+            // NOTE: it's not necessary to check whether ( i < PMPML_LEVELS_64 ),
+            // if it is guaranteed that the string size is less than 1 << USHF_MACHINE_WORD_SIZE_BITS
+            allValues[ ( i << PMPML_CHUNK_SIZE_LOG2_64 ) + cnts[ i ] ] = value;
+            (cnts[ i ]) ++;
+            if ( cnts[ i ] != PMPML_CHUNK_SIZE_64 )
+                break;
+            cnts[ i ] = 0;
+            hash_of_num_chunk( curr_rd[ i ].random_coeff, *(ULARGE_INTEGER__XX*)(&(curr_rd[i].const_term)), allValues + ( i << PMPML_CHUNK_SIZE_LOG2_64 ), value );
+            if ( ( flag & ( 1 << i ) ) == 0 )
+            {
+                cnts[ i + 1] = 0;
+                flag |= 1 << i;
+            }
+        }
+    }
 
-  FORCE_INLINE _ULARGELARGE_INTEGER__XX& finalize( int level, _ULARGELARGE_INTEGER__XX * allValues, std::size_t * cnts, std::size_t& flag ) const
-  {
-    ULARGELARGE_INTEGER__XX value;
-	for ( int i=level;;i++ )
-	{
+    FORCE_INLINE _ULARGELARGE_INTEGER__XX& finalize( int level, _ULARGELARGE_INTEGER__XX * allValues, std::size_t * cnts, std::size_t& flag ) const
+    {
+        ULARGELARGE_INTEGER__XX value;
+        for ( int i=level;; i++ )
+        {
 //		ASSERT ( level != PMPML_LEVELS_64 )
-		if ( ( ( flag & ( 1 << i ) ) == 0 ) && cnts[ i ] == 1 )
-		{
-			return allValues[ i << PMPML_CHUNK_SIZE_LOG2_64 ];
-		}
-		if ( cnts[ i ] )
-		{
-/*			for ( int j=cnts[ i ]; j<PMPML_CHUNK_SIZE_64; j++ )
-			{
-				( allValues + ( i << PMPML_CHUNK_SIZE_LOG2_64 ) )[ j ].LowPart = curr_rd[ i ].const_term;
-				( allValues + ( i << PMPML_CHUNK_SIZE_LOG2_64 ) )[ j ].HighPart = 0;
-			}*/
-			if ( ( flag & ( 1 << i ) ) == 0 )
-			{
-				cnts[ i + 1] = 0;
-				flag |= 1 << i;
-			}
-			hash_of_num_chunk_incomplete( curr_rd[ i ].random_coeff,
-								curr_rd[i].const_term, curr_rd[i].const_term,curr_rd[i].cachedSumLow, curr_rd[i].cachedSumHigh,
-								allValues + ( i << PMPML_CHUNK_SIZE_LOG2_64 ), cnts[i], value );
-/*			hash_of_num_chunk( curr_rd[ i ].random_coeff,
-								*(ULARGE_INTEGER__XX*)(&(curr_rd[i].const_term)),
-								allValues + ( i << PMPML_CHUNK_SIZE_LOG2_64 ), value ); */
-			procesNextValue( i + 1, value,
-							 allValues, cnts, flag );
-		}
-	}
-  }
+            if ( ( ( flag & ( 1 << i ) ) == 0 ) && cnts[ i ] == 1 )
+            {
+                return allValues[ i << PMPML_CHUNK_SIZE_LOG2_64 ];
+            }
+            if ( cnts[ i ] )
+            {
+                /*			for ( int j=cnts[ i ]; j<PMPML_CHUNK_SIZE_64; j++ )
+                			{
+                				( allValues + ( i << PMPML_CHUNK_SIZE_LOG2_64 ) )[ j ].LowPart = curr_rd[ i ].const_term;
+                				( allValues + ( i << PMPML_CHUNK_SIZE_LOG2_64 ) )[ j ].HighPart = 0;
+                			}*/
+                if ( ( flag & ( 1 << i ) ) == 0 )
+                {
+                    cnts[ i + 1] = 0;
+                    flag |= 1 << i;
+                }
+                hash_of_num_chunk_incomplete( curr_rd[ i ].random_coeff,
+                                              curr_rd[i].const_term, curr_rd[i].const_term,curr_rd[i].cachedSumLow, curr_rd[i].cachedSumHigh,
+                                              allValues + ( i << PMPML_CHUNK_SIZE_LOG2_64 ), cnts[i], value );
+                /*			hash_of_num_chunk( curr_rd[ i ].random_coeff,
+                								*(ULARGE_INTEGER__XX*)(&(curr_rd[i].const_term)),
+                								allValues + ( i << PMPML_CHUNK_SIZE_LOG2_64 ), value ); */
+                procesNextValue( i + 1, value,
+                                 allValues, cnts, flag );
+            }
+        }
+    }
 
-  public:
-  FORCE_INLINE uint64_t hash( const unsigned char* chars, std::size_t cnt ) const
-  {
-			if ( _LIKELY_BRANCH_(cnt < 64) )
-			{
-				const uint64_t* coeff = curr_rd[0].random_coeff;
-				ULARGE_INTEGER__XX constTerm = *(ULARGE_INTEGER__XX*)(&(curr_rd[0].const_term));
-				PMPML_CHUNK_LOOP_INTRO_L0_64
-				std::size_t size = cnt >> PMPML_WORD_SIZE_BYTES_LOG2_64;
-				const uint64_t* x = (const uint64_t*)chars;
+public:
+    FORCE_INLINE uint64_t hash( const unsigned char* chars, std::size_t cnt ) const
+    {
+        if ( _LIKELY_BRANCH_(cnt < 64) )
+        {
+            const uint64_t* coeff = curr_rd[0].random_coeff;
+            ULARGE_INTEGER__XX constTerm = *(ULARGE_INTEGER__XX*)(&(curr_rd[0].const_term));
+            PMPML_CHUNK_LOOP_INTRO_L0_64
+            std::size_t size = cnt >> PMPML_WORD_SIZE_BYTES_LOG2_64;
+            const uint64_t* x = (const uint64_t*)chars;
 
-				switch( size )
-				{
-					case 1:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) } break;
-					case 2:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) } break;
-					case 3:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) } break;
-					case 4:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) } break;
-					case 5:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 ) } break;
-					case 6:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 ) } break;
-					case 7:	{	PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 6 ) } break;
-				}
+            switch( size )
+            {
+            case 1:	{
+                PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 )
+            }
+            break;
+            case 2:	{
+                PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 )
+            }
+            break;
+            case 3:	{
+                PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 )
+            }
+            break;
+            case 4:	{
+                PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 )
+            }
+            break;
+            case 5:	{
+                PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 )
+            }
+            break;
+            case 6:	{
+                PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 )
+            }
+            break;
+            case 7:	{
+                PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 0 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 1 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 2 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 3 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 4 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 5 ) PMPML_CHUNK_LOOP_BODY_ULI_T1_64( 6 )
+            }
+            break;
+            }
 
-				uint64_t xLast;
-				switch ( cnt & ( PMPML_WORD_SIZE_BYTES_64 - 1 ) )
-				{
-					case 0: { xLast = 0x1; break;}
-					case 1: { xLast = 0x100 + chars[cnt-1]; break;}
-					case 2: { xLast = *((const unsigned short*)(chars + cnt - 2 )) + 0x10000; break; }
-					case 3: { xLast = chars[ cnt - 1 ]; xLast = ( xLast << 16 ) + *((const unsigned short*)(chars + cnt - 3 )) + 0x1000000; break;}
-					case 4: { xLast = *((const unsigned int*)(chars + cnt - 4)) + UINT64_C( 0x100000000 ); break; }
-					case 5: { xLast = chars[ cnt - 1 ]; xLast = ( xLast << 32 ) + UINT64_C( 0x10000000000 ) + *((const unsigned int*)(chars + cnt - 5)); break;}
-					case 6: { xLast = *((const unsigned short*)(chars + cnt - 2 )); xLast = ( xLast << 32 ) + UINT64_C( 0x1000000000000 ) + *((const unsigned int*)(chars + cnt - 6)); break;}
-					default: { xLast = chars[ cnt - 1 ]; xLast <<= 48; uint64_t xLast1 = *((const unsigned short*)(chars + cnt - 3 )); xLast += (xLast1<<32) + UINT64_C( 0x100000000000000 ) + *((const unsigned int*)(chars + cnt - 7 )); break;}
-				}
-				PMPML_CHUNK_LOOP_BODY_ULI_T1_64_LAST(size)
+            uint64_t xLast;
+            switch ( cnt & ( PMPML_WORD_SIZE_BYTES_64 - 1 ) )
+            {
+            case 0: {
+                xLast = 0x1;
+                break;
+            }
+            case 1: {
+                xLast = 0x100 + chars[cnt-1];
+                break;
+            }
+            case 2: {
+                xLast = *((const unsigned short*)(chars + cnt - 2 )) + 0x10000;
+                break;
+            }
+            case 3: {
+                xLast = chars[ cnt - 1 ];
+                xLast = ( xLast << 16 ) + *((const unsigned short*)(chars + cnt - 3 )) + 0x1000000;
+                break;
+            }
+            case 4: {
+                xLast = *((const unsigned int*)(chars + cnt - 4)) + UINT64_C( 0x100000000 );
+                break;
+            }
+            case 5: {
+                xLast = chars[ cnt - 1 ];
+                xLast = ( xLast << 32 ) + UINT64_C( 0x10000000000 ) + *((const unsigned int*)(chars + cnt - 5));
+                break;
+            }
+            case 6: {
+                xLast = *((const unsigned short*)(chars + cnt - 2 ));
+                xLast = ( xLast << 32 ) + UINT64_C( 0x1000000000000 ) + *((const unsigned int*)(chars + cnt - 6));
+                break;
+            }
+            default: {
+                xLast = chars[ cnt - 1 ];
+                xLast <<= 48;
+                uint64_t xLast1 = *((const unsigned short*)(chars + cnt - 3 ));
+                xLast += (xLast1<<32) + UINT64_C( 0x100000000000000 ) + *((const unsigned int*)(chars + cnt - 7 ));
+                break;
+            }
+            }
+            PMPML_CHUNK_LOOP_BODY_ULI_T1_64_LAST(size)
 
-				PMPML_CHUNK_LOOP_PRE_REDUCE_L0_64
-				PMPML_CHUNK_REDUCE_128_TO_64_AND_RETURN
-			}
-			else if ( cnt < PMPML_CHUNK_SIZE_64 )
-			{
-				return _hash_noRecursionNoInline_SingleChunk( chars, cnt );
-			}
-			else
-			{
-				return _hash_noRecursionNoInline_type2( chars, cnt );
-			}
-  }
+            PMPML_CHUNK_LOOP_PRE_REDUCE_L0_64
+            PMPML_CHUNK_REDUCE_128_TO_64_AND_RETURN
+        }
+        else if ( cnt < PMPML_CHUNK_SIZE_64 )
+        {
+            return _hash_noRecursionNoInline_SingleChunk( chars, cnt );
+        }
+        else
+        {
+            return _hash_noRecursionNoInline_type2( chars, cnt );
+        }
+    }
 
-  NOINLINE uint64_t _hash_noRecursionNoInline_SingleChunk( const unsigned char* chars, std::size_t cnt ) const
-  {
-			_ULARGELARGE_INTEGER__XX tmp_hash;
-			hash_of_beginning_of_string_chunk_type2( curr_rd[0].random_coeff, *(ULARGE_INTEGER__XX*)(&(curr_rd[0].const_term)), chars, cnt, tmp_hash );
-			if ( tmp_hash.HighPart == 0 ) //LIKELY
-			{
-				return fmix64_short( tmp_hash.LowPart );
-			}
-			return tmp_hash.LowPart;
-  }
+    NOINLINE uint64_t _hash_noRecursionNoInline_SingleChunk( const unsigned char* chars, std::size_t cnt ) const
+    {
+        _ULARGELARGE_INTEGER__XX tmp_hash;
+        hash_of_beginning_of_string_chunk_type2( curr_rd[0].random_coeff, *(ULARGE_INTEGER__XX*)(&(curr_rd[0].const_term)), chars, cnt, tmp_hash );
+        if ( tmp_hash.HighPart == 0 ) //LIKELY
+        {
+            return fmix64_short( tmp_hash.LowPart );
+        }
+        return tmp_hash.LowPart;
+    }
 
-  NOINLINE uint64_t _hash_noRecursionNoInline_type2( const unsigned char* chars, std::size_t cnt ) const
-  {
-			_ULARGELARGE_INTEGER__XX allValues[ PMPML_LEVELS_64 * PMPML_CHUNK_SIZE_64 ];
-			std::size_t cnts[ PMPML_LEVELS_64 ];
-			std::size_t flag;
-			cnts[ 1 ] = 0;
-			flag = 0;
+    NOINLINE uint64_t _hash_noRecursionNoInline_type2( const unsigned char* chars, std::size_t cnt ) const
+    {
+        _ULARGELARGE_INTEGER__XX allValues[ PMPML_LEVELS_64 * PMPML_CHUNK_SIZE_64 ];
+        std::size_t cnts[ PMPML_LEVELS_64 ];
+        std::size_t flag;
+        cnts[ 1 ] = 0;
+        flag = 0;
 
-			std::size_t i;
-			_ULARGELARGE_INTEGER__XX tmp_hash;
-			// process full chunks
-			for ( i=0; i<(cnt>>PMPML_CHUNK_SIZE_BYTES_LOG2_64); i++ )
-			{
-				hash_of_string_chunk_compact( curr_rd[0].random_coeff, *(ULARGE_INTEGER__XX*)(&(curr_rd[0].const_term)), ((const uint64_t*)(chars)) + ( i << PMPML_CHUNK_SIZE_LOG2_64 ), tmp_hash );
-				procesNextValue( 1, tmp_hash, allValues, cnts, flag );
-			}
-			// process remaining incomplete chunk(s)
-			// note: if string size is a multiple of chunk size, we create a new chunk (1,0,0,...0),
-			// so THIS PROCESSING IS ALWAYS PERFORMED
-			std::size_t tailCnt = cnt & ( PMPML_CHUNK_SIZE_BYTES_64 - 1 );
-			const unsigned char* tail = chars + ( (cnt>>PMPML_CHUNK_SIZE_BYTES_LOG2_64) << PMPML_CHUNK_SIZE_BYTES_LOG2_64 );
-			hash_of_beginning_of_string_chunk_type2( curr_rd[0].random_coeff, *(ULARGE_INTEGER__XX*)(&(curr_rd[0].const_term)), tail, tailCnt, tmp_hash );
-			procesNextValue( 1, tmp_hash, allValues, cnts, flag );
-			_ULARGELARGE_INTEGER__XX finRet = finalize( 1, allValues, cnts, flag );
-			if ( finRet.HighPart == 0 ) //LIKELY
-			{
-				return fmix64_short( finRet.LowPart );
-			}
-			return finRet.LowPart;
-  }
+        std::size_t i;
+        _ULARGELARGE_INTEGER__XX tmp_hash;
+        // process full chunks
+        for ( i=0; i<(cnt>>PMPML_CHUNK_SIZE_BYTES_LOG2_64); i++ )
+        {
+            hash_of_string_chunk_compact( curr_rd[0].random_coeff, *(ULARGE_INTEGER__XX*)(&(curr_rd[0].const_term)), ((const uint64_t*)(chars)) + ( i << PMPML_CHUNK_SIZE_LOG2_64 ), tmp_hash );
+            procesNextValue( 1, tmp_hash, allValues, cnts, flag );
+        }
+        // process remaining incomplete chunk(s)
+        // note: if string size is a multiple of chunk size, we create a new chunk (1,0,0,...0),
+        // so THIS PROCESSING IS ALWAYS PERFORMED
+        std::size_t tailCnt = cnt & ( PMPML_CHUNK_SIZE_BYTES_64 - 1 );
+        const unsigned char* tail = chars + ( (cnt>>PMPML_CHUNK_SIZE_BYTES_LOG2_64) << PMPML_CHUNK_SIZE_BYTES_LOG2_64 );
+        hash_of_beginning_of_string_chunk_type2( curr_rd[0].random_coeff, *(ULARGE_INTEGER__XX*)(&(curr_rd[0].const_term)), tail, tailCnt, tmp_hash );
+        procesNextValue( 1, tmp_hash, allValues, cnts, flag );
+        _ULARGELARGE_INTEGER__XX finRet = finalize( 1, allValues, cnts, flag );
+        if ( finRet.HighPart == 0 ) //LIKELY
+        {
+            return fmix64_short( finRet.LowPart );
+        }
+        return finRet.LowPart;
+    }
 
 
-  public:
-  PMP_Multilinear_Hasher_64()
-  {
-    curr_rd = rd_for_PMPML_64;
-  }
-  ~PMP_Multilinear_Hasher_64()
-  {
-    if ( curr_rd != NULL && curr_rd != rd_for_PMPML_64 )
-		delete [] curr_rd;
-  }
+public:
+    PMP_Multilinear_Hasher_64()
+    {
+        curr_rd = rd_for_PMPML_64;
+    }
+    ~PMP_Multilinear_Hasher_64()
+    {
+        if ( curr_rd != NULL && curr_rd != rd_for_PMPML_64 )
+            delete [] curr_rd;
+    }
 
-  void randomize( UniformRandomNumberGenerator& rng )
-  {
-    random_data_for_PMPML_64 * temp_curr_rd = new random_data_for_PMPML_64[ PMPML_LEVELS_64 ];
+    void randomize( UniformRandomNumberGenerator& rng )
+    {
+        random_data_for_PMPML_64 * temp_curr_rd = new random_data_for_PMPML_64[ PMPML_LEVELS_64 ];
 
-	int i, j;
-	for ( i=0; i<PMPML_LEVELS_64; i++ )
-	{
-		for ( j=0; j<PMPML_CHUNK_SIZE_64; j++ )
-		{
-			temp_curr_rd[ i ].cachedSumLow = 0;
-			temp_curr_rd[ i ].cachedSumHigh = 0;
-			do
-			{
-				temp_curr_rd[ i ].random_coeff[ j ] = rng.rand();
-				temp_curr_rd[ i ].random_coeff[ j ] <<= 32;
-				temp_curr_rd[ i ].random_coeff[ j ] |= rng.rand();
-			}
-			while ( !IS_VALID_COEFFICIENT_64( temp_curr_rd[ i ].random_coeff[ j ], i ) );
-			uint64_t csl = temp_curr_rd[ i ].cachedSumLow;
-			temp_curr_rd[ i ].cachedSumLow += temp_curr_rd[ i ].random_coeff[ j ];
-			if ( temp_curr_rd[ i ].cachedSumLow < csl )
-				temp_curr_rd[ i ].cachedSumHigh += 1;
-		}
-	}
+        int i, j;
+        for ( i=0; i<PMPML_LEVELS_64; i++ )
+        {
+            for ( j=0; j<PMPML_CHUNK_SIZE_64; j++ )
+            {
+                temp_curr_rd[ i ].cachedSumLow = 0;
+                temp_curr_rd[ i ].cachedSumHigh = 0;
+                do
+                {
+                    temp_curr_rd[ i ].random_coeff[ j ] = rng.rand();
+                    temp_curr_rd[ i ].random_coeff[ j ] <<= 32;
+                    temp_curr_rd[ i ].random_coeff[ j ] |= rng.rand();
+                }
+                while ( !IS_VALID_COEFFICIENT_64( temp_curr_rd[ i ].random_coeff[ j ], i ) );
+                uint64_t csl = temp_curr_rd[ i ].cachedSumLow;
+                temp_curr_rd[ i ].cachedSumLow += temp_curr_rd[ i ].random_coeff[ j ];
+                if ( temp_curr_rd[ i ].cachedSumLow < csl )
+                    temp_curr_rd[ i ].cachedSumHigh += 1;
+            }
+        }
 
-	for ( i=0; i<PMPML_LEVELS_64; i++ )
-	{
-		uint64_t rv = rng.rand();
-		rv <<= 32;
-		rv += rng.rand();
-		temp_curr_rd[ i ].const_term = rv;
-	}
+        for ( i=0; i<PMPML_LEVELS_64; i++ )
+        {
+            uint64_t rv = rng.rand();
+            rv <<= 32;
+            rv += rng.rand();
+            temp_curr_rd[ i ].const_term = rv;
+        }
 
-	if ( curr_rd == rd_for_PMPML_64 )
-		curr_rd = temp_curr_rd;
-	else
-	{
-		if ( curr_rd != NULL )
-			delete [] curr_rd;
-		curr_rd = temp_curr_rd;
-	}
-  }
+        if ( curr_rd == rd_for_PMPML_64 )
+            curr_rd = temp_curr_rd;
+        else
+        {
+            if ( curr_rd != NULL )
+                delete [] curr_rd;
+            curr_rd = temp_curr_rd;
+        }
+    }
 };
 
 #endif //  (defined _WIN64) || (defined __x86_64__)

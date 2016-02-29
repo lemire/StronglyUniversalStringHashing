@@ -1,16 +1,16 @@
 /* -------------------------------------------------------------------------------
  * Copyright (c) 2014, Dmytro Ivanchykhin, Sergey Ignatchenko, Daniel Lemire
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met: 
- * 
+ * modification, are permitted provided that the following conditions are met:
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution. 
- * 
+ *    and/or other materials provided with the distribution.
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -22,11 +22,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * -------------------------------------------------------------------------------
- * 
+ *
  * PMP+-Multilinear hash family implementation
- * 
+ *
  * v.1.00    Apr-14-2014    Initial release
- * 
+ *
  * -------------------------------------------------------------------------------*/
 
 // PMP_Multilinear_common.h: common defs for PMP+-Multilinear hash family implementation
@@ -35,7 +35,7 @@
 #define __MULTILINEARPRIMESTRINGHASHFUNCTOR_COMMON_H__
 #define __MULTILINEARPRIMESTRINGHASHFUNCTOR_COMMON_H__REVISION_ "$Rev: 484 $" /* for automated version information update; could be removed, if not desired */
 
- 
+
 #if defined(_MSC_VER)
 #include "pstdint.h"
 //#include "stdint.h"
@@ -60,7 +60,7 @@
 #elif __GNUC__
 #define NOINLINE      __attribute__ ((noinline))
 #define	FORCE_INLINE inline __attribute__((always_inline))
-#define ALIGN(n)      __attribute__ ((aligned(n))) 
+#define ALIGN(n)      __attribute__ ((aligned(n)))
 #else
 #define	FORCE_INLINE inline
 #define NOINLINE
@@ -78,21 +78,21 @@
 class UniformRandomNumberGenerator
 {
 public:
-	virtual uint32_t rand() = 0;
+    virtual uint32_t rand() = 0;
 };
 
 
 typedef union _ULARGE_INTEGER__XX
 {
-  struct {
-    uint32_t LowPart;
-    uint32_t HighPart;
-  };
-  struct {
-    uint32_t LowPart;
-    uint32_t HighPart;
-  } u;
-  uint64_t QuadPart;
+    struct {
+        uint32_t LowPart;
+        uint32_t HighPart;
+    };
+    struct {
+        uint32_t LowPart;
+        uint32_t HighPart;
+    } u;
+    uint64_t QuadPart;
 } ULARGE_INTEGER__XX;
 
 typedef union _LARGE_INTEGER__XX {
@@ -114,11 +114,19 @@ typedef struct _ULARGELARGE_INTEGER__XX
 } ULARGELARGE_INTEGER__XX;
 
 #ifdef __arm__
-typedef struct { uint32_t value __attribute__((__packed__)); } unaligned_uint32;
-typedef struct { uint64_t value __attribute__((__packed__)); } unaligned_uint64;
+typedef struct {
+    uint32_t value __attribute__((__packed__));
+} unaligned_uint32;
+typedef struct {
+    uint64_t value __attribute__((__packed__));
+} unaligned_uint64;
 #else
-typedef struct { uint32_t value; } unaligned_uint32;
-typedef struct { uint64_t value; } unaligned_uint64;
+typedef struct {
+    uint32_t value;
+} unaligned_uint32;
+typedef struct {
+    uint64_t value;
+} unaligned_uint64;
 #endif // __arm__
 
 #include <functional>
@@ -128,21 +136,21 @@ using namespace std;
 inline
 unsigned int fmix32_short ( unsigned int h )
 {
-  h ^= h >> 13;
-  h *= 0xab3be54f;
-  h ^= h >> 16;
+    h ^= h >> 13;
+    h *= 0xab3be54f;
+    h ^= h >> 16;
 
-  return h;
+    return h;
 }
 
 inline
 uint64_t fmix64_short ( uint64_t k )
 {
-  k ^= k >> 33;
-  k *= UINT64_C( 0xc4ceb9fe1a85ec53 );
-  k ^= k >> 33;
+    k ^= k >> 33;
+    k *= UINT64_C( 0xc4ceb9fe1a85ec53 );
+    k ^= k >> 33;
 
-  return k;
+    return k;
 }
 
 /////////////////     SSE / AVX SUPPORT     /////////////////
@@ -195,7 +203,7 @@ typedef struct _random_data_for_MPSHF
 #error unsupported PMPML_USE_SSE_SIZE value
 #endif
 #else
-	uint32_t random_coeff[ PMPML_CHUNK_SIZE ];
+    uint32_t random_coeff[ PMPML_CHUNK_SIZE ];
 #endif
 } random_data_for_MPSHF;
 extern const random_data_for_MPSHF rd_for_MPSHF[ PMPML_LEVELS ];
@@ -240,7 +248,7 @@ typedef struct _random_data_for_PMPML_64
 #ifdef PMPML_USE_SSE_64
     ALIGN(32) uint64_t random_coeff[ PMPML_CHUNK_SIZE_64 ];
 #else
-	uint64_t random_coeff[ PMPML_CHUNK_SIZE_64 ];
+    uint64_t random_coeff[ PMPML_CHUNK_SIZE_64 ];
 #endif
 } random_data_for_PMPML_64;
 extern const random_data_for_PMPML_64 rd_for_PMPML_64[ PMPML_LEVELS_64 ];
