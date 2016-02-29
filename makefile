@@ -11,7 +11,7 @@ CXXFLAGS = $(FLAGS) -std=c++0x
 CXXDEBUGFLAGS = $(DEBUGFLAGS) -std=c++0x
 export
 
-all: test-target benchmark-target smhasher boosted-treehash-params.exe
+all: test-target benchmark-target
 
 analysis-target:
 	$(MAKE) -C analysis
@@ -39,21 +39,8 @@ benchmark-target:
 variablelengthbenchmark-unaligned.exe: variablelengthbenchmark.exe
 	ln -sf variablelengthbenchmark.exe variablelengthbenchmark-unaligned.exe
 
-boosted-treehash-params.exe: src/boosted-treehash-params.cc include/*.h \
-                             include/treehash/*.hh
-	$(CXX) $(CXXFLAGS) -Iinclude -o $@ $<
-
-smhasher: $(wildcard smhasherpackage/*.h) $(wildcard smhasherpackage/*.c) \
-          $(wildcard smhasherpackage/*.cpp) cl3264.o vhash4smhasher.o
-	$(MAKE) -C include
-	$(MAKE) -C smhasherpackage
-	$(CXX) $(FLAGS) -o smhasher smhasherpackage/*.o cl3264.o \
-            vhash4smhasher.o include/*/*.o
-
 clean:
-	$(MAKE) -C smhasherpackage clean
 	$(MAKE) -C analysis clean
 	$(MAKE) -C test clean
 	$(MAKE) -C benchmark clean
-	rm -f multilinearhashing classicvariablelengthbenchmark \
-            smhasher  *.o *.exe
+	$(MAKE) -C include clean

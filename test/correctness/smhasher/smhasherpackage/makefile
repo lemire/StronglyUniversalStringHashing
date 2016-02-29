@@ -8,5 +8,8 @@ all: $(patsubst %.c,%.o,$(wildcard *.c)) $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 %.o: %.cpp *.h
 	$(CXX) $(CXXFLAGS) -w -c $<
 
+smhasher.exe: $(patsubst %.c,%.o,$(wildcard *.c)) $(patsubst %.cpp,%.o,$(wildcard *.cpp))
+	$(CXX) $(CXXFLAGS) -o $@ $^ ../*.o
+
 clean:
 	rm -f *.o

@@ -1,9 +1,10 @@
-.phony: all iaca-target clean
+.phony: all iaca-target tuning-target clean
 
-all: iaca-target
+all: iaca-target tuning-target
 
-iaca-target:
-	$(MAKE) -C iaca
+%-target:
+	$(MAKE) -C $*
 
 clean:
 	$(MAKE) -C iaca clean
+	$(MAKE) -C tuning clean
