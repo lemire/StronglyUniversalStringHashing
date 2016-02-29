@@ -24,13 +24,15 @@ Usage
 To test speed:
 
     make
-    ./benchmark
-    ./variablelengthbenchmark
+    # disable some processor features that add noise to benchmarks:
+    cd scripts/; sudo ./master.sh; cd ..
+    ./benchmark.exe
+    ./variablelengthbenchmark.exe
 
 To test correctness of hash functions using PCLMULQDQ:
 
-    make clmulunit hashunit
-    ./clmulunit ; ./hashunit
+    make test-target
+    for test in ./test/correctness/*.exe; do $test; done
 
 Licensing
 ==========
