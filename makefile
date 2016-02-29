@@ -1,6 +1,6 @@
 .SUFFIXES:
 
-.phony: all clean analysis-target test-target
+.phony: all clean analysis-target test-target benchmark-target
 
 FLAGS = -ggdb -O2 -mavx -mavx2 -march=native -Wall -Wextra -Wstrict-overflow \
         -Wstrict-aliasing -funroll-loops
@@ -11,9 +11,7 @@ CXXFLAGS = $(FLAGS) -std=c++0x
 CXXDEBUGFLAGS = $(DEBUGFLAGS) -std=c++0x
 export
 
-all: test-target variablelengthbenchmark.exe benchmark.exe \
-     benchmark64bitreductions.exe benchmark128bitmultiplication.exe \
-     benchmark128bitpolyhashing.exe smhasher boosted-treehash-params.exe
+all: test-target benchmark-target smhasher boosted-treehash-params.exe
 
 analysis-target:
 	$(MAKE) -C analysis
@@ -21,6 +19,10 @@ analysis-target:
 test-target:
 	$(MAKE) -C include
 	$(MAKE) -C test
+
+benchmark-target:
+	$(MAKE) -C include
+	$(MAKE) -C benchmark
 
 %.exe: src/%.cc $(shell find include -iname '*.h') $(shell find include -iname '*.c')
 	$(MAKE) -C include
@@ -52,6 +54,6 @@ clean:
 	$(MAKE) -C smhasherpackage clean
 	$(MAKE) -C analysis clean
 	$(MAKE) -C test clean
+	$(MAKE) -C benchmark clean
 	rm -f multilinearhashing classicvariablelengthbenchmark \
-            variablelengthbenchmark benchmark benchmark64bitreductions \
-            smhasher variablelenthbenchmark *.o
+            smhasher  *.o *.exe

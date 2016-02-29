@@ -23,11 +23,11 @@ Usage
 
 To test speed:
 
-    make
+    make benchmark-target
     # disable some processor features that add noise to benchmarks:
     cd scripts/; sudo ./master.sh; cd ..
-    ./benchmark.exe
-    ./variablelengthbenchmark.exe
+    ./benchmark/benchmark.exe
+    ./benchmark/variablelengthbenchmark.exe
 
 To test correctness of hash functions using PCLMULQDQ:
 
