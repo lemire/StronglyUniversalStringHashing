@@ -4,7 +4,7 @@ all: $(patsubst %.c,%.exe,$(wildcard *.c)) \
      $(patsubst %.cc,%.exe,$(wildcard *.cc)) smhasher-target
 
 %.exe: %.c $(wildcard ../../include/*.h)
-	$(CC) $(CFLAGS) -o $@ $< ../../include/*/*.o -I../../include
+	$(CC) $(CFLAGS) -o $@ $< ../../include/*/*.o -I../../include  -lstdc++
 
 %.exe: %.cc $(wildcard ../../include/*.h) $(wildcard ../../include/*.hh)
 	$(CXX) $(CXXFLAGS) -o $@ $< ../../include/*/*.o -I../../include
@@ -22,3 +22,4 @@ smhasher.exe: smhasherpackage cl3264.o vhash4smhasher.o
 
 clean:
 	rm -f *.o *.exe
+	$(MAKE) -C smhasher clean

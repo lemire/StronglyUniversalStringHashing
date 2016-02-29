@@ -30,7 +30,11 @@ struct NamedFunc {
 #define NAMED(f) NamedFunc(f, #f)
 
 NamedFunc hashFunctions[] = {
+  NAMED((&hashPMP64)),
   NAMED((&CLHASH)),
+  NAMED((&hashCity)),
+  NAMED((&hashSipHash)),
+  NAMED((&hashVHASH64)),
   NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, CLNH, 7>)),
   NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHCL, 7>)),
   NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>))

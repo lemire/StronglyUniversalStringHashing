@@ -8,6 +8,16 @@
 // outputs a hash value
 typedef uint64_t (*hashFunction64)(const void *  ,const  uint64_t * , const size_t );
 
+
+#include "PMP/PMP_C_wrapper.h"
+
+// PMP64 hash function (ignores seed, but good to benchmark running speed)
+uint64_t hashPMP64(const void*  rs, const uint64_t *  string, const size_t length) {
+    (void) rs;
+    return pmp64_hash((const unsigned char *) string, length * sizeof(uint64_t));
+}
+
+
 #include "City/City.h"
 
 // Google hash function

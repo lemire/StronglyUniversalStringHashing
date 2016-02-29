@@ -55,7 +55,8 @@ NamedFunc hashFunctions[] = {
     // Tree hashing:
     NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, CLNH, 7>)),
     NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHCL, 7>)),
-    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>))
+    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>)),
+    NAMED((&hashPMP64)),
 };
 
 const int HowManyFunctions64 =
