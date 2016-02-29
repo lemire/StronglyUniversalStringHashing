@@ -34,8 +34,8 @@ test-target:
 	$(MAKE) -C include
 	$(CC) $(CFLAGS) -o $@ -c $< -Iinclude
 
-variablelengthbenchmark-unaligned: variablelengthbenchmark
-	ln -sf variablelengthbenchmark variablelengthbenchmark-unaligned
+variablelengthbenchmark-unaligned.exe: variablelengthbenchmark.exe
+	ln -sf variablelengthbenchmark.exe variablelengthbenchmark-unaligned.exe
 
 boosted-treehash-params.exe: src/boosted-treehash-params.cc include/*.h \
                              include/treehash/*.hh
