@@ -8,10 +8,10 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include "simple-treehash.hh"
-#include "recursive-treehash.hh"
-#include "binary-treehash.hh"
-#include "boosted-treehash.hh"
+#include "treehash/simple-treehash.hh"
+#include "treehash/recursive-treehash.hh"
+#include "treehash/binary-treehash.hh"
+#include "treehash/boosted-treehash.hh"
 
 bool fill_random(uint64_t * data, ssize_t n) {
   const int rfd = open("/dev/urandom", O_RDONLY);
@@ -25,7 +25,7 @@ bool fill_random(uint64_t * data, ssize_t n) {
 }
 
 int main(int argc, char ** argv) {
-  ssize_t length = 1 << 25;
+  ssize_t length = 1 << 15;
   if (argc > 1) {
     if (argc > 2) {
       fprintf(stderr, "Only one argument is premitted: the length\n");

@@ -2,10 +2,10 @@
 
 all: $(patsubst %.c,%.exe,$(wildcard *.c)) $(patsubst %.cc,%.exe,$(wildcard *.cc))
 
-%.exe: %.cc
+%.exe: %.cc $(shell find ../include)
 	$(CXX) $(CXXFLAGS) -o $@ $< ../include/*/*.o -I../include
 
-%.exe: %.c
+%.exe: %.c $(shell find ../include)
 	$(CC) $(CFLAGS) -o $@ $< ../include/*/*.o -I../include
 
 clean:
