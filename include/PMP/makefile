@@ -1,11 +1,8 @@
-.PHONY:
-all clean
+.PHONY: all clean
 
-all:
-$(patsubst %.cpp,%.o,$(wildcard *.cpp))
+all: $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 
-%.o:
-%.cpp $(wildcard ./*.h)
+%.o: %.cpp $(wildcard ./*.h)
 	$(CXX) $(CXXFLAGS) -c $<
 
 clean:
