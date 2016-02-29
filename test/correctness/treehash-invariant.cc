@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#include <inttypes.h>
 #include <errno.h>
 #include <unistd.h>
 
@@ -59,10 +60,10 @@ int main(int argc, char ** argv) {
                            boosted_treehash<5>(r, data, i)};
     if ((x[0] != x[1]) || (x[1] != x[2]) || (x[2] != x[3])) {
       fprintf(stderr, "Failed validation at %zd.\n", i);
-      fprintf(stderr, "Simple:     %0lx\n", x[0]);
-      fprintf(stderr, "Recursive:  %0lx\n", x[1]);
-      fprintf(stderr, "Binary:     %0lx\n", x[2]);
-      fprintf(stderr, "Boosted<5>: %0lx\n", x[3]);
+      fprintf(stderr, "Simple:     %" PRIx64  "\n", x[0]);
+      fprintf(stderr, "Recursive:  %" PRIx64  "\n", x[1]);
+      fprintf(stderr, "Binary:     %" PRIx64  "\n", x[2]);
+      fprintf(stderr, "Boosted<5>: %" PRIx64  "\n", x[3]);
       return 1;
     }
   }

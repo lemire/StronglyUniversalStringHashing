@@ -15,7 +15,7 @@ smhasher-target:
 %.o: %.c $(wildcard ../../include/*.h)
 	$(CC) $(CFLAGS) -o $@ -c $< -I../../include
 
-smhasher.exe: $(shell find smhasherpackage) cl3264.o vhash4smhasher.o
+smhasher.exe: smhasherpackage cl3264.o vhash4smhasher.o
 	$(MAKE) -C smhasherpackage
 	$(CXX) $(FLAGS) -o $@ smhasherpackage/*.o cl3264.o vhash4smhasher.o \
             ../../include/*/*.o
