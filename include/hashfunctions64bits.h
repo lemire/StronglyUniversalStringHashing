@@ -8,14 +8,14 @@
 // outputs a hash value
 typedef uint64_t (*hashFunction64)(const void *  ,const  uint64_t * , const size_t );
 
-#include "City.h"
+#include "City/City.h"
 
 // Google hash function
 uint64_t hashCity(const void*  rs, const uint64_t *  string, const size_t length) {
     return CityHash64WithSeed((const char *) string, length * sizeof(uint64_t),*(uint64_t*)rs);
 }
 
-#include "siphash24.h"
+#include "SipHash/siphash24.h"
 // SipHash
 uint64_t hashSipHash(const void*  rs, const uint64_t *  string, const size_t length) {
     uint64_t answer;
@@ -25,7 +25,7 @@ uint64_t hashSipHash(const void*  rs, const uint64_t *  string, const size_t len
 
 
 
-#include "vmac.h"
+#include "VHASH/vmac.h"
 #include <string.h>
 // to simulate the speed of VHASH. Not thread safe.
 // This is not correct if the input is not divisible by 16 bytes.

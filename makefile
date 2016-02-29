@@ -11,58 +11,28 @@ CXXFLAGS = $(FLAGS) -std=c++0x
 CXXDEBUGFLAGS = $(DEBUGFLAGS) -std=c++0x
 export
 
-all: test-target classicvariablelengthbenchmark variablelengthbenchmark \
-     variablelengthbenchmark-debug benchmark benchmark64bitreductions \
-     smhasher benchmark128bitmultiplication benchmark128bitpolyhashing \
-     boosted-treehash-params.exe
+all: test-target variablelengthbenchmark.exe benchmark.exe \
+     benchmark64bitreductions.exe benchmark128bitmultiplication.exe \
+     benchmark128bitpolyhashing.exe smhasher boosted-treehash-params.exe
 
 analysis-target:
 	$(MAKE) -C analysis
 
-test-target: City.o siphash24.o vmac.o rijndael-alg-fst.o
+test-target:
+	$(MAKE) -C include
 	$(MAKE) -C test
 
-benchmark: src/benchmark.cc include/*.h include/treehash/*.hh City.o \
-           siphash24.o vmac.o
-	$(CXX) $(CXXFLAGS) -o benchmark src/benchmark.cc City.o siphash24.o \
-            vmac.o rijndael-alg-fst.o -Iinclude -ICity -ISipHash -IVHASH
+%.exe: src/%.cc $(shell find include -iname '*.h') $(shell find include -iname '*.c')
+	$(MAKE) -C include
+	$(CXX) $(CXXFLAGS) -o $@ $< include/*/*.o -Iinclude
 
-benchmark-debug: src/benchmark.cc include/*.h include/treehash/*.hh City.o \
-                 siphash24.o vmac.o
-	$(CXX) $(CXXDEBUGFLAGS) -o benchmark-debug src/benchmark.cc City.o \
-            siphash24.o vmac.o rijndael-alg-fst.o -Iinclude -ICity -ISipHash \
-            -IVHASH
+%.exe: src/%.c $(shell find include -iname '*.h') $(shell find include -iname '*.c')
+	$(MAKE) -C include
+	$(CC) $(CFLAGS) -o $@ $< include/*/*.o -Iinclude
 
-benchmark128bitmultiplication: src/benchmark128bitmultiplication.c \
-                               include/clmul.h
-	$(CC) $(CFLAGS) -o benchmark128bitmultiplication \
-            src/benchmark128bitmultiplication.c -Iinclude
-
-benchmark128bitpolyhashing: src/benchmark128bitpolyhashing.c include/clmul.h
-	$(CC) $(CFLAGS) -o benchmark128bitpolyhashing \
-            src/benchmark128bitpolyhashing.c -Iinclude
-
-benchmark64bitreductions: src/benchmark64bitreductions.c include/clmul.h
-	$(CC) $(CFLAGS) -o benchmark64bitreductions \
-            src/benchmark64bitreductions.c -Iinclude
-
-classicvariablelengthbenchmark: src/classicvariablelengthbenchmark.c \
-                                include/*.h City.o siphash24.o vmac.o
-	$(CC) $(CFLAGS) -o classicvariablelengthbenchmark \
-            src/classicvariablelengthbenchmark.c City.o siphash24.o vmac.o \
-            rijndael-alg-fst.o -Iinclude -ICity -ISipHash -IVHASH
-
-variablelengthbenchmark: src/variablelengthbenchmark.cc include/*.h \
-                         include/treehash/*.hh City.o siphash24.o vmac.o
-	$(CXX) $(CXXFLAGS) -o variablelengthbenchmark \
-            src/variablelengthbenchmark.cc City.o siphash24.o vmac.o \
-            rijndael-alg-fst.o -Iinclude -ICity -ISipHash -IVHASH
-
-variablelengthbenchmark-debug: src/variablelengthbenchmark.cc include/*.h \
-                               include/treehash/*.hh City.o siphash24.o vmac.o
-	$(CXX) $(CXXDEBUGFLAGS) -o $@ src/variablelengthbenchmark.cc City.o \
-            siphash24.o vmac.o rijndael-alg-fst.o -Iinclude -ICity -ISipHash \
-            -IVHASH
+%.o: src/%.c $(shell find include -iname '*.h') $(shell find include -iname '*.c')
+	$(MAKE) -C include
+	$(CC) $(CFLAGS) -o $@ -c $< -Iinclude
 
 variablelengthbenchmark-unaligned: variablelengthbenchmark
 	ln -sf variablelengthbenchmark variablelengthbenchmark-unaligned
@@ -71,30 +41,12 @@ boosted-treehash-params.exe: src/boosted-treehash-params.cc include/*.h \
                              include/treehash/*.hh
 	$(CXX) $(CXXFLAGS) -Iinclude -o $@ $<
 
-City.o: City/City.c City/City.h
-	$(CC) $(CFLAGS) -c City/City.c -ICity
-
-siphash24.o: SipHash/siphash24.c SipHash/siphash24.h
-	$(CC) $(CFLAGS) -c SipHash/siphash24.c -ISipHash
-
-rijndael-alg-fst.o: VHASH/rijndael-alg-fst.c  VHASH/rijndael-alg-fst.h
-	$(CC) $(CFLAGS) -c VHASH/rijndael-alg-fst.c -IVHASH
-
-cl3264.o: src/cl3264.c include/*.h
-	$(CC) $(CFLAGS) -c src/cl3264.c -Iinclude
-
-vhash4smhasher.o: src/vhash4smhasher.c include/*.h
-	$(CC) $(CFLAGS) -c src/vhash4smhasher.c -Iinclude -IVHASH
-
-vmac.o: rijndael-alg-fst.o VHASH/vmac.c VHASH/vmac.h
-	$(CC) $(CFLAGS) -c VHASH/vmac.c -IVHASH
-
 smhasher: $(wildcard smhasherpackage/*.h) $(wildcard smhasherpackage/*.c) \
-          $(wildcard smhasherpackage/*.cpp) cl3264.o vhash4smhasher.o vmac.o \
-          rijndael-alg-fst.o
+          $(wildcard smhasherpackage/*.cpp) cl3264.o vhash4smhasher.o
+	$(MAKE) -C include
 	$(MAKE) -C smhasherpackage
 	$(CXX) $(FLAGS) -o smhasher smhasherpackage/*.o cl3264.o \
-            vhash4smhasher.o vmac.o rijndael-alg-fst.o
+            vhash4smhasher.o include/*/*.o
 
 clean:
 	$(MAKE) -C smhasherpackage clean

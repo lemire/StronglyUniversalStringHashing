@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "mersenne.h"
-#include "vmac.h"
+#include "VHASH/vmac.h"
 
 
 uint64_t vrandoms[140];

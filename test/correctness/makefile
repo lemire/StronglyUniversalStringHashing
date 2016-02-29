@@ -3,10 +3,10 @@
 all: $(patsubst %.c,%.exe,$(wildcard *.c)) $(patsubst %.cc,%.exe,$(wildcard *.cc))
 
 %.exe: %.c $(wildcard ../../include/*.h)
-	$(CC) $(CFLAGS) -o $@ $< ../../City.o ../../siphash24.o ../../vmac.o ../../rijndael-alg-fst.o -I../../include -I../../City -I../../SipHash -I../../VHASH
+	$(CC) $(CFLAGS) -o $@ $< ../../include/*/*.o -I../../include
 
 %.exe: %.cc $(wildcard ../../include/*.h) $(wildcard ../../include/*.hh)
-	$(CXX) $(CXXFLAGS) -o $@ $< ../../City.o ../../siphash24.o ../../vmac.o ../../rijndael-alg-fst.o -I../../include -I../../City -I../../SipHash -I../../VHASH
+	$(CXX) $(CXXFLAGS) -o $@ $< ../../include/*/*.o -I../../include
 
 clean:
 	rm -f *.o *.exe
