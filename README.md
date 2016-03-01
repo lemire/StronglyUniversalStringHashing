@@ -34,6 +34,12 @@ To test correctness of hash functions using PCLMULQDQ:
     make test-target
     for test in ./test/correctness/*.exe; do $test; done
 
+Or more simply...
+
+    ./run_unit.sh
+
+
+
 Licensing
 ==========
 
