@@ -1,4 +1,3 @@
-
 /**
  * Usage:
  *
@@ -6,7 +5,6 @@
  * $ /opt/intel/iaca/bin/iaca.sh -64 -mark 1 ./nhvsclnh.o
  * $ /opt/intel/iaca/bin/iaca.sh -64 -mark 2 ./nhvsclnh.o
  */
-
 
 #include <stdint.h>
 #include <stdlib.h>

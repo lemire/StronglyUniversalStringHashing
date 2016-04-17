@@ -1,9 +1,2 @@
-clmulunit
-variablelengthbenchmark
-variablelengthbenchmark-debug
-benchmark
-benchmark64bitreductions
-uniformsanity
-smhasher
-benchmark128bitmultiplication
-benchmark128bitpolyhashing
+*.exe
+*.o

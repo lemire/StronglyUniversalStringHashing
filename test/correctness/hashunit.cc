@@ -30,10 +30,14 @@ struct NamedFunc {
 #define NAMED(f) NamedFunc(f, #f)
 
 NamedFunc hashFunctions[] = {
-    NAMED((&CLHASH)),
-    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, CLNH, 1>)),
-    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHCL, 7>)),
-    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>))
+  NAMED((&hashPMP64)),
+  NAMED((&CLHASH)),
+  NAMED((&hashCity)),
+  NAMED((&hashSipHash)),
+  NAMED((&hashVHASH64)),
+  NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, CLNH, 7>)),
+  NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHCL, 7>)),
+  NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>))
 };
 
 const int HowManyFunctions64 =
@@ -44,15 +48,17 @@ const int HowManyFunctions64 =
 int testbitflipping() {
     printf("[%s] %s\n", __FILE__, __func__);
     int i = 0;
-    int lengthStart = 1, lengthEnd = 2048; // inclusive
+    int lengthStart = 1, lengthEnd = 1024; // inclusive
     uint64_t randbuffer[150] __attribute__ ((aligned (16)));// 150 should be plenty
 
     uint64_t * intstring;
-    // We need 32 bytes of alignment for working with __m256i's
-    if (posix_memalign((void **)(&intstring), 32, sizeof(uint64_t)*lengthEnd)) {
-        cerr << "Failed to allocate " << lengthEnd << " words." << endl;
-        return 1;
+    void * intstringoffsetted; // on purpose, we mess with the alignment
+    intstringoffsetted = malloc(sizeof(uint64_t)*lengthEnd  + 1);
+    if(intstringoffsetted == NULL) {
+      cerr << "Failed to allocate " << lengthEnd << " words." << endl;
+      return 1;
     }
+    intstring =  (uint64_t *) ((char *) intstringoffsetted + 1);
     bool stillinplay [HowManyFunctions64];
     for (i = 0; i < HowManyFunctions64; ++i) {
         stillinplay[i] = true;
@@ -97,32 +103,29 @@ endoflength:
             {}
         }
     }
-    free(intstring);
+    free(intstringoffsetted);
     return re;
 }
 
 int testunused() {
     printf("[%s] %s\n", __FILE__, __func__);
     assert(HowManyFunctions64 <= 64);
-    int lengthStart = 1, lengthEnd = 2048; // inclusive
+    int lengthStart = 1, lengthEnd = 1024; // inclusive
     int i;
     int length;
     uint64_t randbuffer[150] __attribute__ ((aligned (16)));// 150 should be plenty
 
-    uint64_t * intstring;
-    // We need 32 bytes of alignment for working with __m256i's
-    if (posix_memalign((void **)(&intstring), 32, sizeof(uint64_t)*lengthEnd)) {
-        cerr << "Failed to allocate " << lengthEnd << " words." << endl;
-        return 1;
-    }
+    uint64_t * intstring = (uint64_t *) malloc(sizeof(uint64_t)*lengthEnd);
     for (i = 0; i < 150; ++i) {
         randbuffer[i] = pcg64_random();
     }
     for (i = 0; i < lengthEnd; ++i) {
         intstring[i] = pcg64_random();
     }
+    int result = 0;
     for (i = 0; i < HowManyFunctions64; ++i) {
         const hashFunction64 thisfunc64 = hashFunctions[i].f;
+        cout << "testing " << hashFunctions[i].name << endl;
         for (length = lengthStart; length <= lengthEnd; length += 1) {
             for (int place = 0; place < length; ++place) {
                 const auto first_run = thisfunc64(randbuffer, intstring, length);
@@ -136,11 +139,11 @@ int testunused() {
                     intstring[place] = new_val2;
                     const auto second_run2 = thisfunc64(randbuffer, intstring, length);
                     if (second_run2 == second_run) {
-                        cout << "testing " << hashFunctions[i].name << endl;
                         cerr << " You may have a bug. \n" <<endl;
                         cerr << second_run << " " << second_run2 << endl
                              << new_val << " " << new_val2 << endl;
                         cerr << endl;
+                        result = 1;
                         goto endoflength;
                     }
                 }
@@ -150,15 +153,15 @@ endoflength:
         {}
     }
     free(intstring);
-    return 1;
+    return result;
 }
 
 int main(int c, char ** arg) {
     (void) (c);
     (void) (arg);
     int r = 0;
-    r |= testunused();
     r |= testbitflipping();
+    r |= testunused();
     if(r == 0) cout <<" Your code is probably ok." <<endl;
     else cout << "Your code looks buggy." << endl;
     return r;
