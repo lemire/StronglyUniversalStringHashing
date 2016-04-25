@@ -62,6 +62,6 @@ following exceptions for code written by other authors:
 Related projects
 =================
 
-For a project with similar goals, see:
+There is a very simple clhash library in C: https://github.com/lemire/clhash
 
-https://github.com/lemire/fasthashing
+For a project with similar goals, see: https://github.com/lemire/fasthashing
