@@ -5,6 +5,15 @@ StronglyUniversalStringHashing
 Very fast [universal hash
 families](https://en.wikipedia.org/wiki/Universal_hashing) on strings.
 
+Sample results on a regular x64 (Skylake) processor:
+```
+Google's City                        CPU cycle/byte = 0.216047 	 
+64-bit VHASH                         CPU cycle/byte = 0.215097 	 
+64-bit CLHASH                        CPU cycle/byte = 0.091786 	
+SipHash                              CPU cycle/byte = 1.414069
+```
+
+
 This code includes the experimental code from [Daniel Lemire and Owen
 Kaser, "Faster 64-bit universal hashing using carry-less
 multiplications", Journal of Cryptographic Engineering (to
