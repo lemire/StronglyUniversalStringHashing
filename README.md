@@ -14,7 +14,7 @@ SipHash                              CPU cycle/byte = 1.414069
 ```
 
 
-This software includes the experimental code from 
+This software includes the experimental code from the following research papers... 
 
 * Daniel Lemire and Owen
 Kaser, [Faster 64-bit universal hashing using carry-less
