@@ -18,7 +18,7 @@ This software includes the experimental code from the following research papers.
 
 * Daniel Lemire and Owen
 Kaser, [Faster 64-bit universal hashing using carry-less
-multiplications](http://arxiv.org/abs/1503.03465), Journal of Cryptographic Engineering (to appear)
+multiplications](http://arxiv.org/abs/1503.03465), Journal of Cryptographic Engineering 6 (3), 2016.
 * Owen Kaser and Daniel Lemire, [Strongly universal string hashing is fast](http://arxiv.org/abs/1202.4961), Computer Journal (2014) 57 (11): 1624-1638.
 
 Acknowledgements
