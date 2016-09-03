@@ -45,7 +45,7 @@ ticks stopRDTSCP(void) {
     return rdtsc();
 }
 // start and stop are as recommended by
-// Gabriele Paoloni, How to Benchmark Code Execution Times on Intel® IA-32 and IA-64 Instruction Set Architectures
+// Gabriele Paoloni, How to Benchmark Code Execution Times on Intel IA-32 and IA-64 Instruction Set Architectures
 // September 2010
 // http://edc.intel.com/Link.aspx?id=3954
 
@@ -92,7 +92,7 @@ extern "C" {
 #include "treehash/generic-treehash.hh"
 
 
-#define HowManyFunctions 12
+#define HowManyFunctions 13
 #define HowManyFunctions64 11
 
 hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
@@ -109,10 +109,9 @@ hashFunction64 funcArr64[HowManyFunctions64] = {&hashCity,
                                                };
 
 hashFunction funcArr[HowManyFunctions] = {&hashGaloisFieldMultilinear,
-                                          &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,&hashMultilinear2by2 ,
-                                          &hashMultilinearhalf, &hashMultilineardouble,
-                                          &hashNH,&hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX,&pyramidal_Multilinear
-                                         };
+    &hashGaloisFieldMultilinearHalfMultiplications, &hashMultilinear,
+    &hashMultilinear2by2, &hashMultilinearhalf, &hashMultilineardouble, &hashNH,
+    &hashRabinKarp, &hashFNV1, &hashFNV1a, &hashSAX, &pyramidal_Multilinear, &pdp32avx};
 
 const char* functionnames64[HowManyFunctions64] = {
     "Google's City                       ",
@@ -140,7 +139,8 @@ const char* functionnames[HowManyFunctions] = {
     "FNV1                                ",
     "FNV1a                               ",
     "SAX                                 ",
-    "Pyramidal multilinear (a. univ.)    "
+    "Pyramidal multilinear (a. univ.)    ",
+    "pdp32avx                            ",
 };
 #else
 
@@ -198,9 +198,9 @@ int main(int argc, char ** arg) {
     const char * functionname;
     ticks bef, aft;
     struct timeval start, finish;
-    uint64_t randbuffer[N + 3] __attribute__ ((aligned (16)));
+    uint64_t randbuffer[N + 3] __attribute__ ((aligned (32)));
     uint32_t sumToFoolCompiler = 0;
-    uint32_t intstring[N] __attribute__ ((aligned (16))); // // could force 16-byte alignment with  __attribute__ ((aligned (16)));
+    uint32_t intstring[N] __attribute__ ((aligned (32)));
     int c;
     while ((c = getopt(argc, arg, "hb:")) != -1)
         switch (c) {

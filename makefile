@@ -3,7 +3,7 @@
 .phony: all clean analysis-target test-target benchmark-target
 
 FLAGS = -ggdb -O2 -mavx -mavx2 -march=native -Wall -Wextra -Wstrict-overflow \
-        -Wstrict-aliasing -funroll-loops
+        -Wstrict-aliasing -funroll-loops -fno-strict-aliasing
 DEBUGFLAGS = $(FLAGS) -ggdb3 -O0 -fno-unroll-loops -fsanitize=undefined
 CFLAGS = $(FLAGS) -std=gnu99
 CDEBUGFLAGS = $(DEBUGFLAGS) -std=gnu99
