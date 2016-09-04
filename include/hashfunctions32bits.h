@@ -216,7 +216,7 @@ uint32_t pyramidal_Multilinear(const void *  randomsource, const uint32_t *  str
     return answer;
 }
 
-// Almost-strongly universal partial dot product (aka NH, aka half multilinear) using AVX
+// Almost-strongly universal pseudo dot product (aka NH, aka half multilinear) using AVX
 // and AVX2 instructions.
 uint32_t pdp32avx(const void *rs, const uint32_t *string, const size_t length) {
   const uint32_t *const endstring = string + length;
