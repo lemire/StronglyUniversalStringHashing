@@ -56,6 +56,7 @@ NamedFunc hashFunctions[] = {
     NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, CLNH, 7>)),
     NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHCL, 7>)),
     NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>)),
+    NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHavx, 3>)),
     NAMED((&hashPMP64)),
 };
 
@@ -86,7 +87,7 @@ int main(int c, char ** arg) {
     int length;
     int SHORTTRIALS;
     struct timeval start, finish;
-    uint64_t randbuffer[150] __attribute__ ((aligned (16)));// 150 should be plenty
+    uint64_t randbuffer[150] __attribute__ ((aligned (32)));// 150 should be plenty
     uint32_t sumToFoolCompiler = 0;
     uint64_t * intstring;
     // We need 32 bytes of alignment for working with __m256i's

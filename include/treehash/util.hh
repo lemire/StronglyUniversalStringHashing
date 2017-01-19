@@ -376,6 +376,45 @@ struct CLNHx2 {
   Rand r[62];
 };
 
+struct NHavx {
+  static const bool alignmentRequired = true;
+  typedef CLNHunaligned Unaligned;
+  typedef __m256i Atom;
+
+ private:
+  typedef __m256i Rand;
+
+ public:
+  const static size_t ATOM_SIZE = sizeof(Atom);
+  inline static void AtomCopy(Atom *x, const Atom &y) { *x = y; }
+  inline void Hash(Atom *out, const int i, const Atom &in0,
+                   const Atom &in1) const {
+    Atom input = _mm256_add_epi32(in0, r[i]);
+    const Atom hi = _mm256_srli_epi64(input, 32);
+    input = _mm256_mul_epu32(input, hi);
+    *out = _mm256_add_epi64(in1, input);
+  }
+
+  explicit NHavx(const void **rvoid, const size_t depth)
+      : r(reinterpret_cast<const Rand *>(*rvoid)) {
+    *rvoid = reinterpret_cast<const void *>(r + depth);
+  }
+
+  inline static uint64_t Reduce(const void **rvoid, const Atom &x) {
+    int64_t y[4] = {_mm256_extract_epi64(x, 0), _mm256_extract_epi64(x, 1),
+        _mm256_extract_epi64(x, 2), _mm256_extract_epi64(x, 3)};
+    uint64_t *z = reinterpret_cast<uint64_t *>(y);
+    const ui128 *r128 = *reinterpret_cast<const ui128 **>(rvoid);
+    *rvoid = reinterpret_cast<const void *>(r128 + 2);
+    z[0] = deltaDietz(*r128, z[0], z[1]);
+    z[2] = deltaDietz(*r128, z[2], z[3]);
+    return deltaDietz(*(r128 + 1), z[0], z[2]);
+  }
+
+ private:
+  const Rand *r;
+};
+
 // This primitive just wraps another primitive, but operates on arrays
 // of a given static size.
 template <typename T, size_t n>

@@ -45,7 +45,7 @@
 
 
 
-////    GENERAL STAFF    ////
+////    GENERAL STUFF    ////
 /////////////////////////////
 
 #if defined(_MSC_VER)
@@ -173,12 +173,9 @@ __asm__( "mulq %5\n" \
 
 #ifdef PMPML_CHUNK_LOOP_USE_TWO_ACCUMULATORS_64
 
-#ifdef __clang__
 // see remark above
 
-#error NOT IMPLEMENTED
 
-#else // __clang__ not defined
 
 #define PMPML_CHUNK_LOOP_BODY_ULI_T1_64__( ii ) { \
 uint64_t rhi;  /*Dummy variable to tell the compiler that the register rax is input and clobbered but not actually output; see assembler code below. Better syntactic expression is very welcome.*/ \
@@ -198,7 +195,6 @@ __asm__("addq %3, %0\n" \
         : "g"(ctr2_0), "g"(ctr2_1), "g"(ctr2_2) : "cc" ); \
 }
 
-#endif // __clang__
 
 #endif // PMPML_CHUNK_LOOP_USE_TWO_ACCUMULATORS_64
 

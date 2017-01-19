@@ -1,7 +1,7 @@
-
-
 #ifndef HASHFUNCTIONS32BITS_H_
 #define HASHFUNCTIONS32BITS_H_
+
+#include <immintrin.h>
 
 // first pointer is a random source,
 // next pointer is the data.
@@ -137,7 +137,7 @@ uint32_t hashRabinKarp(const void * useless, const uint32_t *  string, const siz
 }
 
 // This is similar to Rabin-Karp, but we avoid the multiplication
-//D. J. Bernstein, CDB–Constant Database, http://cr.yp.to/cdb.html
+//D. J. Bernstein, CDB-Constant Database, http://cr.yp.to/cdb.html
 uint32_t hashBernstein(const void * useless,const uint32_t *  string, const size_t length) {
     (void) (useless);
     int sum = 0;
@@ -216,6 +216,26 @@ uint32_t pyramidal_Multilinear(const void *  randomsource, const uint32_t *  str
     return answer;
 }
 
-
+// Almost-strongly universal pseudo dot product (aka NH, aka half multilinear) using AVX
+// and AVX2 instructions.
+uint32_t pdp32avx(const void *rs, const uint32_t *string, const size_t length) {
+  const uint32_t *const endstring = string + length;
+  const __m256i *randomsource = (const __m256i *)rs;
+  assert(((uintptr_t)randomsource & 31) == 0);
+  assert ((length & 7) == 0);
+  __m256i acc = *randomsource;
+  ++randomsource;
+  for (; string + 7 < endstring; randomsource += 1, string += 8) {
+    __m256i input = _mm256_loadu_si256((const __m256i *)string);
+    input = _mm256_add_epi32(input, *randomsource);
+    __m256i hi = _mm256_srli_epi64(input, 32);
+    input = _mm256_mul_epu32(input, hi);
+    acc = _mm256_add_epi64(acc, input);
+  }
+  const int64_t intermediate[2] = {(int64_t)length, _mm256_extract_epi64(acc, 0) +
+          _mm256_extract_epi64(acc, 1) + _mm256_extract_epi64(acc, 2) +
+          _mm256_extract_epi64(acc, 3)};
+  return hashMultilinear(randomsource, (const uint32_t *)intermediate, 4);
+}
 
 #endif /* HASHFUNCTIONS32BITS_H_ */
