@@ -14,11 +14,13 @@ SipHash                              CPU cycle/byte = 1.414069
 ```
 
 
-This software includes the experimental code from the following research papers... 
+This software includes the experimental code from the following research papers...
+
 
 * Daniel Lemire and Owen
 Kaser, [Faster 64-bit universal hashing using carry-less
 multiplications](http://arxiv.org/abs/1503.03465), Journal of Cryptographic Engineering 6 (3), 2016.
+* Dmytro Ivanchykhin, Sergey Ignatchenko, Daniel Lemire, [Regular and almost universal hashing: an efficient implementation](https://arxiv.org/abs/1609.09840), Software: Practice and Experience (to appear).
 * Owen Kaser and Daniel Lemire, [Strongly universal string hashing is fast](http://arxiv.org/abs/1202.4961), Computer Journal (2014) 57 (11): 1624-1638.
 
 Acknowledgements
@@ -63,5 +65,3 @@ following exceptions for code written by other authors:
   * smhasher and CityHash are MIT licensed.
 
   * VHASH and siphash are public domain.
-
-
