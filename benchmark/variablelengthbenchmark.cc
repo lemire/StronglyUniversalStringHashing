@@ -35,6 +35,7 @@ extern "C" {
 #include "clmulpoly64bits.h"
 #include "clmulhierarchical64bits.h"
 #include "ghash.h"
+#include "umash/umash.h"
 }
 
 #include "treehash/binary-treehash.hh"
@@ -45,6 +46,20 @@ struct NamedFunc {
   const string name;
   NamedFunc(const hashFunction64& f, const string& name) : f(f), name(name) {}
 };
+
+// the NamedFunc struct requires hash functions in a particular type, so umashWrap handles
+// the conversion over umash_full
+uint64_t umashWrap(const void * params  ,const  uint64_t * data, const size_t n_words) {
+  return umash_full(reinterpret_cast<const umash_params *>(params), 42, 0, data,
+                    n_words * sizeof(uint64_t));
+}
+
+// A wrapper for a version of CLHASH that runs on strings that have a length (in bytes)
+// that is not a multiple of sizeof(uint64_t)
+uint64_t clhashWrap(const void *rs, const uint64_t *stringword, const size_t lengthword) {
+  return CLHASHbyte(rs, reinterpret_cast<const char *>(stringword),
+                    lengthword * sizeof(uint64_t));
+}
 
 #define NAMED(f) NamedFunc(f, #f)
 
@@ -58,6 +73,8 @@ NamedFunc hashFunctions[] = {
     NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NH, 7>)),
     NAMED((&generic_treehash<BoostedZeroCopyGenericBinaryTreehash, NHavx, 3>)),
     NAMED((&hashPMP64)),
+    NAMED(&umashWrap),
+    NAMED(&clhashWrap),
 };
 
 const int HowManyFunctions64 =
@@ -100,12 +117,24 @@ int main(int c, char ** arg) {
     if (!aligned) {
       intstring = reinterpret_cast<decltype(intstring)>(1 + reinterpret_cast<char *>(intstring));
     }
+    // seed our random bits
+    umash_params umash_seeds;
+    while (true) {
+      assert((sizeof(umash_seeds) % sizeof(uint64_t)) == 0);
+      for (i = 0; i < static_cast<int>(sizeof(umash_seeds) / sizeof(uint64_t)); ++i) {
+        const uint64_t seed = rand() | ((uint64_t)(rand()) << 32);
+        reinterpret_cast<uint64_t *>(&umash_seeds)[i] = seed;
+      }
+      if (umash_params_prepare(&umash_seeds)) break;
+    }
     for (i = 0; i < 150; ++i) {
-        randbuffer[i] = rand() | ((uint64_t)(rand()) << 32);
+      const uint64_t seed = rand() | ((uint64_t)(rand()) << 32);
+      randbuffer[i] = seed;
     }
     for (i = 0; i < lengthEnd; ++i) {
-        intstring[i] = rand() | ((uint64_t)(rand()) << 32);
+      intstring[i] = rand() | ((uint64_t)(rand()) << 32);
     }
+
     printf("#Reporting the number of cycles per byte.\n");
     printf("#First number is input length in  8-byte words.\n");
     printf("0 ");

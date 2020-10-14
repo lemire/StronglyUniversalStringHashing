@@ -1,0 +1,3 @@
+[submodule "include/umash"]
+	path = include/umash
+	url = https://github.com/backtrace-labs/umash
