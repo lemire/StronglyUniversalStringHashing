@@ -4,19 +4,16 @@ sudo: false
 compiler:
   - gcc
 
-# We need a newer gcc for -mavx2 and -fsanitize=undefined
 env:
   matrix:
-    - PLUS=g++-4.9 MINUS=gcc-4.9
-# clang is failing with an illegal instruction error
-#    - PLUS=clang++ MINUS=clang
+    - PLUS=g++ MINUS=gcc
 
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - g++-4.9
+      - g++
 
 before_script:
   - export CXX=$PLUS CC=$MINUS
