@@ -1,6 +1,5 @@
 StronglyUniversalStringHashing
 ==============================
-[![Build Status](https://travis-ci.org/lemire/StronglyUniversalStringHashing.png)](https://travis-ci.org/lemire/StronglyUniversalStringHashing)
 
 Very fast [universal hash
 families](https://en.wikipedia.org/wiki/Universal_hashing) on strings.
